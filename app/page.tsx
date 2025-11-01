@@ -1,6 +1,7 @@
+// app/page.tsx
 'use client';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const imgs = ["/main1.jpg", "/main2.jpg", "/main3.jpg", "/main4.jpg"];
 
@@ -14,7 +15,13 @@ function pickNext(current?: string) {
 }
 
 export default function Home() {
-  const [src, setSrc] = useState<string>(() => pickNext());
+  // 1) 서버/클라이언트 최초 렌더를 동일하게: 고정값으로 시작
+  const [src, setSrc] = useState<string>(imgs[0]);
+
+  // 2) 마운트 이후에만 랜덤으로 교체 → hydration mismatch 방지
+  useEffect(() => {
+    setSrc(pickNext(imgs[0]));
+  }, []);
 
   return (
     <section className="p-0">

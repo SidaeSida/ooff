@@ -14,11 +14,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        {/* 모바일 뷰포트 고정 */}
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="color-scheme" content="light" /> {/* iOS Safari 강제 라이트 */}
-      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50 text-gray-900`}>
         <div className="mx-auto w-full max-w-[420px] px-4">
           {/* 모바일 기준 좁은 폭 컨테이너 */}

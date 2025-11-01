@@ -6,8 +6,8 @@ export default function Header() {
         <a href="/" className="block font-semibold text-base sm:text-lg whitespace-nowrap">
           OOFF · Our Own Film Festival
         </a>
-        {/* 메뉴는 아래 줄 (모바일), 큰 화면에선 오른쪽 정렬 */}
-        <nav className="mt-2 flex gap-4 text-sm sm:mt-0 sm:justify-end">
+        {/* 메뉴는 아래 줄, 모든 해상도에서 오른쪽 정렬 */}
+        <nav className="mt-2 flex justify-end gap-4 text-sm sm:mt-0">
           <a href="/films" className="hover:underline">Films</a>
           <a href="/timetable" className="hover:underline">Timetable</a>
         </nav>
