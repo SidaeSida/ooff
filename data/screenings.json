@@ -1,0 +1,5 @@
+[
+  { "filmId": "f1", "date": "2025-11-10", "theater": "Hall A", "time": "19:00" },
+  { "filmId": "f2", "date": "2025-11-11", "theater": "Hall B", "time": "14:30" },
+  { "filmId": "f1", "date": "2025-11-12", "theater": "Hall A", "time": "16:00" }
+]
