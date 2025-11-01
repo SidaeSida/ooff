@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from "react";
+
 const imgs = ["/main1.jpg", "/main2.jpg", "/main3.jpg", "/main4.jpg"];
 
 function pickNext(current?: string) {
@@ -12,7 +14,7 @@ function pickNext(current?: string) {
 }
 
 export default function Home() {
-  const [src, setSrc] = React.useState<string>(() => pickNext());
+  const [src, setSrc] = useState<string>(() => pickNext());
 
   return (
     <section className="p-0">
@@ -25,9 +27,6 @@ export default function Home() {
         aria-label="Change cover image"
         draggable={false}
       />
-      <p className="mt-2 text-center text-xs text-gray-500">
-        Tap image to shuffle
-      </p>
     </section>
   );
 }
