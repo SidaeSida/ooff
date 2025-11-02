@@ -1,0 +1,4 @@
+[
+  { "id": "festival_hiff", "name": "Hobak International Film Festival", "shortName": "HIFF", "city": "Seoul", "country": "KR" },
+  { "id": "festival_wiff", "name": "Winnie International Film Festival", "shortName": "WIFF", "city": "Busan", "country": "KR" }
+]
