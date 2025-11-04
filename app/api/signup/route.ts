@@ -35,7 +35,12 @@ export async function POST(req: Request) {
     }
 
     // 비밀번호 해시(argon2id)
-    const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+    const passwordHash = await argon2.hash(password, {
+      type: argon2.argon2id,
+      timeCost: 2,        // 기본 3 → 2
+      memoryCost: 15360,  // 기본 약 19MB 수준으로 설정(서버리스 부담 완화)
+      parallelism: 1
+    });
 
     // 사용자 생성
     await prisma.user.create({
