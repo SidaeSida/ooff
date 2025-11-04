@@ -1,39 +1,59 @@
+// app/api/signup/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { z } from "zod";
+import { prisma } from "@/lib/prisma";
 import argon2 from "argon2";
 
-const prisma = new PrismaClient();
-
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-});
+// 반드시 Node 런타임에서 실행(Edge에서는 argon2가 실패할 수 있음)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "INVALID" }, { status: 400 });
+    // 입력 파싱
+    const { email, password } = await req.json().catch(() => ({} as any));
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+
+    if (!normalizedEmail || !password || password.length < 8) {
+      return NextResponse.json(
+        { error: "INVALID_INPUT" },
+        { status: 400 }
+      );
     }
 
-    const { email, password } = parsed.data;
-
-    const exists = await prisma.user.findUnique({ where: { email } });
+    // 중복 이메일 체크
+    const exists = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
     if (exists) {
-      return NextResponse.json({ error: "DUPLICATE" }, { status: 409 });
+      return NextResponse.json(
+        { error: "EMAIL_EXISTS" },
+        { status: 409 }
+      );
     }
 
+    // 비밀번호 해시(argon2id)
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
-    const user = await prisma.user.create({
-      data: { email, passwordHash },
-      select: { id: true, email: true, createdAt: true },
+
+    // 사용자 생성
+    await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        passwordHash,
+      },
     });
 
-    return NextResponse.json(user, { status: 201 });
-  } catch (e) {
-    return NextResponse.json({ error: "SERVER_ERROR" }, { status: 500 });
+    return NextResponse.json({ ok: true }, { status: 201 });
+  } catch (e: any) {
+    // 프로덕션 임시 디버그용: 최소한의 에러 코드 반환
+    const code =
+      e?.code ||
+      e?.name ||
+      "INTERNAL_ERROR";
+    return NextResponse.json(
+      { error: code },
+      { status: 500 }
+    );
   }
 }
-
