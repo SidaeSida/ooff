@@ -1,13 +1,11 @@
-// app/layout.tsx
-export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "../components/Header";
 import AuthProvider from "../components/AuthProvider";
+import { auth } from "@/auth"; // ★ v5
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+export const dynamic = "force-dynamic";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -18,8 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
-
+  const session = await auth(); // ★ v5: 서버 세션
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50 text-gray-900`}>
