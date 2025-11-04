@@ -6,6 +6,7 @@ import argon2 from "argon2";
 // 반드시 Node 런타임에서 실행(Edge에서는 argon2가 실패할 수 있음)
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 
 export async function POST(req: Request) {
   try {

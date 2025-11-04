@@ -6,4 +6,5 @@ const handler = NextAuth(authOptions);
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const preferredRegion = "sin1";
 export { handler as GET, handler as POST };
