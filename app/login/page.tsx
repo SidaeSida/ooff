@@ -78,6 +78,27 @@ export default function LoginPage() {
     upState.password === upState.confirm &&
     !upState.loading;
 
+  // 로그인 제출 함수들 위 어딘가에 추가
+  const checkLock = async (email: string) => {
+    try {
+      const resp = await fetch(`/api/lock?email=${encodeURIComponent(email)}`, { cache: "no-store" });
+      if (!resp.ok) return false;
+      const data = await resp.json();
+      if (data.locked) {
+        setLockRemain(Number(data.remain) || 180);
+        setFailCount(Number(data.count) || 5);
+        setInState((s) => ({ ...s, msg: null }));
+        return true;
+      } else {
+        setLockRemain(null);
+        setFailCount(null);
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  };
+
   // 로그인 제출 — 성공/실패/잠금 분기
   const onSubmitSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,44 +109,27 @@ export default function LoginPage() {
       const res = await signIn("credentials", {
         email: inState.email.trim().toLowerCase(),
         password: inState.password.trim(),
-        redirect: false, // 실패 시 페이지 전환 금지
+        redirect: false,            // 실패 시 페이지 전환 금지
         callbackUrl: nextUrl,
       });
 
-      // 성공: ok+url
+      // 1) 성공: ok + url
       if (res?.ok && res.url) {
         window.location.assign(res.url);
         return;
       }
 
-      // 실패: error 또는 url?error=
-      const errRaw =
-        res?.error ||
-        (res?.url ? new URL(res.url, window.location.origin).searchParams.get("error") ?? "" : "");
-
-      // 서버가 JSON을 실어 보낸 경우 파싱
-      let parsed: any = null;
-      try {
-        parsed = typeof errRaw === "string" ? JSON.parse(errRaw) : null;
-      } catch {
-        parsed = null;
-      }
-
-      if (parsed?.code === "TooManyAttempts") {
-        // 잠금 상태
-        const remainSec = Number(parsed.remain) || 180;
-        const countNum = Number(parsed.count) || 5;
-        setLockRemain(remainSec);
-        setFailCount(countNum);
-        setInState((s) => ({ ...s, msg: null }));
+      // 2) 실패: 즉시 현재 잠금 상태 조회
+      const locked = await checkLock(inState.email.trim().toLowerCase());
+      if (locked) {
+        // checkLock이 lockRemain/failCount와 메시지 상태를 이미 셋업함
         return;
       }
 
-      // 일반 실패
+      // 3) 잠금이 아니면 일반 실패 메시지
       setLockRemain(null);
       setFailCount(null);
       setInState((s) => ({ ...s, msg: "Email or password is incorrect." }));
-      return;
     } catch {
       setInState((s) => ({ ...s, msg: "Sign in failed. Please try again." }));
     } finally {
