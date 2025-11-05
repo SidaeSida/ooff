@@ -1,4 +1,5 @@
 {
+  "prisma": { "schema": "prisma/schema.prisma" },
   "name": "ooff",
   "version": "0.1.0",
   "private": true,
