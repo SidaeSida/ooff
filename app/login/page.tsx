@@ -72,27 +72,35 @@ export default function LoginPage() {
       const res = await signIn("credentials", {
         email: inState.email.trim().toLowerCase(),
         password: inState.password.trim(),
-        redirect: false, // 실패 시 페이지 전환 금지
+        redirect: false,            // 실패 시 페이지 전환 금지
         callbackUrl: nextUrl,
       });
 
-      if (res?.error) {
-        const msg =
-          res.error === "TooManyAttempts"
-            ? "Too many failed attempts. Please try again in 3 minutes."
-            : "Email or password is incorrect.";
-        setInState((s) => ({ ...s, msg }));
+      // 1) 성공 판정: ok + url 이 있을 때만 이동
+      if (res?.ok && res.url) {
+        window.location.assign(res.url);
         return;
       }
 
-      // 성공
-      window.location.assign(res?.url || nextUrl);
+      // 2) 실패 판정: res.error, 또는 res.url의 쿼리스트링으로 판별
+      const err =
+        res?.error ||
+        (res?.url ? new URL(res.url, window.location.origin).searchParams.get("error") ?? "" : "");
+
+      const msg =
+        err === "TooManyAttempts"
+          ? "Too many failed attempts. Please try again in 3 minutes."
+          : "Email or password is incorrect.";
+
+      setInState((s) => ({ ...s, msg }));
     } catch {
+      // 3) 예외(네트워크 등)
       setInState((s) => ({ ...s, msg: "Sign in failed. Please try again." }));
     } finally {
       setInState((s) => ({ ...s, loading: false }));
     }
   };
+
 
   // 회원가입 제출
   const onSubmitSignUp = async (e: React.FormEvent) => {
