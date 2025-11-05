@@ -1,10 +1,8 @@
-// app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-
-const handler = NextAuth(authOptions);
+// app/api/auth/[...nextauth]/route.ts (v5)
+import { handlers } from "@/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const preferredRegion = "sin1";
-export { handler as GET, handler as POST };
+
+export const { GET, POST } = handlers;
