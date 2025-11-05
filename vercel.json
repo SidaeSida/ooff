@@ -1,3 +1,11 @@
 {
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "ourownfilmfestival.com" }],
+      "destination": "https://www.ourownfilmfestival.com/:path*",
+      "permanent": true
+    }
+  ]
 }
