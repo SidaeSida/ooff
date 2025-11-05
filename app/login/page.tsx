@@ -24,7 +24,7 @@ export default function LoginPage() {
   const search = useSearchParams();
   const nextUrl = search.get("next") || "/my";
 
-  // 상단 로그인 상태
+  // 로그인 상태
   const [inState, setInState] = useState<SignInState>({
     email: "",
     password: "",
@@ -32,7 +32,7 @@ export default function LoginPage() {
     msg: null,
   });
 
-  // 하단 회원가입 상태
+  // 회원가입 상태
   const [upState, setUpState] = useState<SignUpState>({
     email: "",
     password: "",
@@ -41,23 +41,28 @@ export default function LoginPage() {
     msg: null,
   });
 
+  // Sign up 패널 토글
+  const [openSignUp, setOpenSignUp] = useState(false);
+
   // 회원가입 성공 시 상단 로그인 이메일 자동 채움
   useEffect(() => {
     if (upState.msg === "SIGNUP_SUCCESS" && upState.email) {
       setInState((s) => ({ ...s, email: upState.email }));
+      setOpenSignUp(false);
     }
   }, [upState.msg, upState.email]);
 
   // 유효성
   const validEmail = (v: string) => /\S+@\S+\.\S+/.test(v.trim());
-  const canSignIn = validEmail(inState.email) && inState.password.length >= 1 && !inState.loading;
+  const canSignIn =
+    validEmail(inState.email) && inState.password.length >= 1 && !inState.loading;
   const canSignUp =
     validEmail(upState.email) &&
     upState.password.length >= 8 &&
     upState.password === upState.confirm &&
     !upState.loading;
 
-  // 로그인 제출
+  // 로그인 제출 — 실패 시 인라인 문구, 성공 시 전체 네비게이션
   const onSubmitSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSignIn) return;
@@ -66,14 +71,23 @@ export default function LoginPage() {
     try {
       const res = await signIn("credentials", {
         email: inState.email.trim().toLowerCase(),
-        password: inState.password,
-        redirect: true,          // 서버 리다이렉트로 헤더 즉시 갱신
-        callbackUrl: nextUrl,    // 기본: /my (또는 ?next=…)
+        password: inState.password.trim(),
+        redirect: false, // 실패 시 페이지 전환 금지
+        callbackUrl: nextUrl,
       });
-      // redirect: true 이므로 여기까지 오면 보통 네비게이션이 이미 발생합니다.
-      // next-auth가 실패 시에는 쿼리스트링에 error를 붙여 리다이렉트할 수 있으므로
-      // 필요시 추가 처리(예: search.get('error'))를 별도로 가능.
-    } catch (err) {
+
+      if (res?.error) {
+        const msg =
+          res.error === "TooManyAttempts"
+            ? "Too many failed attempts. Please try again in 3 minutes."
+            : "Email or password is incorrect.";
+        setInState((s) => ({ ...s, msg }));
+        return;
+      }
+
+      // 성공
+      window.location.assign(res?.url || nextUrl);
+    } catch {
       setInState((s) => ({ ...s, msg: "Sign in failed. Please try again." }));
     } finally {
       setInState((s) => ({ ...s, loading: false }));
@@ -99,11 +113,19 @@ export default function LoginPage() {
       if (resp.status === 201) {
         setUpState((s) => ({ ...s, loading: false, msg: "SIGNUP_SUCCESS" }));
       } else if (resp.status === 409) {
-        setUpState((s) => ({ ...s, loading: false, msg: "This email already exists." }));
+        setUpState((s) => ({
+          ...s,
+          loading: false,
+          msg: "This email already exists.",
+        }));
       } else if (resp.status === 400) {
         setUpState((s) => ({ ...s, loading: false, msg: "Invalid input." }));
       } else {
-        setUpState((s) => ({ ...s, loading: false, msg: "Sign up failed. Please try again." }));
+        setUpState((s) => ({
+          ...s,
+          loading: false,
+          msg: "Sign up failed. Please try again.",
+        }));
       }
     } catch {
       setUpState((s) => ({ ...s, loading: false, msg: "Network error. Please retry." }));
@@ -116,11 +138,13 @@ export default function LoginPage() {
       <h1 className="text-base font-semibold mb-4">OOFF · Our Own Film Festival</h1>
 
       {/* Login */}
-      <section className="mb-8">
+      <section className="mb-6">
         <h2 className="text-base font-medium mb-3">Login</h2>
         <form onSubmit={onSubmitSignIn} className="space-y-3 max-w-sm">
           <div className="grid gap-1">
-            <label htmlFor="inEmail" className="text-sm text-gray-700">Email</label>
+            <label htmlFor="inEmail" className="text-sm text-gray-700">
+              Email
+            </label>
             <input
               id="inEmail"
               type="email"
@@ -133,7 +157,9 @@ export default function LoginPage() {
             />
           </div>
           <div className="grid gap-1">
-            <label htmlFor="inPw" className="text-sm text-gray-700">Password</label>
+            <label htmlFor="inPw" className="text-sm text-gray-700">
+              Password
+            </label>
             <input
               id="inPw"
               type="password"
@@ -160,20 +186,32 @@ export default function LoginPage() {
         </form>
       </section>
 
-      {/* Divider */}
-      <div className="relative my-8">
-        <div className="h-[2px] bg-gray-200" />
-        <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-gray-50 px-3 text-xs text-gray-500">
-          or
-        </span>
+      {/* Sign up 토글 */}
+      <div className="my-6 flex items-center justify-center">
+        <button
+          type="button"
+          onClick={() => setOpenSignUp((v) => !v)}
+          className="text-sm underline hover:no-underline"
+          aria-expanded={openSignUp}
+          aria-controls="signup-panel"
+        >
+          {openSignUp ? "Hide sign up" : "Sign up"}
+        </button>
       </div>
 
-      {/* Sign up */}
-      <section>
-        <h2 className="text-base font-medium mb-3">Sign up</h2>
+      {/* Sign up 패널 */}
+      <section
+        id="signup-panel"
+        className={`transition-all duration-200 overflow-hidden ${
+          openSignUp ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <h2 className="sr-only">Sign up</h2>
         <form onSubmit={onSubmitSignUp} className="space-y-3 max-w-sm">
           <div className="grid gap-1">
-            <label htmlFor="upEmail" className="text-sm text-gray-700">Email</label>
+            <label htmlFor="upEmail" className="text-sm text-gray-700">
+              Email
+            </label>
             <input
               id="upEmail"
               type="email"
@@ -186,7 +224,9 @@ export default function LoginPage() {
             />
           </div>
           <div className="grid gap-1">
-            <label htmlFor="upPw" className="text-sm text-gray-700">Password (min 8)</label>
+            <label htmlFor="upPw" className="text-sm text-gray-700">
+              Password (min 8)
+            </label>
             <input
               id="upPw"
               type="password"
@@ -199,7 +239,9 @@ export default function LoginPage() {
             />
           </div>
           <div className="grid gap-1">
-            <label htmlFor="upPw2" className="text-sm text-gray-700">Confirm password</label>
+            <label htmlFor="upPw2" className="text-sm text-gray-700">
+              Confirm password
+            </label>
             <input
               id="upPw2"
               type="password"

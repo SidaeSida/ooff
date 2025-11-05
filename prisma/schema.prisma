@@ -15,3 +15,10 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 }
+
+model LoginAttempt {
+  email       String   @id
+  failCount   Int      @default(0)
+  lockedUntil DateTime?
+  updatedAt   DateTime @updatedAt
+}
