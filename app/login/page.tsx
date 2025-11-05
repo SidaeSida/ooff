@@ -1,4 +1,3 @@
-// app/login/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -45,8 +44,15 @@ export default function LoginPage() {
   const [openSignUp, setOpenSignUp] = useState(false);
 
   // 잠금 표시용 상태
-  const [lockRemain, setLockRemain] = useState<number | null>(null); // 남은 초
-  const [failCount, setFailCount] = useState<number | null>(null);   // 누적 실패 횟수
+  const [lockRemain, setLockRemain] = useState<number | null>(null);
+  const [failCount, setFailCount] = useState<number | null>(null);
+
+  // CapsLock / ShowPassword
+  const [capsIn, setCapsIn] = useState(false);
+  const [capsUp, setCapsUp] = useState(false);
+  const [showInPw, setShowInPw] = useState(false);
+  const [showUpPw, setShowUpPw] = useState(false);
+  const [showUpPw2, setShowUpPw2] = useState(false);
 
   // 회원가입 성공 시 상단 로그인 이메일 자동 채움
   useEffect(() => {
@@ -78,7 +84,7 @@ export default function LoginPage() {
     upState.password === upState.confirm &&
     !upState.loading;
 
-  // 로그인 제출 함수들 위 어딘가에 추가
+  // 잠금 상태 조회
   const checkLock = async (email: string) => {
     try {
       const resp = await fetch(`/api/lock?email=${encodeURIComponent(email)}`, { cache: "no-store" });
@@ -109,24 +115,18 @@ export default function LoginPage() {
       const res = await signIn("credentials", {
         email: inState.email.trim().toLowerCase(),
         password: inState.password.trim(),
-        redirect: false,            // 실패 시 페이지 전환 금지
+        redirect: false,
         callbackUrl: nextUrl,
       });
 
-      // 1) 성공: ok + url
       if (res?.ok && res.url) {
         window.location.assign(res.url);
         return;
       }
 
-      // 2) 실패: 즉시 현재 잠금 상태 조회
       const locked = await checkLock(inState.email.trim().toLowerCase());
-      if (locked) {
-        // checkLock이 lockRemain/failCount와 메시지 상태를 이미 셋업함
-        return;
-      }
+      if (locked) return;
 
-      // 3) 잠금이 아니면 일반 실패 메시지
       setLockRemain(null);
       setFailCount(null);
       setInState((s) => ({ ...s, msg: "Email or password is incorrect." }));
@@ -156,19 +156,11 @@ export default function LoginPage() {
       if (resp.status === 201) {
         setUpState((s) => ({ ...s, loading: false, msg: "SIGNUP_SUCCESS" }));
       } else if (resp.status === 409) {
-        setUpState((s) => ({
-          ...s,
-          loading: false,
-          msg: "This email already exists.",
-        }));
+        setUpState((s) => ({ ...s, loading: false, msg: "This email already exists." }));
       } else if (resp.status === 400) {
         setUpState((s) => ({ ...s, loading: false, msg: "Invalid input." }));
       } else {
-        setUpState((s) => ({
-          ...s,
-          loading: false,
-          msg: "Sign up failed. Please try again.",
-        }));
+        setUpState((s) => ({ ...s, loading: false, msg: "Sign up failed. Please try again." }));
       }
     } catch {
       setUpState((s) => ({ ...s, loading: false, msg: "Network error. Please retry." }));
@@ -177,17 +169,12 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-[70vh] py-6">
-      {/* Title */}
-      <h1 className="text-base font-semibold mb-4">OOFF · Our Own Film Festival</h1>
-
-      {/* Login */}
+      {/* 중복 타이틀 제거: 바로 Login부터 */}
       <section className="mb-6">
         <h2 className="text-base font-medium mb-3">Login</h2>
         <form onSubmit={onSubmitSignIn} className="space-y-3 max-w-sm">
           <div className="grid gap-1">
-            <label htmlFor="inEmail" className="text-sm text-gray-700">
-              Email
-            </label>
+            <label htmlFor="inEmail" className="text-sm text-gray-700">Email</label>
             <input
               id="inEmail"
               type="email"
@@ -200,19 +187,30 @@ export default function LoginPage() {
             />
           </div>
           <div className="grid gap-1">
-            <label htmlFor="inPw" className="text-sm text-gray-700">
-              Password
-            </label>
-            <input
-              id="inPw"
-              type="password"
-              value={inState.password}
-              onChange={(e) => setInState((s) => ({ ...s, password: e.target.value }))}
-              required
-              className="border rounded-lg px-3 py-2 text-sm"
-              placeholder="Password"
-              autoComplete="current-password"
-            />
+            <label htmlFor="inPw" className="text-sm text-gray-700">Password</label>
+            <div className="relative">
+              <input
+                id="inPw"
+                type={showInPw ? "text" : "password"}
+                value={inState.password}
+                onChange={(e) => setInState((s) => ({ ...s, password: e.target.value }))}
+                onKeyDown={(e) => setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))}
+                onKeyUp={(e) => setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))}
+                required
+                className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
+                placeholder="Password"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowInPw((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs underline"
+                aria-label={showInPw ? "Hide password" : "Show password"}
+              >
+                {showInPw ? "Hide" : "Show"}
+              </button>
+            </div>
+            {capsIn && <p className="text-xs text-amber-700">Caps Lock is on.</p>}
           </div>
 
           {/* 오류/잠금 메시지 */}
@@ -262,9 +260,7 @@ export default function LoginPage() {
         <h2 className="sr-only">Sign up</h2>
         <form onSubmit={onSubmitSignUp} className="space-y-3 max-w-sm">
           <div className="grid gap-1">
-            <label htmlFor="upEmail" className="text-sm text-gray-700">
-              Email
-            </label>
+            <label htmlFor="upEmail" className="text-sm text-gray-700">Email</label>
             <input
               id="upEmail"
               type="email"
@@ -277,34 +273,53 @@ export default function LoginPage() {
             />
           </div>
           <div className="grid gap-1">
-            <label htmlFor="upPw" className="text-sm text-gray-700">
-              Password (min 8)
-            </label>
-            <input
-              id="upPw"
-              type="password"
-              value={upState.password}
-              onChange={(e) => setUpState((s) => ({ ...s, password: e.target.value }))}
-              required
-              className="border rounded-lg px-3 py-2 text-sm"
-              placeholder="Password"
-              autoComplete="new-password"
-            />
+            <label htmlFor="upPw" className="text-sm text-gray-700">Password (min 8)</label>
+            <div className="relative">
+              <input
+                id="upPw"
+                type={showUpPw ? "text" : "password"}
+                value={upState.password}
+                onChange={(e) => setUpState((s) => ({ ...s, password: e.target.value }))}
+                onKeyDown={(e) => setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))}
+                onKeyUp={(e) => setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))}
+                required
+                className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
+                placeholder="Password"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowUpPw((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs underline"
+                aria-label={showUpPw ? "Hide password" : "Show password"}
+              >
+                {showUpPw ? "Hide" : "Show"}
+              </button>
+            </div>
+            {capsUp && <p className="text-xs text-amber-700">Caps Lock is on.</p>}
           </div>
           <div className="grid gap-1">
-            <label htmlFor="upPw2" className="text-sm text-gray-700">
-              Confirm password
-            </label>
-            <input
-              id="upPw2"
-              type="password"
-              value={upState.confirm}
-              onChange={(e) => setUpState((s) => ({ ...s, confirm: e.target.value }))}
-              required
-              className="border rounded-lg px-3 py-2 text-sm"
-              placeholder="Confirm password"
-              autoComplete="new-password"
-            />
+            <label htmlFor="upPw2" className="text-sm text-gray-700">Confirm password</label>
+            <div className="relative">
+              <input
+                id="upPw2"
+                type={showUpPw2 ? "text" : "password"}
+                value={upState.confirm}
+                onChange={(e) => setUpState((s) => ({ ...s, confirm: e.target.value }))}
+                required
+                className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
+                placeholder="Confirm password"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowUpPw2((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs underline"
+                aria-label={showUpPw2 ? "Hide password" : "Show password"}
+              >
+                {showUpPw2 ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
 
           {/* 검증 메시지 */}
