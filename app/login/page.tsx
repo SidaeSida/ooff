@@ -41,8 +41,12 @@ export default function LoginPage() {
     msg: null,
   });
 
-  // Sign up 패널 토글
+  // Sign up 토글
   const [openSignUp, setOpenSignUp] = useState(false);
+
+  // 잠금 표시용 상태
+  const [lockRemain, setLockRemain] = useState<number | null>(null); // 남은 초
+  const [failCount, setFailCount] = useState<number | null>(null);   // 누적 실패 횟수
 
   // 회원가입 성공 시 상단 로그인 이메일 자동 채움
   useEffect(() => {
@@ -51,6 +55,18 @@ export default function LoginPage() {
       setOpenSignUp(false);
     }
   }, [upState.msg, upState.email]);
+
+  // 잠금 카운트다운
+  useEffect(() => {
+    if (lockRemain == null) return;
+    if (lockRemain <= 0) {
+      setLockRemain(null);
+      setFailCount(null);
+      return;
+    }
+    const t = setInterval(() => setLockRemain((s) => (s == null ? null : s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [lockRemain]);
 
   // 유효성
   const validEmail = (v: string) => /\S+@\S+\.\S+/.test(v.trim());
@@ -62,7 +78,7 @@ export default function LoginPage() {
     upState.password === upState.confirm &&
     !upState.loading;
 
-  // 로그인 제출 — 실패 시 인라인 문구, 성공 시 전체 네비게이션
+  // 로그인 제출 — 성공/실패/잠금 분기
   const onSubmitSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSignIn) return;
@@ -72,35 +88,50 @@ export default function LoginPage() {
       const res = await signIn("credentials", {
         email: inState.email.trim().toLowerCase(),
         password: inState.password.trim(),
-        redirect: false,            // 실패 시 페이지 전환 금지
+        redirect: false, // 실패 시 페이지 전환 금지
         callbackUrl: nextUrl,
       });
 
-      // 1) 성공 판정: ok + url 이 있을 때만 이동
+      // 성공: ok+url
       if (res?.ok && res.url) {
         window.location.assign(res.url);
         return;
       }
 
-      // 2) 실패 판정: res.error, 또는 res.url의 쿼리스트링으로 판별
-      const err =
+      // 실패: error 또는 url?error=
+      const errRaw =
         res?.error ||
         (res?.url ? new URL(res.url, window.location.origin).searchParams.get("error") ?? "" : "");
 
-      const msg =
-        err === "TooManyAttempts"
-          ? "Too many failed attempts. Please try again in 3 minutes."
-          : "Email or password is incorrect.";
+      // 서버가 JSON을 실어 보낸 경우 파싱
+      let parsed: any = null;
+      try {
+        parsed = typeof errRaw === "string" ? JSON.parse(errRaw) : null;
+      } catch {
+        parsed = null;
+      }
 
-      setInState((s) => ({ ...s, msg }));
+      if (parsed?.code === "TooManyAttempts") {
+        // 잠금 상태
+        const remainSec = Number(parsed.remain) || 180;
+        const countNum = Number(parsed.count) || 5;
+        setLockRemain(remainSec);
+        setFailCount(countNum);
+        setInState((s) => ({ ...s, msg: null }));
+        return;
+      }
+
+      // 일반 실패
+      setLockRemain(null);
+      setFailCount(null);
+      setInState((s) => ({ ...s, msg: "Email or password is incorrect." }));
+      return;
     } catch {
-      // 3) 예외(네트워크 등)
       setInState((s) => ({ ...s, msg: "Sign in failed. Please try again." }));
     } finally {
       setInState((s) => ({ ...s, loading: false }));
     }
   };
-
 
   // 회원가입 제출
   const onSubmitSignUp = async (e: React.FormEvent) => {
@@ -180,7 +211,17 @@ export default function LoginPage() {
             />
           </div>
 
-          {inState.msg && <p className="text-sm text-red-600">{inState.msg}</p>}
+          {/* 오류/잠금 메시지 */}
+          {lockRemain != null ? (
+            <p className="text-sm text-red-600">
+              Too many failed attempts. Please try again in{" "}
+              {String(Math.floor(lockRemain / 60)).padStart(2, "0")}:
+              {String(lockRemain % 60).padStart(2, "0")}
+              {typeof failCount === "number" ? ` (${failCount}/5)` : null}
+            </p>
+          ) : inState.msg ? (
+            <p className="text-sm text-red-600">{inState.msg}</p>
+          ) : null}
 
           <button
             type="submit"
