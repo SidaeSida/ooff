@@ -10,15 +10,50 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String        @id @default(cuid())
+  email        String        @unique
   passwordHash String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime      @default(now())
+  UserEntry    UserEntry[]
+  UserPrivacy  UserPrivacy[]
 }
 
 model LoginAttempt {
-  email       String   @id
-  failCount   Int      @default(0)
+  email       String    @id
+  failCount   Int       @default(0)
   lockedUntil DateTime?
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime  @updatedAt
+}
+
+enum Visibility {
+  private
+  friends
+  public
+}
+
+model UserEntry {
+  id          String     @id @default(cuid())
+  userId      String
+  filmId      String
+  rating      Decimal?   @db.Decimal(2, 1)
+  shortReview String?    @db.VarChar(200)
+  isStarred   Boolean    @default(false)
+  visibility  Visibility @default(private)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, filmId])
+  @@index([userId])
+  @@index([filmId])
+}
+
+model UserPrivacy {
+  userId           String     @id
+  ratingVisibility Visibility @default(private)
+  reviewVisibility Visibility @default(private)
+  updatedAt        DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }

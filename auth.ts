@@ -1,13 +1,36 @@
-// auth.ts (v5)
+// auth.ts (NextAuth v5)
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import argon2 from "argon2";
 
+// (선택) 타입 경고 줄이기용 — 세션에 id 추가 선언
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      email?: string | null;
+      name?: string | null;
+      image?: string | null;
+    };
+  }
+}
+
 type Creds = { email?: string; password?: string };
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { auth, handlers, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
+  callbacks: {
+    async jwt({ token, user }) {
+      // credentials 성공 시 user.id 주입
+      if (user && (user as any).id) token.sub = (user as any).id;
+      return token;
+    },
+    async session({ session, token }) {
+      if (token?.sub) (session.user as any).id = token.sub;
+      return session;
+    },
+  },
   providers: [
     Credentials({
       name: "Email and Password",
@@ -24,19 +47,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const now = new Date();
         const attempt = await prisma.loginAttempt.findUnique({ where: { email } });
 
-        // ① 이미 잠금 중이면 남은 시간/누적 횟수 전달
+        // 잠금 상태면 즉시 거절
         if (attempt?.lockedUntil && attempt.lockedUntil > now) {
           const remain = Math.max(1, Math.ceil((attempt.lockedUntil.getTime() - now.getTime()) / 1000));
-          throw new CredentialsSignin(JSON.stringify({
-            code: "TooManyAttempts",
-            remain,
-            count: attempt.failCount ?? 5,
-          }));
+          throw new CredentialsSignin(
+            JSON.stringify({ code: "TooManyAttempts", remain, count: attempt.failCount ?? 5 })
+          );
         }
 
         const user = await prisma.user.findUnique({ where: { email } });
 
-        // ② 사용자 없음 → 실패 카운트 + 필요 시 잠금 시작
+        // 사용자 없음
         if (!user || !user.passwordHash) {
           const count = (attempt?.failCount ?? 0) + 1;
           const lock = count >= 5 ? new Date(now.getTime() + 3 * 60 * 1000) : null;
@@ -45,13 +66,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             create: { email, failCount: count, lockedUntil: lock },
             update: { failCount: count, lockedUntil: lock },
           });
-          if (lock) {
-            throw new CredentialsSignin(JSON.stringify({ code: "TooManyAttempts", remain: 180, count }));
-          }
+          if (lock) throw new CredentialsSignin(JSON.stringify({ code: "TooManyAttempts", remain: 180, count }));
           throw new CredentialsSignin("CredentialsSignin");
         }
 
-        // ③ 비밀번호 불일치 → 실패 카운트 + 필요 시 잠금 시작
+        // 비밀번호 검증
         const ok = await argon2.verify(user.passwordHash, password);
         if (!ok) {
           const count = (attempt?.failCount ?? 0) + 1;
@@ -61,13 +80,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             create: { email, failCount: count, lockedUntil: lock },
             update: { failCount: count, lockedUntil: lock },
           });
-          if (lock) {
-            throw new CredentialsSignin(JSON.stringify({ code: "TooManyAttempts", remain: 180, count }));
-          }
+          if (lock) throw new CredentialsSignin(JSON.stringify({ code: "TooManyAttempts", remain: 180, count }));
           throw new CredentialsSignin("CredentialsSignin");
         }
 
-        // ④ 성공 → 카운터 초기화
+        // 성공 → 카운터 초기화
         if (attempt) {
           await prisma.loginAttempt.update({
             where: { email },
@@ -75,6 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
         }
 
+        // 세션에 쓸 최소 정보(id, email)
         return { id: user.id, email: user.email };
       },
     }),
