@@ -15,7 +15,7 @@ model User {
   passwordHash String
   createdAt    DateTime      @default(now())
   UserEntry    UserEntry[]
-  UserPrivacy  UserPrivacy[]
+  UserPrivacy  UserPrivacy?
 }
 
 model LoginAttempt {

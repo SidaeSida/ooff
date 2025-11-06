@@ -92,8 +92,9 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
   const displayValue = dragValue ?? rating ?? 0;
   const fillRatio = useMemo(() => clamp(displayValue / 5.0, 0, 1), [displayValue]);
 
-  // ─── 상호작용 ───────────────────────────────────────────────────────────────
+  // ─── 상호작용 (모바일 스크롤 잠금 포함) ────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault(); // 터치 시작 시 스크롤/줌 억제
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     dragMoved.current = false;
     setDragging(true);
@@ -103,6 +104,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragging) return;
+    e.preventDefault(); // 드래그 중 스크롤 억제
     dragMoved.current = true;
     setDragValue(valueFromPointer(e.clientX, 0.1, true)); // 드래그는 항상 0.1, 0.0 허용
   };
@@ -148,7 +150,13 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
   // ─── Save / Reset ──────────────────────────────────────────────────────────
   const dirty = (rating ?? null) !== (savedRating ?? null) || review !== savedReview;
 
+  const blurActive = () => {
+    const el = document.activeElement as HTMLElement | null;
+    if (el && typeof el.blur === 'function') el.blur();
+  };
+
   const onSave = async () => {
+    blurActive(); // 모바일에서 키보드/줌 종료
     try {
       const resp = await fetch('/api/user-entry', {
         method: 'PUT',
@@ -170,6 +178,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
 
   // 서버 기록 삭제(null, '')
   const onReset = async () => {
+    blurActive();
     try {
       setRating(null);
       setReview('');
@@ -209,7 +218,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
         </span>
       </div>
 
-      {/* Rating bar */}
+      {/* Rating bar (모바일 스크롤 잠금: touch-none) */}
       <div className="flex items-center justify-center">
         <div
           ref={barRef}
@@ -225,7 +234,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
           onPointerCancel={onPointerUp}
           onClick={onClickBar}
           onDoubleClick={onDoubleClick}
-          className={`relative h-9 ${BAR_WIDTH_CLASS} rounded-full border select-none bg-white`}
+          className={`relative h-9 ${BAR_WIDTH_CLASS} rounded-full border select-none bg-white touch-none`}
         >
           {/* 5칸(정수 위치) + 4개 경계선 + 중앙 별 */}
           <div className="absolute inset-0 grid grid-cols-5 pointer-events-none">
@@ -251,7 +260,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
         </div>
       </div>
 
-      {/* Review + Actions */}
+      {/* Review + Actions 〔모바일 16px로 확대방지, 저장/리셋 시 blur()〕 */}
       <div>
         <label className="sr-only" htmlFor="review">Review</label>
         <textarea
@@ -260,7 +269,10 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
           value={review}
           onChange={(e) => setReview(e.target.value)}
           placeholder="Add a short note"
-          className="w-full rounded-lg border px-3 py-2 text-sm resize-none"
+          className="w-full rounded-lg border px-3 py-2 text-base sm:text-sm resize-none"
+          inputMode="text"
+          autoCorrect="on"
+          spellCheck={false}
           maxLength={200}
         />
         <div className="mt-2 flex items-center justify-between">

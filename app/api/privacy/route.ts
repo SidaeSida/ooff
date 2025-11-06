@@ -11,15 +11,19 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const row = await prisma.userPrivacy.findUnique({
-    where: { userId: session.user.id },
-  });
+  try {
+    const row = await prisma.userPrivacy.findUnique({
+      where: { userId: session.user.id },
+    });
 
-  // 기본값: private/private
-  return NextResponse.json(
-    row ?? { userId: session.user.id, ratingVisibility: "private", reviewVisibility: "private" },
-    { status: 200 }
-  );
+    // 없으면 기본값만 반환(생성은 하지 않음)
+    return NextResponse.json(
+      row ?? { userId: session.user.id, ratingVisibility: "private", reviewVisibility: "private" },
+      { status: 200 }
+    );
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? String(e) }, { status: 500 });
+  }
 }
 
 export async function PUT(req: Request) {
@@ -27,8 +31,13 @@ export async function PUT(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "invalid json" }, { status: 400 });
+
+  let body: any = null;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
 
   const r = body.ratingVisibility;
   const v = body.reviewVisibility;
@@ -47,11 +56,29 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "no changes" }, { status: 400 });
   }
 
-  const saved = await prisma.userPrivacy.upsert({
-    where: { userId: session.user.id },
-    create: { userId: session.user.id, ratingVisibility: data.ratingVisibility ?? "private", reviewVisibility: data.reviewVisibility ?? "private" },
-    update: data,
-  });
+  try {
+    // ▶ 세션의 user.id가 실제 User 테이블에 있는지 확인 (FK 오류 예방)
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user) {
+      return NextResponse.json(
+        { error: `User not found for session id=${session.user.id}. Check auth callbacks / database.` },
+        { status: 409 }
+      );
+    }
 
-  return NextResponse.json(saved, { status: 200 });
+    const saved = await prisma.userPrivacy.upsert({
+      where: { userId: session.user.id },
+      create: {
+        userId: session.user.id,
+        ratingVisibility: data.ratingVisibility ?? "private",
+        reviewVisibility: data.reviewVisibility ?? "private",
+      },
+      update: data,
+    });
+
+    return NextResponse.json(saved, { status: 200 });
+  } catch (e: any) {
+    // 예: FK 오류(P2003), 테이블 미존재(P2021), 기타
+    return NextResponse.json({ error: e?.message ?? String(e) }, { status: 500 });
+  }
 }
