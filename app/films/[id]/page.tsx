@@ -1,4 +1,3 @@
-// app/films/[id]/page.tsx
 import { notFound } from 'next/navigation';
 import filmsData from '@/data/films.json';
 import RatingEditorClient from './RatingEditorClient';
@@ -19,13 +18,8 @@ function norm(s: string) {
   return decodeURIComponent(String(s)).trim().toLowerCase();
 }
 
-// ✅ Next.js 16: params는 Promise 입니다. 반드시 await 해서 꺼내야 합니다.
-export default async function FilmDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;              // ← 여기서 await
+export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }>; }) {
+  const { id } = await params;
   const films = filmsData as Film[];
   const target = norm(id);
 
@@ -48,9 +42,8 @@ export default async function FilmDetailPage({
         <p className="text-lg leading-relaxed text-gray-800">{film.synopsis}</p>
       )}
 
-      <div className="rounded-2xl border p-4">
-        <RatingEditorClient filmId={film.id} />
-      </div>
+      {/* 내부 컴포넌트가 배경/전환을 처리합니다 */}
+      <RatingEditorClient filmId={film.id} />
     </section>
   );
 }

@@ -1,3 +1,4 @@
+// app/films/FilmsClient.tsx
 'use client';
 
 import { useEffect, useMemo } from 'react';
@@ -6,7 +7,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import filmsData from '@/data/films.json';
 import entriesData from '@/data/entries.json';
 import screeningsData from '@/data/screenings.json';
-import editionsData from '@/data/editions.json';
 
 type Film = {
   id: string;
@@ -19,13 +19,11 @@ type Film = {
   credits?: { directors?: string[] };
 };
 type Entry = { id: string; filmId: string; editionId: string; section?: string };
-type Screening = { id: string; entryId: string; startsAt: string; venue: string; city?: string };
-type Edition = { id: string; festivalId: string; year: number; editionNumber?: number };
+type Screening = { id: string; entryId: string; startsAt: string; venue: string };
 
 const films = filmsData as Film[];
 const entries = entriesData as Entry[];
 const screenings = screeningsData as Screening[];
-const editions = editionsData as Edition[];
 
 const DEFAULT_EDITION = 'edition_hiff_2026';
 
@@ -43,7 +41,6 @@ function setQuery(
   const qs = sp.toString();
   router.replace(qs ? `${pathname}?${qs}` : pathname);
 }
-
 function toggleCsv(currentCsv: string | null, value: string): string {
   const cur = (currentCsv ?? '').split(',').filter(Boolean);
   const set = new Set(cur);
@@ -59,11 +56,9 @@ function isAllSelected(currentCsv: string | null, options: string[]): boolean {
   const cur = new Set((currentCsv ?? '').split(',').filter(Boolean));
   return options.every(o => cur.has(o));
 }
-function ymd(iso: string) {
-  return iso.slice(0, 10);
-}
+function ymd(iso: string) { return iso.slice(0, 10); }
 
-export default function FilmsClient() {
+export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
@@ -88,9 +83,7 @@ export default function FilmsClient() {
 
   const screeningsByEntry = useMemo(() => {
     const m = new Map<string, Screening[]>();
-    for (const s of screenings) {
-      (m.get(s.entryId) ?? m.set(s.entryId, []).get(s.entryId)!).push(s);
-    }
+    for (const s of screenings) (m.get(s.entryId) ?? m.set(s.entryId, []).get(s.entryId)!).push(s);
     return m;
   }, []);
   const filmById = useMemo(() => Object.fromEntries(films.map(f => [f.id, f])), []);
@@ -118,15 +111,11 @@ export default function FilmsClient() {
   const filteredFilmIds = useMemo(() => {
     let es = edition === 'all' ? entries : entries.filter(e => e.editionId === edition);
 
-    if (edition !== 'all' && sectionSet.size) {
-      es = es.filter(e => e.section && sectionSet.has(e.section));
-    }
+    if (edition !== 'all' && sectionSet.size) es = es.filter(e => e.section && sectionSet.has(e.section));
     if (edition !== 'all' && dateSet.size) {
       const ok = new Set<string>();
       for (const e of es) {
-        if ((screeningsByEntry.get(e.id) ?? []).some(s => dateSet.has(ymd(s.startsAt)))) {
-          ok.add(e.id);
-        }
+        if ((screeningsByEntry.get(e.id) ?? []).some(s => dateSet.has(ymd(s.startsAt)))) ok.add(e.id);
       }
       es = es.filter(e => ok.has(e.id));
     }
@@ -137,7 +126,6 @@ export default function FilmsClient() {
     return filmIds.filter(fid => {
       const f = filmById[fid];
       if (!f) return false;
-
       if (text) {
         const hay = [f.title, ...(f.credits?.directors ?? []), ...(f.tags ?? [])].join(' ').toLowerCase();
         if (!hay.includes(text)) return false;
@@ -151,8 +139,12 @@ export default function FilmsClient() {
     [filteredFilmIds, filmById]
   );
 
+  const ratedSet = useMemo(() => new Set(ratedFilmIds), [ratedFilmIds]);
+
   return (
     <>
+      {/* 기존 필터 바 그대로 */}
+      {/* ... (기존 코드 동일 – 생략 없음, 현재 파일 전체 교체본입니다) */}
       <div className="bg-white border rounded-lg p-3 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-gray-600 mr-2">Festival</span>
@@ -166,9 +158,7 @@ export default function FilmsClient() {
                 type="radio"
                 name="edition"
                 checked={edition === opt.id}
-                onChange={() =>
-                  setQuery(router, pathname, search, { edition: opt.id, section: undefined, date: undefined })
-                }
+                onChange={() => setQuery(router, pathname, search, { edition: opt.id, section: undefined, date: undefined })}
               />
               {opt.label}
             </label>
@@ -189,8 +179,7 @@ export default function FilmsClient() {
             className="flex-1 min-w-0 border rounded px-3 py-2 text-sm"
           />
           {q && (
-            <button
-              className="text-xs underline text-gray-600 whitespace-nowrap"
+            <button className="text-xs underline text-gray-600 whitespace-nowrap"
               onClick={() => setQuery(router, pathname, search, { q: undefined })}
             >
               Clear
@@ -209,9 +198,7 @@ export default function FilmsClient() {
                   <button
                     onClick={() => {
                       const allNow = isAllSelected(sectionCsv, availableSections);
-                      setQuery(router, pathname, search, {
-                        section: allNow ? undefined : csvOfAll(availableSections),
-                      });
+                      setQuery(router, pathname, search, { section: allNow ? undefined : csvOfAll(availableSections) });
                     }}
                     className={`px-2 py-1 rounded border text-sm ${
                       isAllSelected(sectionCsv, availableSections) ? 'bg-black text-white' : 'bg-white'
@@ -234,8 +221,7 @@ export default function FilmsClient() {
                 </>
               )}
               {sectionCsv && (
-                <button
-                  className="ml-2 text-xs underline text-gray-600 whitespace-nowrap"
+                <button className="ml-2 text-xs underline text-gray-600 whitespace-nowrap"
                   onClick={() => setQuery(router, pathname, search, { section: undefined })}
                 >
                   Reset
@@ -256,9 +242,7 @@ export default function FilmsClient() {
                   <button
                     onClick={() => {
                       const allNow = isAllSelected(dateCsv, availableDates);
-                      setQuery(router, pathname, search, {
-                        date: allNow ? undefined : csvOfAll(availableDates),
-                      });
+                      setQuery(router, pathname, search, { date: allNow ? undefined : csvOfAll(availableDates) });
                     }}
                     className={`px-2 py-1 rounded border text-sm ${
                       isAllSelected(dateCsv, availableDates) ? 'bg-black text-white' : 'bg-white'
@@ -281,8 +265,7 @@ export default function FilmsClient() {
                 </>
               )}
               {dateCsv && (
-                <button
-                  className="ml-2 text-xs underline text-gray-600 whitespace-nowrap"
+                <button className="ml-2 text-xs underline text-gray-600 whitespace-nowrap"
                   onClick={() => setQuery(router, pathname, search, { date: undefined })}
                 >
                   Reset
@@ -296,13 +279,7 @@ export default function FilmsClient() {
           <div>
             <button
               className="text-xs underline text-gray-600 whitespace-nowrap"
-              onClick={() =>
-                setQuery(router, pathname, search, {
-                  section: undefined,
-                  date: undefined,
-                  q: undefined,
-                })
-              }
+              onClick={() => setQuery(router, pathname, search, { section: undefined, date: undefined, q: undefined })}
             >
               Clear all
             </button>
@@ -313,19 +290,44 @@ export default function FilmsClient() {
       <div className="text-sm text-gray-600">Results {filmsResult.length}</div>
 
       <ul className="space-y-3">
-        {filmsResult.map(f => (
-          <li key={f.id} className="border rounded-lg p-4 bg-white">
-            {/* ✅ 목록 링크 — 여기입니다 */}
-            <a href={`/films/${encodeURIComponent(f.id)}`} className="block">
-              <div className="font-medium">
-                {f.title} <span className="text-gray-500">({f.year})</span>
-              </div>
-              <div className="text-sm text-gray-600">· {f.runtime}min</div>
-              {f.synopsis && <p className="text-sm mt-2 line-clamp-2">{f.synopsis}</p>}
-              {f.genres?.length ? <div className="mt-2 text-xs text-gray-500">Genre: {f.genres.join(', ')}</div> : null}
-            </a>
-          </li>
-        ))}
+        {filmsResult.map(f => {
+          const isRated = ratedSet.has(f.id);
+          return (
+            <li
+              key={f.id}
+              className="border rounded-lg p-4 transition-colors duration-300 ease-out"
+              style={{
+                background: isRated ? 'var(--bg-rated)' : 'var(--bg-unrated)',
+                borderColor: isRated ? 'var(--bd-rated)' : 'var(--bd-unrated)',
+              }}
+            >
+              <a href={`/films/${encodeURIComponent(f.id)}`} className="block">
+                <div className={`font-medium ${isRated ? 'text-white' : ''}`}>
+                  {f.title}{' '}
+                  <span className={isRated ? 'text-white/80' : 'text-gray-500'}>
+                    ({f.year})
+                  </span>
+                </div>
+
+                <div className={`text-sm ${isRated ? 'text-white/80' : 'text-gray-600'}`}>
+                  · {f.runtime}min
+                </div>
+
+                {f.synopsis && (
+                  <p className={`text-sm mt-2 line-clamp-2 ${isRated ? 'text-white/90' : ''}`}>
+                    {f.synopsis}
+                  </p>
+                )}
+
+                {f.genres?.length ? (
+                  <div className={`mt-2 text-xs ${isRated ? 'text-white/70' : 'text-gray-500'}`}>
+                    Genre: {f.genres.join(', ')}
+                  </div>
+                ) : null}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </>
   );

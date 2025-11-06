@@ -1,6 +1,7 @@
 // components/Header.tsx
 import Link from "next/link";
-import { auth } from "@/auth"; // ★ v5
+import { auth } from "@/auth";
+import NavClient from "./NavClient"; // ★ 추가(아래 새 파일)
 
 export default async function Header() {
   const session = await auth();
@@ -12,14 +13,15 @@ export default async function Header() {
         <a href="/" className="block font-semibold text-base sm:text-lg whitespace-nowrap">
           OOFF · Our Own Film Festival
         </a>
+        {/* 메뉴: 제목과 다른 줄, 위치/간격 원복 */}
         <nav className="mt-2 flex justify-end gap-4 text-sm sm:mt-0">
-          <a href="/films" className="hover:underline">Films</a>
-          <a href="/timetable" className="hover:underline">Timetable</a>
-          {isLoggedIn ? (
-            <Link href="/my" className="hover:underline">My</Link>
-          ) : (
-            <Link href="/login" className="hover:underline">Login</Link>
-          )}
+          <NavClient
+            items={[
+              { href: "/films", label: "Films" },
+              { href: "/timetable", label: "Timetable" },
+              isLoggedIn ? { href: "/my", label: "My" } : { href: "/login", label: "Login" },
+            ]}
+          />
         </nav>
       </div>
     </header>

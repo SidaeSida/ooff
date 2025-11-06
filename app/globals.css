@@ -1,8 +1,10 @@
-/* app/globals.css — monochrome (black/white) */
+/* app/globals.css — monochrome + palette tokens */
 
 @import "tailwindcss";
 
-/* ---- Tokens (Tailwind v4 @theme) ---- */
+/* ---- Tokens (Tailwind v4 @theme) ----
+   ※ VSCode가 @theme를 모르는 표준으로 노란줄을 줄 수 있으나 실제 빌드에는 문제 없습니다.
+   필요 시 Settings → "css.lint.unknownAtRules": "ignore" 로 경고 숨김. */
 @theme inline {
   --color-background: #ffffff;   /* pure white */
   --color-foreground: #111111;   /* near black */
@@ -14,13 +16,37 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Force light everywhere (Safari 포함) */
-:root { color-scheme: light; }
-html, body { background: var(--color-background); }
+/* ---- Project palette (cards, accents) ---- */
+:root{
+  /* Card state colors */
+  --bg-unrated:#E6E2DE;
+  --bg-hover-u:#E0DBD6;
+  --bd-unrated:#D5CEC8;
+
+  --bg-rated:#b9916a;
+  --bg-hover-r:#C39D79;
+  --bd-rated:#A67F5B;
+
+  /* Rating Bar colors */
+  --bar-fill-unrated:#A79E97; /* 머시룸 그레이 */
+  --bar-fill-rated:#9E7A5C;   /* 시나몬 브라운(한 톤 딥) */
+  --bar-fill-opacity:0.60;     /* 0.0~1.0 */
+
+  /* My Rating 배지 색 */
+  --badge-rated-bg:#B66A2E; /* 진한 주황 */
+  --badge-rated-fg:#FFFFFF; /* 배지 글자색 */
+
+
+  --accent:#BE8A2F;     /* mustard/oak */
+  --ink:#2E2B24;        /* deep brown */
+
+  color-scheme: light;  /* Force light everywhere (Safari 포함) */
+}
 
 /* Base */
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+html, body { background: var(--color-background); }
 body {
   margin: 0;
   color: var(--color-foreground);
@@ -30,9 +56,15 @@ body {
   line-height: 1.6;
 }
 
-/* Links = inherit color, 밑줄만 */
+/* Links */
 a { color: inherit; text-decoration: none; }
 a:hover { text-decoration: underline; }
+
+/* Accessible focus */
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
 
 /* Dividers / cards (비 Tailwind 요소 대비) */
 hr { border: 0; border-top: 1px solid var(--color-border); }

@@ -93,30 +93,34 @@ export default function MyRatingsClient() {
         return (
           <article
             key={e.id}
-            className="rounded-xl border px-3 py-2 cursor-pointer hover:bg-gray-50 transition"
+            className="rounded-xl border px-3 py-2 cursor-pointer transition-colors duration-300 ease-out"
+            style={{ background: 'var(--bg-rated)', borderColor: 'var(--bd-rated)', color: '#FFFFFF' }}
             onClick={() => router.push(`/films/${e.filmId}`)}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-[15px] font-semibold truncate">{title}</h3>
+                <h3 className="text-[15px] font-semibold truncate text-white">{title}</h3>
                 {directors && (
-                  <p className="text-xs text-gray-600 truncate mt-0.5">{directors}</p>
+                  <p className="text-xs truncate mt-0.5 text-white/80">{directors}</p>
                 )}
               </div>
               {/* 점수 뱃지 */}
-              <div className="shrink-0 rounded-full border px-2 py-0.5 text-xs">
+              <div
+                className="shrink-0 rounded-full px-2.5 py-1 text-base font-semibold"
+                style={{ background:'var(--badge-rated-bg)', color:'var(--badge-rated-fg)', border:'none' }}
+              >
                 {badge}
               </div>
             </div>
 
             {e.shortReview && (
-              <p className="text-sm mt-1 break-words">{e.shortReview}</p>
+              <p className="text-sm mt-1 break-words text-white/90">{e.shortReview}</p>
             )}
-
             <div className="mt-1 flex items-center justify-between">
-              <p className="text-[11px] text-gray-500">Updated {ymd}</p>
+              <p className="text-[11px] text-white/70">Updated {ymd}</p>
               <button
-                className="text-xs rounded-md border px-2 py-0.5 hover:bg-gray-100"
+                className="text-xs rounded-md px-2 py-0.5"
+                style={{ background:'var(--bg-unrated)', color:'#111111', border:'1px solid var(--bd-unrated)' }}
                 onClick={(evt) => onDelete(e.filmId, evt)}
               >
                 Delete
