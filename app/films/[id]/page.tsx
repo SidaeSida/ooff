@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation';
 import filmsData from '@/data/films.json';
 import RatingEditorClient from './RatingEditorClient';
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 type Film = {
   id: string;
   title: string;
@@ -12,9 +15,21 @@ type Film = {
   credits?: { directors?: string[] };
 };
 
-export default function FilmDetailPage({ params }: { params: { id: string } }) {
+function norm(s: string) {
+  return decodeURIComponent(String(s)).trim().toLowerCase();
+}
+
+// ✅ Next.js 16: params는 Promise 입니다. 반드시 await 해서 꺼내야 합니다.
+export default async function FilmDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;              // ← 여기서 await
   const films = filmsData as Film[];
-  const film = films.find((f) => f.id === params.id);
+  const target = norm(id);
+
+  const film = films.find((f) => norm(f.id) === target);
   if (!film) return notFound();
 
   const title = `${film.title} (${film.year})`;
@@ -22,21 +37,17 @@ export default function FilmDetailPage({ params }: { params: { id: string } }) {
   const runtime = film.runtime;
 
   return (
-    // ✅ 최상단을 <section>으로 — 레이아웃의 <main> 안에 또 <main>을 만들지 않음
     <section className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
-      {/* Header */}
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">{title}</h1>
-        <p className="text-gray-700">{directors}</p>
+        {directors && <p className="text-gray-700">{directors}</p>}
         <p className="text-gray-500">· {runtime} min</p>
       </header>
 
-      {/* Synopsis */}
       {film.synopsis && (
         <p className="text-lg leading-relaxed text-gray-800">{film.synopsis}</p>
       )}
 
-      {/* Rating / Review */}
       <div className="rounded-2xl border p-4">
         <RatingEditorClient filmId={film.id} />
       </div>

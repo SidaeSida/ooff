@@ -1,13 +1,12 @@
-// app/films/FilmsClient.tsx
 'use client';
 
 import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import filmsData from '../../data/films.json';
-import entriesData from '../../data/entries.json';
-import screeningsData from '../../data/screenings.json';
-import editionsData from '../../data/editions.json';
+import filmsData from '@/data/films.json';
+import entriesData from '@/data/entries.json';
+import screeningsData from '@/data/screenings.json';
+import editionsData from '@/data/editions.json';
 
 type Film = {
   id: string;
@@ -69,7 +68,6 @@ export default function FilmsClient() {
   const pathname = usePathname();
   const search = useSearchParams();
 
-  // URL에 edition이 없으면 첫 마운트에 기본값 주입
   useEffect(() => {
     if (!search.get('edition')) {
       const sp = new URLSearchParams(search.toString());
@@ -88,7 +86,6 @@ export default function FilmsClient() {
   const sectionSet = useMemo(() => new Set((sectionCsv ?? '').split(',').filter(Boolean)), [sectionCsv]);
   const dateSet = useMemo(() => new Set((dateCsv ?? '').split(',').filter(Boolean)), [dateCsv]);
 
-  // 인덱스
   const screeningsByEntry = useMemo(() => {
     const m = new Map<string, Screening[]>();
     for (const s of screenings) {
@@ -98,7 +95,6 @@ export default function FilmsClient() {
   }, []);
   const filmById = useMemo(() => Object.fromEntries(films.map(f => [f.id, f])), []);
 
-  // 옵션 소스 (ALL이면 섹션/날짜 옵션 비움)
   const editionEntries = useMemo(
     () => (edition === 'all' ? entries : entries.filter(e => e.editionId === edition)),
     [edition]
@@ -119,7 +115,6 @@ export default function FilmsClient() {
     return Array.from(set).sort();
   }, [edition, editionEntries, screeningsByEntry]);
 
-  // 필터 체인 (ALL일 때는 섹션/날짜를 무시)
   const filteredFilmIds = useMemo(() => {
     let es = edition === 'all' ? entries : entries.filter(e => e.editionId === edition);
 
@@ -158,9 +153,7 @@ export default function FilmsClient() {
 
   return (
     <>
-      {/* FILTER BAR */}
       <div className="bg-white border rounded-lg p-3 space-y-3">
-        {/* Festival (라디오) */}
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-gray-600 mr-2">Festival</span>
           {[
@@ -174,7 +167,6 @@ export default function FilmsClient() {
                 name="edition"
                 checked={edition === opt.id}
                 onChange={() =>
-                  // 에디션 변경 시 section/date 즉시 초기화
                   setQuery(router, pathname, search, { edition: opt.id, section: undefined, date: undefined })
                 }
               />
@@ -183,7 +175,6 @@ export default function FilmsClient() {
           ))}
         </div>
 
-        {/* Search (결과 내 검색 유지) */}
         <div className="flex items-center gap-2">
           <input
             type="search"
@@ -207,7 +198,6 @@ export default function FilmsClient() {
           )}
         </div>
 
-        {/* Section (ALL이 아닐 때만 노출) */}
         {edition !== 'all' && (
           <details>
             <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Section</summary>
@@ -216,7 +206,6 @@ export default function FilmsClient() {
                 <span className="text-sm text-gray-400">None</span>
               ) : (
                 <>
-                  {/* All 토글 */}
                   <button
                     onClick={() => {
                       const allNow = isAllSelected(sectionCsv, availableSections);
@@ -230,7 +219,6 @@ export default function FilmsClient() {
                   >
                     All
                   </button>
-
                   {availableSections.map(sec => {
                     const checked = sectionSet.has(sec);
                     return (
@@ -257,7 +245,6 @@ export default function FilmsClient() {
           </details>
         )}
 
-        {/* Date (ALL이 아닐 때만 노출) */}
         {edition !== 'all' && (
           <details>
             <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Date</summary>
@@ -266,7 +253,6 @@ export default function FilmsClient() {
                 <span className="text-sm text-gray-400">None</span>
               ) : (
                 <>
-                  {/* All 토글 */}
                   <button
                     onClick={() => {
                       const allNow = isAllSelected(dateCsv, availableDates);
@@ -280,7 +266,6 @@ export default function FilmsClient() {
                   >
                     All
                   </button>
-
                   {availableDates.map(d => {
                     const checked = dateSet.has(d);
                     return (
@@ -307,7 +292,6 @@ export default function FilmsClient() {
           </details>
         )}
 
-        {/* Clear all */}
         {(edition !== 'all' && (sectionCsv || dateCsv)) || q ? (
           <div>
             <button
@@ -331,7 +315,8 @@ export default function FilmsClient() {
       <ul className="space-y-3">
         {filmsResult.map(f => (
           <li key={f.id} className="border rounded-lg p-4 bg-white">
-            <a href={`/films/${f.id}`} className="block">
+            {/* ✅ 목록 링크 — 여기입니다 */}
+            <a href={`/films/${encodeURIComponent(f.id)}`} className="block">
               <div className="font-medium">
                 {f.title} <span className="text-gray-500">({f.year})</span>
               </div>
