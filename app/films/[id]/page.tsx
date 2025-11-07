@@ -1,3 +1,4 @@
+// app/films/[id]/page.tsx
 import { notFound } from 'next/navigation';
 import filmsData from '@/data/films.json';
 import RatingEditorClient from './RatingEditorClient';

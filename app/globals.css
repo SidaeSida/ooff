@@ -1,5 +1,3 @@
-/* app/globals.css — monochrome + palette tokens */
-
 @import "tailwindcss";
 
 /* ---- Tokens (Tailwind v4 @theme) ----
@@ -35,7 +33,6 @@
   /* My Rating 배지 색 */
   --badge-rated-bg:#B66A2E; /* 진한 주황 */
   --badge-rated-fg:#FFFFFF; /* 배지 글자색 */
-
 
   --accent:#BE8A2F;     /* mustard/oak */
   --ink:#2E2B24;        /* deep brown */
@@ -79,3 +76,13 @@ img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
 
 /* Helper */
 .container-narrow { max-width: 390px; margin-inline: auto; padding-inline: 1rem; }
+
+/* ---- 추가: iOS 입력 포커스 확대 방지(보강) ---- */
+@media (max-width: 480px){
+  input, textarea { font-size:16px; }
+}
+
+/* ---- 추가: Festival 라디오 전용 주황 악센트 ---- */
+.radio-accent-orange input[type="radio"]{
+  accent-color: var(--badge-rated-bg); /* #B66A2E */
+}
