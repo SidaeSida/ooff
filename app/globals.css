@@ -63,6 +63,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   outline-offset:2px;
 }
 
+/* Rated 카드에서 리뷰 입력창 포커스는 검정 아웃라인로 가시성 강화 */
+textarea.focus-black:focus-visible{
+  outline:2px solid rgba(255,255,255,0.7); /* ← 필요시 #F2E7DD 또는 #E7D3BF로 교체 */
+  outline-offset:2px;
+}
+
 /* Dividers / cards (비 Tailwind 요소 대비) */
 hr { border: 0; border-top: 1px solid var(--color-border); }
 .card {
@@ -86,3 +92,14 @@ img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
 .radio-accent-orange input[type="radio"]{
   accent-color: var(--badge-rated-bg); /* #B66A2E */
 }
+
+/* 별(★) 시각적 수직 중앙 보정 */
+.star-nudge { transform: translateY(-4px); }
+
+:root{
+  --rating-bar-radius: 14px; /* 8px~20px 등으로 바꾸면 끝 둥글기 즉시 반영 */
+}
+
+/* 홈 전용 스크롤 잠금 */
+html.no-scroll, html.no-scroll body { overflow: hidden; }
+.home-viewport { height: 100dvh; overflow: hidden; overscroll-behavior: contain; }

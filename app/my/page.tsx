@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import PrivacyControlsClient from './PrivacyControlsClient';
 import MyRatingsClient from './MyRatingsClient';
 import SignOutButton from './SignOutButton';
+import PageShowRefresh from '@/components/PageShowRefresh';
 
 export default async function MyPage() {
   const session = await auth();
@@ -33,6 +34,7 @@ export default async function MyPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 pt-1 pb-10">
+      <PageShowRefresh /> {/* ★ BFCache 복원 시 router.refresh() */}
       <p className="text-sm text-gray-600 mb-2">
         Signed in as <span className="font-medium">{email}</span>
       </p>

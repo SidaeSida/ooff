@@ -1,4 +1,3 @@
-// app/films/[id]/RatingEditorClient.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -15,7 +14,8 @@ type Entry = {
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)); }
 function roundTo(n: number, step: number) { return Math.round(n / step) * step; }
 
-const BAR_WIDTH_CLASS = 'w-[85%]';
+const BAR_WIDTH_CLASS = 'w-[50%]';
+const MAX_REVIEW = 200; // 한줄평 최대 글자수(현행 유지)
 
 export default function RatingEditorClient({ filmId }: { filmId: string }) {
   const [loading, setLoading] = useState(true);
@@ -79,6 +79,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
 
   const displayValue = dragValue ?? rating ?? 0;
   const fillRatio = useMemo(() => clamp(displayValue / 5.0, 0, 1), [displayValue]);
+  const fillPct = Math.round(fillRatio * 100);
 
   // 상호작용
   const onPointerDown = (e: React.PointerEvent) => {
@@ -105,7 +106,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
   const onClickBar = (e: React.MouseEvent) => {
     if (suppressNextClick.current) { suppressNextClick.current = false; return; }
     if (dragging) return;
-    const v = valueFromPointer(e.clientX, 0.5, false);
+    const v = valueFromPointer((e as any).clientX, 0.5, false);
     setRating(v);
   };
   const onDoubleClick = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
@@ -120,11 +121,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
 
   // Save / Reset
   const dirty = (rating ?? null) !== (savedRating ?? null) || review !== savedReview;
-
-  // 편집이 시작되면 committed=false
-  useEffect(() => {
-    if (dirty) setCommitted(false);
-  }, [dirty]);
+  useEffect(() => { if (dirty) setCommitted(false); }, [dirty]);
 
   const blurActive = () => {
     const el = document.activeElement as HTMLElement | null;
@@ -144,7 +141,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
       if (!resp.ok) throw new Error(await resp.text());
       setSavedRating(rating);
       setSavedReview(review);
-      setCommitted(true); // 저장 성공 → Saved 고정(다시 편집 전까지)
+      setCommitted(true);
     } catch (err: any) {
       alert(`Save failed: ${err?.message ?? err}`);
     }
@@ -165,14 +162,14 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
       if (!resp.ok) throw new Error(await resp.text());
       setSavedRating(null);
       setSavedReview('');
-      setCommitted(true); // 리셋도 커밋임
+      setCommitted(true);
     } catch (err: any) {
       alert(`Reset failed: ${err?.message ?? err}`);
     }
   };
 
-  // 배경색: “저장된 값” 기준 (편집 중엔 바뀌지 않음)
-  const isSavedRated = (savedRating ?? null) !== null;
+  // 전환 조건: “저장된 평점 or 저장된 한줄평”
+  const isSavedRated = (savedRating ?? null) !== null || (savedReview.trim().length > 0);
 
   if (loading) {
     return (
@@ -183,6 +180,9 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
     );
   }
 
+  // 마스크(별 레이어용) — iOS 포함
+  const starMask = `linear-gradient(90deg, #000 ${fillPct}%, rgba(0,0,0,0) ${fillPct}%)`;
+
   return (
     <div
       className="rounded-2xl border p-4 transition-colors duration-300 ease-out"
@@ -191,13 +191,15 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
         borderColor: isSavedRated ? 'var(--bd-rated)' : 'var(--bd-unrated)',
       }}
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
+        {/* 점수 숫자 — 저장 후에는 흰색으로 */}
         <div className="w-full text-center">
-          <span className="text-xl font-semibold tabular-nums tracking-tight">
+          <span className={`text-2xl font-semibold tabular-nums tracking-tight ${isSavedRated ? 'text-white' : ''}`}>
             {! (dragValue ?? rating) ? '–' : (dragValue ?? rating)!.toFixed(1)}
           </span>
         </div>
 
+        {/* 별/바 — 컨테이너 라운드 + 오버플로우 클립, 채움은 직사각형 끝단, 별은 항상 위(두 레이어) */}
         <div className="flex items-center justify-center">
           <div
             ref={barRef}
@@ -213,46 +215,73 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
             onPointerCancel={onPointerUp}
             onClick={onClickBar}
             onDoubleClick={onDoubleClick}
-            className={`relative h-9 ${BAR_WIDTH_CLASS} rounded-full border select-none bg-white touch-none`}
+            className={`relative h-9 ${BAR_WIDTH_CLASS} select-none bg-white touch-none overflow-hidden`}
+            style={{ borderRadius: 'var(--rating-bar-radius)' }}
           >
-            <div className="absolute inset-0 grid grid-cols-5 pointer-events-none">
-              {[0,1,2,3,4].map((i) => (
-                <div key={i} className="relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-[18px] opacity-70">★</div>
-                  {i < 4 && <div className="absolute right-0 top-0 h-full w-px bg-gray-200/80" />}
-                </div>
-              ))}
-            </div>
+            {/* 채움 바 — 직사각형, 끝단 수직, 라운딩 없음 */}
             <div
-              className="absolute left-0 top-0 h-full rounded-full"
+              className="absolute left-0 top-0 h-full"
               style={{
-                width: `${fillRatio * 100}%`,
+                width: `${fillPct}%`,
                 background: isSavedRated ? 'var(--bar-fill-rated)' : 'var(--bar-fill-unrated)',
                 opacity: 'var(--bar-fill-opacity)',
                 transition: dragging ? 'none' : 'width 90ms linear, background-color 200ms ease-out, opacity 200ms ease-out',
+                zIndex: 5,
               }}
             />
+            {/* 별 레이어(연한 바닥) */}
+            <div className="absolute inset-0 grid grid-cols-5 pointer-events-none z-20">
+              {[0,1,2,3,4].map((i) => (
+                <div key={`bg-${i}`} className="relative">
+                  <div className="absolute inset-0 flex items-center justify-center text-[30px] leading-none star-nudge opacity-35">★</div>
+                  {i < 4 && <div className="absolute right-0 top-0 h-full w-px bg-transparent" />}
+                </div>
+              ))}
+            </div>
+            {/* 별 레이어(진한, 채움 비율만 보이도록 마스크) */}
             <div
-              className="absolute top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-white/90 border"
-              style={{ left: `calc(${((dragValue ?? rating ?? 0) / 5) * 100}% - 1px)` }}
-            />
+              className="absolute inset-0 grid grid-cols-5 pointer-events-none z-30"
+              style={{
+                WebkitMaskImage: starMask as any,
+                maskImage: starMask as any,
+                WebkitMaskRepeat: 'no-repeat' as any,
+                maskRepeat: 'no-repeat' as any,
+              }}
+            >
+              {[0,1,2,3,4].map((i) => (
+                <div key={`fg-${i}`} className="relative">
+                  <div className="absolute inset-0 flex items-center justify-center text-[30px] leading-none star-nudge opacity-100">★</div>
+                  {i < 4 && <div className="absolute right-0 top-0 h-full w-px bg-transparent" />}
+                </div>
+              ))}
+            </div>
+            {/* 지시선(끝선) 제거됨 */}
           </div>
         </div>
 
+        {/* 한줄평 — 저장 후 텍스트만 흰색, 포커스 링은 focus-soft(글로벌 정의) */}
         <div>
           <label className="sr-only" htmlFor="review">Review</label>
           <textarea
             id="review"
-            rows={2}
+            rows={3}
             value={review}
             onChange={(e) => setReview(e.target.value)}
             placeholder="Add a short note"
-            className="w-full rounded-lg border px-3 py-2 text-base sm:text-sm resize-none"
+            className={`w-full rounded-lg border px-3 py-2 text-base sm:text-sm resize-none overflow-auto
+              ${isSavedRated ? 'bg-transparent text-white placeholder-white/70 border-white/40 caret-white focus-soft' : ''}`}
             inputMode="text"
             autoCorrect="on"
             spellCheck={false}
-            maxLength={200}
+            maxLength={MAX_REVIEW}
           />
+          {/* 90% 이상 사용 시 카운터 */}
+          {review.length >= Math.floor(MAX_REVIEW * 0.9) && (
+            <div className={`mt-1 text-[11px] ${isSavedRated ? 'text-white/80' : 'text-gray-500'} text-right`}>
+              {review.length}/{MAX_REVIEW}
+            </div>
+          )}
+
           <div className="mt-2 flex items-center justify-between">
             <button onClick={onReset} className="px-3 py-1.5 rounded-md border text-sm hover:bg-gray-50">
               Reset
@@ -260,9 +289,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
             <button
               onClick={onSave}
               disabled={!dirty}
-              className={`px-3 py-1.5 rounded-md border text-sm ${
-                !dirty ? 'opacity-60 cursor-default' : 'hover:bg-gray-50'
-              }`}
+              className={`px-3 py-1.5 rounded-md border text-sm ${!dirty ? 'opacity-60 cursor-default' : 'hover:bg-gray-50'}`}
             >
               {(!dirty && committed) ? 'Saved' : 'Save'}
             </button>
