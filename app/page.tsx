@@ -2,7 +2,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import NoScroll from '@/components/NoScroll';
 
 const imgs = ['/main1.jpg', '/main2.jpg', '/main3.jpg', '/main4.jpg'];
 
@@ -14,31 +13,25 @@ function pickNext(current?: string) {
 }
 
 export default function Home() {
-  // 1) 서버/클라이언트 최초 렌더 동일화
+  // SSR/CSR 불일치 방지: 고정값 → 마운트 후 교체
   const [src, setSrc] = useState<string>(imgs[0]);
-
-  // 2) 마운트 이후에만 랜덤 교체 → hydration mismatch 방지
-  useEffect(() => {
-    setSrc(pickNext(imgs[0]));
-  }, []);
+  useEffect(() => { setSrc(pickNext(imgs[0])); }, []);
 
   return (
-    <main className="home-viewport">
-      <NoScroll />
-      <section
-        className="relative w-screen h-[100dvh] overflow-hidden"
-        aria-label="OOFF cover section"
-      >
+    <main className="px-4">
+      {/* 폭 고정 컨테이너: 배포 사이트와 동일 느낌(조절지점: maxWidth) */}
+      <div className="mx-auto" style={{ maxWidth: 560 }}>
+        {/* 메뉴 아래 간격(조절지점: mt-6) */}
         <img
           src={src}
           alt="OOFF cover"
-          className="absolute inset-0 w-full h-full object-contain block select-none"
+          className="block w-full h-auto mt-6 rounded-md select-none"
           onClick={() => setSrc(pickNext(src))}
           role="button"
           aria-label="Change cover image"
           draggable={false}
         />
-      </section>
+      </div>
     </main>
   );
 }
