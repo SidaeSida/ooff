@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import filmsData from "@/data/films.json";
+import { deleteUserEntry } from "./actions";
 
 type Vis = "private" | "friends" | "public";
 type Film = {
@@ -127,27 +128,6 @@ useEffect(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
-
-const onDelete = async (filmId: string, e: React.MouseEvent) => {
-  e.preventDefault();  // ★ 추가
-  e.stopPropagation(); // 기존
-  if (!confirm("Delete this rating and review?")) return;
-
-  const resp = await fetch(`/api/user-entry?filmId=${encodeURIComponent(filmId)}`, {
-    method: "DELETE",
-    cache: "no-store",
-    credentials: "same-origin",
-  });
-
-  if (resp.ok || resp.status === 204) {
-    setItems((prev) => (prev ? prev.filter((x) => x.filmId !== filmId) : prev)); // 낙관적 제거
-    router.refresh(); // 서버 상태 동기화
-  } else {
-    const msg = await resp.text();
-    alert(`Delete failed: ${msg || resp.status}`);
-  }
-};
-
   // 뷰 렌더
   if (loading && !items) {
     return (
@@ -209,26 +189,32 @@ const onDelete = async (filmId: string, e: React.MouseEvent) => {
             {/* 푸터(버튼 영역)는 본문 클릭 영역 밖에 둠 */}
             <div className="mt-1 flex items-center justify-between">
               <p className="text-[11px] text-white/70">Updated {ymd}</p>
-              <button
-                type="button"
-                className="text-xs rounded-md px-2 py-0.5 relative z-10"
-                style={{
-                  background: "var(--bg-unrated)",
-                  color: "#111111",
-                  border: "1px solid var(--bd-unrated)",
-                  touchAction: "manipulation",                 // ★ iOS 터치 최적화
-                }}
-                // ★ 캡처 단계에서 전파·기본동작 모두 차단 (iOS BFCache 후 버블링 오작동 방지)
-                onTouchStartCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
-                onPointerDownCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
-                onMouseDownCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
-                onClickCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
-                onClick={(evt) => onDelete(e.filmId, evt)}     // 실제 처리
-              >
-                Delete
-              </button>
-            </div>
 
+              {/* ★ 서버 액션 기반 삭제: iOS Safari에서도 신뢰성 높음 */}
+              <form
+                action={async (formData) => {
+                  // 서버에서 삭제 및 revalidatePath 수행
+                  'use server'; // 안전표기: 빌드가 분리 최적화되더라도 의도 명확화
+                  await deleteUserEntry(formData);
+                }}
+                // 카드 네비게이션 클릭과 충돌 방지
+                onClickCapture={(e) => { e.stopPropagation(); }}
+              >
+                <input type="hidden" name="filmId" value={e.filmId} />
+                <button
+                  type="submit"
+                  className="text-xs rounded-md px-2 py-0.5"
+                  style={{
+                    background: "var(--bg-unrated)",
+                    color: "#111111",
+                    border: "1px solid var(--bd-unrated)",
+                    touchAction: "manipulation", // 모바일 터치 최적화
+                  }}
+                >
+                  Delete
+                </button>
+              </form>
+            </div>
           </article>
         );
       })}
