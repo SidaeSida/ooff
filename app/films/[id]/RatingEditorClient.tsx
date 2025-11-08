@@ -31,6 +31,10 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
   // “최근 커밋됨” 플래그: 저장/리셋 성공 후 true, 편집 시작되면 false
   const [committed, setCommitted] = useState(false);
 
+  // “삭제 완료” 토스트 대체: Save 버튼 라벨을 3초간 Deleted로
+  const [recentlyDeleted, setRecentlyDeleted] = useState(false);
+  const deletedTimerRef = useRef<number | null>(null);
+
   // 드래그 상태
   const [dragging, setDragging] = useState(false);
   const [dragValue, setDragValue] = useState<number | null>(null);
@@ -62,7 +66,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => { alive = false; if (deletedTimerRef.current) window.clearTimeout(deletedTimerRef.current); };
   }, [filmId]);
 
   // 좌표→값
@@ -128,20 +132,41 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
     if (el && typeof el.blur === 'function') el.blur();
   };
 
+  const doShowDeletedBadge = () => {
+    setRecentlyDeleted(true);
+    if (deletedTimerRef.current) window.clearTimeout(deletedTimerRef.current);
+    deletedTimerRef.current = window.setTimeout(() => setRecentlyDeleted(false), 3000);
+  };
+
   const onSave = async () => {
     blurActive();
+    // 삭제 조건: 평점 null 이고 리뷰가 빈 문자열
+    const willDelete = (rating == null) && (review.trim() === '');
     try {
-      const resp = await fetch('/api/user-entry', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        cache: 'no-store',
-        body: JSON.stringify({ filmId, rating, shortReview: review }),
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      setSavedRating(rating);
-      setSavedReview(review);
-      setCommitted(true);
+      if (willDelete) {
+        const resp = await fetch(`/api/user-entry?filmId=${encodeURIComponent(filmId)}`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!resp.ok && resp.status !== 204) throw new Error(await resp.text());
+        setSavedRating(null);
+        setSavedReview('');
+        setCommitted(true);
+        doShowDeletedBadge(); // 3초간 Deleted 표시
+      } else {
+        const resp = await fetch('/api/user-entry', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          cache: 'no-store',
+          body: JSON.stringify({ filmId, rating, shortReview: review }),
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        setSavedRating(rating);
+        setSavedReview(review);
+        setCommitted(true);
+      }
     } catch (err: any) {
       alert(`Save failed: ${err?.message ?? err}`);
     }
@@ -150,19 +175,10 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
   const onReset = async () => {
     blurActive();
     try {
+      // 편집 상태만 클리어(삭제는 Save에서 결정)
       setRating(null);
       setReview('');
-      const resp = await fetch('/api/user-entry', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        cache: 'no-store',
-        body: JSON.stringify({ filmId, rating: null, shortReview: '' }),
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      setSavedRating(null);
-      setSavedReview('');
-      setCommitted(true);
+      setCommitted(false);
     } catch (err: any) {
       alert(`Reset failed: ${err?.message ?? err}`);
     }
@@ -195,11 +211,11 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
         {/* 점수 숫자 — 저장 후에는 흰색으로 */}
         <div className="w-full text-center">
           <span className={`text-2xl font-semibold tabular-nums tracking-tight ${isSavedRated ? 'text-white' : ''}`}>
-            {! (dragValue ?? rating) ? '–' : (dragValue ?? rating)!.toFixed(1)}
+            {!(dragValue ?? rating) ? '–' : (dragValue ?? rating)!.toFixed(1)}
           </span>
         </div>
 
-        {/* 별/바 — 컨테이너 라운드 + 오버플로우 클립, 채움은 직사각형 끝단, 별은 항상 위(두 레이어) */}
+        {/* 별/바 */}
         <div className="flex items-center justify-center">
           <div
             ref={barRef}
@@ -218,8 +234,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
             className={`relative h-9 ${BAR_WIDTH_CLASS} select-none bg-white touch-none overflow-hidden`}
             style={{ borderRadius: 'var(--rating-bar-radius)' }}
           >
-            
-            {/* 채움 바 — 직사각형, 끝단 수직, 라운딩 없음 */}
+            {/* 채움 바 */}
             <div
               className="absolute left-0 top-0 h-full"
               style={{
@@ -235,7 +250,6 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
               {[0,1,2,3,4].map((i) => (
                 <div key={`bg-${i}`} className="relative">
                   <div className="absolute inset-0 flex items-center justify-center text-[20px] leading-none star-nudge opacity-35">★</div>
-                  {/* 별 칸 사이선은 투명 유지(아래 오버레이 구분선이 실제 표시를 담당) */}
                   {i < 4 && <div className="absolute right-0 top-0 h-full w-px bg-transparent" />}
                 </div>
               ))}
@@ -253,32 +267,23 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
               {[0,1,2,3,4].map((i) => (
                 <div key={`fg-${i}`} className="relative">
                   <div className="absolute inset-0 flex items-center justify-center text-[20px] leading-none star-nudge opacity-100">★</div>
-                  {/* 별 칸 사이선은 투명 유지 */}
                   {i < 4 && <div className="absolute right-0 top-0 h-full w-px bg-transparent" />}
                 </div>
               ))}
             </div>
-            {/* ▼ 구분선(20/40/60/80%) — 별/마스크 위 최상위, 이중 라인으로 모든 배경에서 가시성 확보 */}
+            {/* 구분선(20/40/60/80%) — 이중 라인 */}
             <div className="absolute inset-0 pointer-events-none z-[60]">
               {['20%','40%','60%','80%'].map((left) => (
                 <div key={left} className="absolute top-0 h-full" style={{ left }}>
-                  {/* 어두운 가이드(밝은 배경용) — 매우 옅게 */}
-                  <div
-                    className="absolute top-0 left-0 h-full w-px"
-                    style={{ background: 'rgba(0,0,0,0.14)' }}   // ← 필요 시 0.12~0.16로 미세조정
-                  />
-                  {/* 밝은 가이드(어두운/채움 배경용) — 더 옅게 겹침 */}
-                  <div
-                    className="absolute top-0 left-0 h-full w-px"
-                    style={{ background: 'rgba(255,255,255,0.38)' }} // ← 필요 시 0.32~0.42로 미세조정
-                  />
+                  <div className="absolute top-0 left-0 h-full w-px" style={{ background: 'rgba(0,0,0,0.14)' }} />
+                  <div className="absolute top-0 left-0 h-full w-px" style={{ background: 'rgba(255,255,255,0.38)' }} />
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* 한줄평 — 저장 후 텍스트만 흰색, 포커스 링은 focus-soft(글로벌 정의) */}
+        {/* 한줄평 */}
         <div>
           <label className="sr-only" htmlFor="review">Review</label>
           <textarea
@@ -294,7 +299,6 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
             spellCheck={false}
             maxLength={MAX_REVIEW}
           />
-          {/* 90% 이상 사용 시 카운터 */}
           {review.length >= Math.floor(MAX_REVIEW * 0.9) && (
             <div className={`mt-1 text-[11px] ${isSavedRated ? 'text-white/80' : 'text-gray-500'} text-right`}>
               {review.length}/{MAX_REVIEW}
@@ -310,7 +314,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
               disabled={!dirty}
               className={`px-3 py-1.5 rounded-md border text-sm ${!dirty ? 'opacity-60 cursor-default' : 'hover:bg-gray-50'}`}
             >
-              {(!dirty && committed) ? 'Saved' : 'Save'}
+              {recentlyDeleted ? 'Deleted' : (!dirty && committed) ? 'Saved' : 'Save'}
             </button>
           </div>
         </div>

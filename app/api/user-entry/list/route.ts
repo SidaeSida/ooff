@@ -15,6 +15,8 @@ export async function GET() {
     orderBy: { updatedAt: "desc" },
   });
 
-  // 목록 API는 항상 200 + 배열로 응답
-  return NextResponse.json(rows, { status: 200 });
+  // ★ 평점=null 이고 리뷰가 비어있으면 목록에서 제외
+  const filtered = rows.filter((r) => !(r.rating === null && (!r.shortReview || r.shortReview.trim() === "")));
+
+  return NextResponse.json(filtered, { status: 200 });
 }
