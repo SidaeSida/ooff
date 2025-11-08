@@ -98,7 +98,7 @@ img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
 
 /* ★ 모바일(폭<=480px)에서 보정폭을 완화 */
 @media (max-width: 480px){
-  .star-nudge { transform: translateY(-2px); }         /* 필요시 -1px ~ 0px 사이 미세조정 */
+  .star-nudge { transform: translateY(-0px); }         /* 필요시 -1px ~ 0px 사이 미세조정 */
 }
 
 :root{
