@@ -192,13 +192,8 @@ useEffect(() => {
 
               {/* ★ 서버 액션 기반 삭제: iOS Safari에서도 신뢰성 높음 */}
               <form
-                action={async (formData) => {
-                  // 서버에서 삭제 및 revalidatePath 수행
-                  'use server'; // 안전표기: 빌드가 분리 최적화되더라도 의도 명확화
-                  await deleteUserEntry(formData);
-                }}
-                // 카드 네비게이션 클릭과 충돌 방지
-                onClickCapture={(e) => { e.stopPropagation(); }}
+                action={deleteUserEntry}                              // ★ 서버 액션 직접 바인딩
+                onClickCapture={(e) => { e.stopPropagation(); }}      // 카드 onClick과 충돌 방지
               >
                 <input type="hidden" name="filmId" value={e.filmId} />
                 <button
@@ -208,7 +203,7 @@ useEffect(() => {
                     background: "var(--bg-unrated)",
                     color: "#111111",
                     border: "1px solid var(--bd-unrated)",
-                    touchAction: "manipulation", // 모바일 터치 최적화
+                    touchAction: "manipulation",
                   }}
                 >
                   Delete
