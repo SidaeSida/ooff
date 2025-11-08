@@ -172,7 +172,6 @@ export default function MyRatingsClient() {
             {/* 푸터(업데이트 일시만 표기) */}
             <div className="mt-1 flex items-center justify-between">
               <p className="text-[11px] text-white/70">Updated {ymd}</p>
-              <span className="text-[11px] text-white/50">Tap a card → Reset & Save to delete</span>
             </div>
           </article>
         );
