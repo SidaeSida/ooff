@@ -119,23 +119,25 @@ export default function MyRatingsClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onDelete = async (filmId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm("Delete this rating and review?")) return;
-    const resp = await fetch(`/api/user-entry?filmId=${encodeURIComponent(filmId)}`, {
-      method: "DELETE",
-      cache: "no-store",
-      credentials: "same-origin",
-    });
-    if (resp.ok || resp.status === 204) {
-      // 낙관적 업데이트 + 서버 상태 동기화
-      setItems((prev) => (prev ? prev.filter((x) => x.filmId !== filmId) : prev));
-      router.refresh();
-    } else {
-      const msg = await resp.text();
-      alert(`Delete failed: ${msg || resp.status}`);
-    }
-  };
+const onDelete = async (filmId: string, e: React.MouseEvent) => {
+  e.preventDefault();  // ★ 추가
+  e.stopPropagation(); // 기존
+  if (!confirm("Delete this rating and review?")) return;
+
+  const resp = await fetch(`/api/user-entry?filmId=${encodeURIComponent(filmId)}`, {
+    method: "DELETE",
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+
+  if (resp.ok || resp.status === 204) {
+    setItems((prev) => (prev ? prev.filter((x) => x.filmId !== filmId) : prev)); // 낙관적 제거
+    router.refresh(); // 서버 상태 동기화
+  } else {
+    const msg = await resp.text();
+    alert(`Delete failed: ${msg || resp.status}`);
+  }
+};
 
   // 뷰 렌더
   if (loading && !items) {
@@ -164,38 +166,47 @@ export default function MyRatingsClient() {
         return (
           <article
             key={e.id}
-            className="rounded-xl border px-3 py-2 cursor-pointer transition-colors duration-300 ease-out"
+            className="rounded-xl border px-3 py-2 transition-colors duration-300 ease-out" // ← cursor-pointer 제거
             style={{ background: "var(--bg-rated)", borderColor: "var(--bd-rated)", color: "#FFFFFF" }}
-            onClick={() => router.push(`/films/${e.filmId}`)}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="text-[15px] font-semibold truncate text-white">{title}</h3>
-                {directors && <p className="text-xs truncate mt-0.5 text-white/80">{directors}</p>}
+            {/* 본문만 클릭 가능 영역으로 제한 */}
+            <div
+              className="cursor-pointer"
+              onClick={() => router.push(`/films/${e.filmId}`)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-[15px] font-semibold truncate text-white">{title}</h3>
+                  {directors && <p className="text-xs truncate mt-0.5 text-white/80">{directors}</p>}
+                </div>
+                <div
+                  className="shrink-0 rounded-full px-2.5 py-1 text-base font-semibold"
+                  style={{ background: "var(--badge-rated-bg)", color: "var(--badge-rated-fg)", border: "none" }}
+                >
+                  {badge}
+                </div>
               </div>
-              <div
-                className="shrink-0 rounded-full px-2.5 py-1 text-base font-semibold"
-                style={{ background: "var(--badge-rated-bg)", color: "var(--badge-rated-fg)", border: "none" }}
-              >
-                {badge}
-              </div>
+
+              {e.shortReview && (
+                <div
+                  className="mt-1 text-sm text-white/90 leading-[1.5] overflow-auto"
+                  style={{ whiteSpace: "pre-line", maxHeight: "12em" }}
+                >
+                  {e.shortReview}
+                </div>
+              )}
             </div>
 
-            {e.shortReview && (
-              <div
-                className="mt-1 text-sm text-white/90 leading-[1.5] overflow-auto"
-                style={{ whiteSpace: "pre-line", maxHeight: "12em" }}
-              >
-                {e.shortReview}
-              </div>
-            )}
-
+            {/* 푸터(버튼 영역)는 본문 클릭 영역 밖에 둠 */}
             <div className="mt-1 flex items-center justify-between">
               <p className="text-[11px] text-white/70">Updated {ymd}</p>
               <button
-                className="text-xs rounded-md px-2 py-0.5"
+                type="button"                                                    // ★ 추가
+                className="text-xs rounded-md px-2 py-0.5 relative z-10"         // ★ z-10 추가
                 style={{ background: "var(--bg-unrated)", color: "#111111", border: "1px solid var(--bd-unrated)" }}
-                onClick={(evt) => onDelete(e.filmId, evt)}
+                onPointerDown={(evt) => { evt.preventDefault(); evt.stopPropagation(); }} // ★ 추가
+                onMouseDown={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}    // ★ 추가
+                onClick={(evt) => onDelete(e.filmId, evt)}                                  // 기존 유지
               >
                 Delete
               </button>

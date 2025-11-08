@@ -207,8 +207,9 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
             aria-label="Search"
             title="Search"
             onClick={() => doSearch(qLocal)}
-            className="h-9 w-9 md:h-8 md:w-8 rounded-full border inline-flex items-center justify-center hover:bg-gray-50 focus:outline-none"
+            className="inline-flex items-center justify-center p-1.5 md:p-1 bg-transparent border-0 rounded-none hover:bg-transparent focus:outline-none focus:ring-0"
           >
+            {/* 아이콘만 표시(외곽 원형/테두리 제거) */}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>

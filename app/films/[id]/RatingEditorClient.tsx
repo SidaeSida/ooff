@@ -14,7 +14,7 @@ type Entry = {
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)); }
 function roundTo(n: number, step: number) { return Math.round(n / step) * step; }
 
-const BAR_WIDTH_CLASS = 'w-[50%]';
+const BAR_WIDTH_CLASS = 'w-[70%]';
 const MAX_REVIEW = 200; // 한줄평 최대 글자수(현행 유지)
 
 export default function RatingEditorClient({ filmId }: { filmId: string }) {
@@ -218,6 +218,7 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
             className={`relative h-9 ${BAR_WIDTH_CLASS} select-none bg-white touch-none overflow-hidden`}
             style={{ borderRadius: 'var(--rating-bar-radius)' }}
           >
+            
             {/* 채움 바 — 직사각형, 끝단 수직, 라운딩 없음 */}
             <div
               className="absolute left-0 top-0 h-full"
@@ -233,7 +234,8 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
             <div className="absolute inset-0 grid grid-cols-5 pointer-events-none z-20">
               {[0,1,2,3,4].map((i) => (
                 <div key={`bg-${i}`} className="relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-[30px] leading-none star-nudge opacity-35">★</div>
+                  <div className="absolute inset-0 flex items-center justify-center text-[20px] leading-none star-nudge opacity-35">★</div>
+                  {/* 별 칸 사이선은 투명 유지(아래 오버레이 구분선이 실제 표시를 담당) */}
                   {i < 4 && <div className="absolute right-0 top-0 h-full w-px bg-transparent" />}
                 </div>
               ))}
@@ -250,12 +252,29 @@ export default function RatingEditorClient({ filmId }: { filmId: string }) {
             >
               {[0,1,2,3,4].map((i) => (
                 <div key={`fg-${i}`} className="relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-[30px] leading-none star-nudge opacity-100">★</div>
+                  <div className="absolute inset-0 flex items-center justify-center text-[20px] leading-none star-nudge opacity-100">★</div>
+                  {/* 별 칸 사이선은 투명 유지 */}
                   {i < 4 && <div className="absolute right-0 top-0 h-full w-px bg-transparent" />}
                 </div>
               ))}
             </div>
-            {/* 지시선(끝선) 제거됨 */}
+            {/* ▼ 구분선(20/40/60/80%) — 별/마스크 위 최상위, 이중 라인으로 모든 배경에서 가시성 확보 */}
+            <div className="absolute inset-0 pointer-events-none z-[60]">
+              {['20%','40%','60%','80%'].map((left) => (
+                <div key={left} className="absolute top-0 h-full" style={{ left }}>
+                  {/* 어두운 가이드(밝은 배경용) — 매우 옅게 */}
+                  <div
+                    className="absolute top-0 left-0 h-full w-px"
+                    style={{ background: 'rgba(0,0,0,0.14)' }}   // ← 필요 시 0.12~0.16로 미세조정
+                  />
+                  {/* 밝은 가이드(어두운/채움 배경용) — 더 옅게 겹침 */}
+                  <div
+                    className="absolute top-0 left-0 h-full w-px"
+                    style={{ background: 'rgba(255,255,255,0.38)' }} // ← 필요 시 0.32~0.42로 미세조정
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
