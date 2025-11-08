@@ -94,7 +94,12 @@ img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
 }
 
 /* 별(★) 시각적 수직 중앙 보정 */
-.star-nudge { transform: translateY(-4px); }
+.star-nudge { transform: translateY(-4px); }           /* 기본(데스크톱 위주) */
+
+/* ★ 모바일(폭<=480px)에서 보정폭을 완화 */
+@media (max-width: 480px){
+  .star-nudge { transform: translateY(-2px); }         /* 필요시 -1px ~ 0px 사이 미세조정 */
+}
 
 :root{
   --rating-bar-radius: 14px; /* 8px~20px 등으로 바꾸면 끝 둥글기 즉시 반영 */

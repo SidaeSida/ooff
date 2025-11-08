@@ -32,6 +32,10 @@ export default function MyRatingsClient() {
   const mountedRef = useRef<boolean>(false);
   const inFlightRef = useRef<boolean>(false);
 
+  // ★ BFCache 복귀 시 리마운트 트리거용 키
+  const [bfRev, setBfRev] = useState(0);
+
+
   // 영화 메타(제목/감독/연도)
   const filmMap = useMemo(() => {
     const map = new Map<string, Film>();
@@ -93,31 +97,36 @@ export default function MyRatingsClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 뒤로가기(BFCache)/탭 복귀 시 재조회 (과도 트리거 방지를 위한 디바운스)
-  useEffect(() => {
-    let t: number | null = null;
-    const kick = () => {
-      if (!mountedRef.current) return;
-      if (t) window.clearTimeout(t);
-      t = window.setTimeout(() => { load(); }, 120); // 짧게 디바운스
-    };
+  // 뒤로가기(BFCache)/탭 복귀 시 재조회 + ★리마운트 키 증가
+useEffect(() => {
+  let t: number | null = null;
+  const kick = (doRemount: boolean) => {
+    if (!mountedRef.current) return;
+    if (t) window.clearTimeout(t);
+    t = window.setTimeout(() => {
+      if (doRemount) setBfRev((x) => x + 1); // ★ 강제 리마운트
+      load();
+    }, 120);
+  };
 
-    const onPageShow = (e: PageTransitionEvent) => {
-      if ((e as any).persisted) kick();
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") kick();
-    };
+  const onPageShow = (e: PageTransitionEvent) => {
+    // ★ persisted면 리마운트 + 재조회
+    if ((e as any).persisted) kick(true);
+  };
+  const onVisibility = () => {
+    if (document.visibilityState === "visible") kick(false);
+  };
 
-    window.addEventListener("pageshow", onPageShow as any);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      if (t) window.clearTimeout(t);
-      window.removeEventListener("pageshow", onPageShow as any);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  window.addEventListener("pageshow", onPageShow as any);
+  document.addEventListener("visibilitychange", onVisibility);
+  return () => {
+    if (t) window.clearTimeout(t);
+    window.removeEventListener("pageshow", onPageShow as any);
+    document.removeEventListener("visibilitychange", onVisibility);
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
 
 const onDelete = async (filmId: string, e: React.MouseEvent) => {
   e.preventDefault();  // ★ 추가
@@ -152,7 +161,7 @@ const onDelete = async (filmId: string, e: React.MouseEvent) => {
   if (!items || items.length === 0) return <p className="text-sm text-gray-600">No ratings yet.</p>;
 
   return (
-    <div className="space-y-3">
+    <div key={bfRev} className="space-y-3"> {/* ★ BFCache 복귀 시 리마운트 */}
       {items.map((e) => {
         const f = filmMap.get(e.filmId);
         const title = f ? `${f.title}${f.year ? ` (${f.year})` : ""}` : e.filmId;
@@ -201,16 +210,25 @@ const onDelete = async (filmId: string, e: React.MouseEvent) => {
             <div className="mt-1 flex items-center justify-between">
               <p className="text-[11px] text-white/70">Updated {ymd}</p>
               <button
-                type="button"                                                    // ★ 추가
-                className="text-xs rounded-md px-2 py-0.5 relative z-10"         // ★ z-10 추가
-                style={{ background: "var(--bg-unrated)", color: "#111111", border: "1px solid var(--bd-unrated)" }}
-                onPointerDown={(evt) => { evt.preventDefault(); evt.stopPropagation(); }} // ★ 추가
-                onMouseDown={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}    // ★ 추가
-                onClick={(evt) => onDelete(e.filmId, evt)}                                  // 기존 유지
+                type="button"
+                className="text-xs rounded-md px-2 py-0.5 relative z-10"
+                style={{
+                  background: "var(--bg-unrated)",
+                  color: "#111111",
+                  border: "1px solid var(--bd-unrated)",
+                  touchAction: "manipulation",                 // ★ iOS 터치 최적화
+                }}
+                // ★ 캡처 단계에서 전파·기본동작 모두 차단 (iOS BFCache 후 버블링 오작동 방지)
+                onTouchStartCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
+                onPointerDownCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
+                onMouseDownCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
+                onClickCapture={(evt) => { evt.preventDefault(); evt.stopPropagation(); }}
+                onClick={(evt) => onDelete(e.filmId, evt)}     // 실제 처리
               >
                 Delete
               </button>
             </div>
+
           </article>
         );
       })}
