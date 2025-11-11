@@ -1,0 +1,12 @@
+{
+  "format": {
+    "DCP": "DCP",
+    "35mm": "35mm",
+    "16mm": "16mm"
+  },
+  "color": {
+    "Color/B&W": "Color/B&W",
+    "Color": "Color",
+    "B&W": "B&W"
+  }
+}

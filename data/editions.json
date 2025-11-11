@@ -1,16 +1,19 @@
 [
   {
-    "id": "edition_hiff_2026",
-    "festivalId": "festival_hiff",
-    "year": 2026,
-    "editionNumber": 1,
-    "dateRange": { "start": "2026-03-20", "end": "2026-03-28" }
+    "id": "edition_jiff_2025",
+    "festivalId": "festival_jiff",
+    "year": 2025,
+    "editionNumber": 26,
+    "dateRange": {
+      "start": "2025-04-30",
+      "end": "2025-05-09"
+    }
   },
   {
-    "id": "edition_wiff_2025",
-    "festivalId": "festival_wiff",
+    "id": "edition_biff_2025",
+    "festivalId": "festival_biff",
     "year": 2025,
-    "editionNumber": 3,
-    "dateRange": { "start": "2025-06-10", "end": "2025-06-18" }
+    "editionNumber": 30,
+    "dateRange": null
   }
 ]

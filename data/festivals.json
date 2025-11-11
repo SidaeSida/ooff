@@ -1,4 +1,16 @@
 [
-  { "id": "festival_hiff", "name": "Hobak International Film Festival", "shortName": "HIFF", "city": "Seoul", "country": "KR" },
-  { "id": "festival_wiff", "name": "Winnie International Film Festival", "shortName": "WIFF", "city": "Busan", "country": "KR" }
+  {
+    "id": "festival_jiff",
+    "name": "JEONJU International Film Festival",
+    "shortName": "JIFF",
+    "city": "Jeonju",
+    "country": "KR"
+  },
+  {
+    "id": "festival_biff",
+    "name": "Busan International Film Festival",
+    "shortName": "BIFF",
+    "city": "Busan",
+    "country": "KR"
+  }
 ]

@@ -1,6 +1,11 @@
-// app/films/[id]/page.tsx
 import { notFound } from 'next/navigation';
+
 import filmsData from '@/data/films.json';
+import entriesData from '@/data/entries.json';
+import screeningsData from '@/data/screenings.json';
+import creditsFull from '@/data/credits_full.json';
+
+import DetailClient from './DetailClient';
 import RatingEditorClient from './RatingEditorClient';
 
 export const dynamic = 'force-dynamic';
@@ -9,41 +14,260 @@ export const dynamicParams = true;
 type Film = {
   id: string;
   title: string;
+  title_ko?: string;
+  title_en?: string;
   year: number;
-  runtime: number;
+  runtime?: number | null;
+  countries?: string[];
+  genres?: string[];
   synopsis?: string;
   credits?: { directors?: string[] };
+  posters?: string[];
 };
 
-function norm(s: string) {
-  return decodeURIComponent(String(s)).trim().toLowerCase();
+type Entry = {
+  id: string;
+  filmId: string;
+  editionId: string;           // edition_jiff_2025 | edition_biff_2025
+  section?: string | null;
+  format?: string | null;
+  color?: string | null;
+  premiere?: string | null;
+  detail_url?: string | null;
+};
+
+type Screening = {
+  id: string;
+  entryId: string;
+  code?: string | null;
+  startsAt?: string | null;    // ISO
+  endsAt?: string | null;      // ISO or null
+  venue?: string | null;
+  rating?: string | null;      // All | 12 | 15 | 19
+  dialogue?: string | null;    // E/H/K/KE/X
+  subtitles?: string | null;   // E/K/KE/X
+  withGV?: boolean;
+};
+
+type CreditFullRow = {
+  filmId: string;
+  role: string;
+  value: string;
+  order?: number | null;
+};
+
+function normId(v: unknown): string {
+  try { return decodeURIComponent(String(v ?? '')).trim().toLowerCase(); }
+  catch { return String(v ?? '').trim().toLowerCase(); }
 }
 
-export default async function FilmDetailPage({ params }: { params: Promise<{ id: string }>; }) {
-  const { id } = await params;
-  const films = filmsData as Film[];
-  const target = norm(id);
+function edLabel(editionId: string) {
+  if (editionId === 'edition_jiff_2025') return 'JIFF2025';
+  if (editionId === 'edition_biff_2025') return 'BIFF2025';
+  return editionId;
+}
 
-  const film = films.find((f) => norm(f.id) === target);
+export default async function FilmDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string };
+}) {
+  // Next 16: params가 Promise일 수 있음
+  const p = (params as any)?.then ? await (params as Promise<{ id: string }>) : (params as { id: string });
+  const paramId = normId(p?.id);
+  if (!paramId) return notFound();
+
+  const films = filmsData as Film[];
+  const entries = entriesData as Entry[];
+  const screenings = screeningsData as Screening[];
+
+  const film = films.find((f) => normId(f.id) === paramId);
   if (!film) return notFound();
 
-  const title = `${film.title} (${film.year})`;
-  const directors = film.credits?.directors?.join(', ');
-  const runtime = film.runtime;
+  // 이 작품의 엔트리/상영
+  const filmEntries = entries.filter((e) => normId(e.filmId) === paramId);
+
+  // entryId -> screenings
+  const screeningsByEntry = new Map<string, Screening[]>();
+  for (const s of screenings) {
+    const key = s.entryId;
+    if (!key) continue;
+    (screeningsByEntry.get(key) ?? screeningsByEntry.set(key, []).get(key)!).push(s);
+  }
+  const screeningsThisFilm = filmEntries.flatMap((e) => screeningsByEntry.get(e.id) ?? []);
+
+  // 동시상영 A+B+C: 이 영화가 포함된 모든 code 집합 → 전체 screenings 중 그 code를 가진 상영을 포함
+  const codeSet = new Set<string>(
+    screeningsThisFilm.map((s) => (s.code ?? '').trim()).filter(Boolean)
+  );
+  const screeningsForCodes = screenings.filter((s) => {
+    const c = (s.code ?? '').trim();
+    return c && codeSet.has(c);
+  });
+  // 코드가 없는 상영은 이 영화분만 포함(Fallback용)
+  const screeningsNoCode = screeningsThisFilm.filter((s) => !(s.code ?? '').trim());
+  const screeningsForDetail = [...screeningsForCodes, ...screeningsNoCode];
+
+  // entryId -> film 타이틀 매핑(동시상영 타 작품 표기용)
+  const filmById = new Map(films.map((f) => [normId(f.id), f]));
+  const entryToFilm: Record<string, { filmId: string; title_ko: string; title_en: string }> = {};
+  for (const e of entries) {
+    const f = filmById.get(normId(e.filmId));
+    entryToFilm[e.id] = {
+      filmId: f?.id ?? e.filmId,
+      title_ko: f?.title_ko ?? '',
+      title_en: f?.title_en ?? f?.title ?? '',
+    };
+  }
+
+  // 대표 등급(상영정보 최빈값)
+  const ratingFreq = new Map<string, number>();
+  for (const s of screeningsThisFilm) {
+    const r = (s.rating ?? '').trim();
+    if (!r) continue;
+    ratingFreq.set(r, (ratingFreq.get(r) ?? 0) + 1);
+  }
+  let topRating: string | undefined;
+  let topN = -1;
+  for (const [k, v] of ratingFreq) if (v > topN) { topRating = k; topN = v; }
+
+  // 메타라인(목록 규칙과 동일)
+  const first = filmEntries[0];
+  const metaBits = [
+    (film.countries ?? []).join(', '),
+    film.year ? String(film.year) : undefined,
+    film.runtime != null ? `${film.runtime}min` : undefined,
+    (first?.format ?? '') || undefined,
+    (first?.color ?? '') || undefined,
+    (film.genres?.length ? film.genres.join(', ') : undefined),
+    (topRating ?? undefined),
+    (first?.premiere ?? undefined),
+  ].filter(Boolean) as string[];
+
+  // 포스터 후보
+  const posterCandidates = (film.posters ?? []).map((p) => `/${p}`);
+
+  // 섹션 배지(중복 key 방지)
+  const sectionBadges = filmEntries
+    .filter((e) => e.section && e.section.trim().length)
+    .map((e, idx) => ({
+      key: `${e.id}::${e.editionId}::${e.section ?? ''}::${idx}`,
+      label: `${edLabel(e.editionId)} ${e.section!.trim()}`,
+    }));
+
+  // 시놉시스/Program Note 라벨: 시놉시스 우선
+  const hasBIFF = filmEntries.some((e) => e.editionId === 'edition_biff_2025');
+  const synopsisLabel = film.synopsis ? '시놉시스' : (hasBIFF ? 'Program Note' : '시놉시스');
+
+  // credits_full.json → 이 작품 행만
+  const creditRows = (creditsFull as CreditFullRow[]).filter((c) => normId(c.filmId) === paramId);
 
   return (
-    <section className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        {directors && <p className="text-gray-700">{directors}</p>}
-        <p className="text-gray-500">· {runtime} min</p>
-      </header>
-
-      {film.synopsis && (
-        <p className="text-lg leading-relaxed text-gray-800">{film.synopsis}</p>
+    // 컨테이너: 상단 패딩 제거, 네비 보더선에 밀착
+    <section className="max-w-3xl mx-auto pt-0 pb-4 px-3 sm:px-4 space-y-3">
+      {/* 히어로: 헤더 하단 보더선을 가리기 위해 -mt-px, 블러 제거, 하단 그라데이션만 */}
+      {posterCandidates.length > 0 && (
+        <div className="-mt-px relative overflow-hidden rounded-none" style={{ height: '42vw', maxHeight: 420 }}>
+          {/* 배경(동일 이미지, 블러 없음) */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${posterCandidates[0]})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+          {/* 하단 그라데이션(배경 → 페이지 배경색으로 소프트 페더) */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(255,255,255,0) 70%, rgba(255,255,255,0.85) 100%)',
+            }}
+          />
+          {/* 원본 이미지(컨테이너에 맞춰 꽉 채움) */}
+          <img
+            src={posterCandidates[0]}
+            alt={`${film.title_ko ?? film.title} poster`}
+            className="relative z-10 h-full w-full object-cover"
+          />
+        </div>
       )}
 
-      {/* 내부 컴포넌트가 배경/전환을 처리합니다 */}
+      {/* 배지/타이틀/메타 — 상단 간격 최소화 */}
+      <header className="space-y-1">
+        {!!sectionBadges.length && (
+          <div className="flex flex-wrap gap-1 -mt-1">
+            {sectionBadges.map((b) => (
+              <span key={b.key} className="text-[11px] px-2 py-0.5 rounded-full border">
+                {b.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* 한글 제목(연도 제거, 사이즈 상향) */}
+        <h1 className="text-[1.25rem] sm:text-[1.35rem] font-semibold leading-snug">
+          {film.title_ko ?? film.title}
+        </h1>
+
+        {/* 영어 제목(조금 작게) */}
+        {film.title_en && (
+          <div className="text-[0.95rem] sm:text-[1.0rem] leading-snug text-gray-800">
+            {film.title_en}
+          </div>
+        )}
+
+        {/* 감독 */}
+        {!!(film.credits?.directors?.length) && (
+          <div className="text-[0.875rem] text-gray-700">
+            Director : {film.credits!.directors!.join(', ')}
+          </div>
+        )}
+
+        {/* 메타라인 */}
+        {metaBits.length > 0 && (
+          <p className="text-[0.875rem] text-gray-600 whitespace-pre-wrap break-words">
+            {metaBits.join(' | ')}
+          </p>
+        )}
+      </header>
+
+      {/* 시놉시스/Program Note — 제목은 굵게·동일 크기, 본문 크기는 유지 */}
+      {(film.synopsis || hasBIFF) && (
+        <section>
+          <h2 className="text-base font-semibold mb-1">{synopsisLabel}</h2>
+          {film.synopsis ? (
+            <p className="text-[0.875rem] leading-relaxed text-gray-800">{film.synopsis}</p>
+          ) : hasBIFF ? (
+            <p className="text-[0.875rem] leading-relaxed text-gray-800">
+              Program note is not separately provided in JSON. Please refer to festival source if needed.
+            </p>
+          ) : null}
+        </section>
+      )}
+
+      {/* 상영시간 + 크레딧은 Client에서 렌더 */}
+      <DetailClient
+        film={{
+          id: film.id,
+          title: film.title,
+          title_ko: film.title_ko ?? '',
+          title_en: film.title_en ?? '',
+          year: film.year,
+          countries: film.countries ?? [],
+          runtime: film.runtime ?? undefined,
+          genres: film.genres ?? [],
+          synopsis: film.synopsis ?? '',
+          credits: film.credits ?? { directors: [] },
+        }}
+        entries={filmEntries}
+        screenings={screeningsForDetail}
+        entryToFilm={entryToFilm}
+        posterCandidates={posterCandidates}
+        creditRows={creditRows}
+      />
+
+      {/* 평점 에디터 */}
       <RatingEditorClient filmId={film.id} />
     </section>
   );

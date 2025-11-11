@@ -1,0 +1,25 @@
+{
+  "dialogue": {
+    "K": "Korean",
+    "E": "English",
+    "H": "Korean+English",
+    "KE": "Korean/English",
+    "J": "Japanese",
+    "C": "Chinese",
+    "X": "N/A"
+  },
+  "subtitles": {
+    "K": "Korean",
+    "E": "English",
+    "KE": "Korean/English",
+    "J": "Japanese",
+    "C": "Chinese",
+    "X": "N/A"
+  },
+  "rating": {
+    "All": "All",
+    "12": "12",
+    "15": "15",
+    "19": "19"
+  }
+}

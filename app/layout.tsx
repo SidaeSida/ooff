@@ -1,29 +1,28 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Header from "../components/Header";
-import AuthProvider from "../components/AuthProvider";
-import { auth } from "@/auth"; // ★ v5
+import type { Metadata } from 'next';
+import './globals.css';
+import { Geist, Geist_Mono } from 'next/font/google';
+import Header from '@/components/Header';
+import AuthProvider from '@/components/AuthProvider';
 
-export const dynamic = "force-dynamic";
-
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
 
 export const metadata: Metadata = {
-  title: "OOFF",
-  description: "Our Own Film Festival",
+  title: 'OOFF · Our Own Film Festival',
+  description: 'Personal festival archive',
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth(); // ★ v5: 서버 세션
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50 text-gray-900`}>
-        <AuthProvider session={session}>
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <AuthProvider>
           <div className="mx-auto w-full max-w-[420px] px-4">
             <Header />
-            <main className="py-6">{children}</main>
+            {/* 서버/클라이언트 DOM 차이 억제 */}
+            <main className="py-6" suppressHydrationWarning>
+              {children}
+            </main>
           </div>
         </AuthProvider>
       </body>
