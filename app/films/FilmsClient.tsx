@@ -1,3 +1,4 @@
+// films/FilmsClient.tsx
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -19,7 +20,7 @@ type Film = {
   genres?: string[];
   festivalBadges?: string[];
   credits?: { directors?: string[] };
-  creditTokens?: string[]; // 있으면 전역 크레딧 검색 포함
+  creditTokens?: string[];
 };
 type Entry = {
   id: string;
@@ -67,6 +68,9 @@ const radioOptions = [
   { id: 'all', label: 'All' },
 ];
 
+// 페이지네이션
+const PAGE_SIZE = 20;
+
 function setQuery(
   router: ReturnType<typeof useRouter>,
   pathname: string,
@@ -99,12 +103,32 @@ function isAllSelected(currentCsv: string | null, options: string[]): boolean {
 function ymd(iso?: string | null) {
   return iso ? iso.slice(0, 10) : '';
 }
+
+// 요일/주말 유틸 + 표기: "M월D일(요일)"
+function weekdayKFromISO(iso?: string | null) {
+  if (!iso) return '';
+  const y = Number(iso.slice(0, 4));
+  const m = Number(iso.slice(5, 7));
+  const d = Number(iso.slice(8, 10));
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return ['일', '월', '화', '수', '목', '금', '토'][dow];
+}
+function isWeekendISO(iso?: string | null) {
+  if (!iso) return false;
+  const y = Number(iso.slice(0, 4));
+  const m = Number(iso.slice(5, 7));
+  const d = Number(iso.slice(8, 10));
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return dow === 0 || dow === 6; // 일/토
+}
 function mdK(iso?: string | null) {
   if (!iso) return '';
   const m = Number(iso.slice(5, 7));
   const d = Number(iso.slice(8, 10));
-  return `${m}월 ${d}일`;
+  const w = weekdayKFromISO(iso);
+  return `${m}월${d}일(${w})`;
 }
+
 function normId(s: string) {
   try { return decodeURIComponent(String(s)).trim().toLowerCase(); }
   catch { return String(s).trim().toLowerCase(); }
@@ -158,7 +182,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     [edition]
   );
 
-  // 섹션 후보(제공 순서 + 글씨 축소)
+  // 섹션 후보(제공 순서)
   const availableSections = useMemo(() => {
     if (edition === 'all') return [];
     const set = new Set<string>();
@@ -172,7 +196,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     return arr.sort((a, b) => idx(a) - idx(b));
   }, [edition, editionEntries]);
 
-  // 날짜 후보(표시: “M월 D일”, 내부: ISO 유지)
+  // 날짜 후보(표시: "M월D일(요일)", 내부: ISO)
   const availableDates = useMemo(() => {
     if (edition === 'all') return [];
     const set = new Set<string>();
@@ -207,7 +231,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           f.title_en ?? '',
           ...(f.credits?.directors ?? []),
           ...(f.genres ?? []),
-          ...(f.creditTokens ?? []), // 있으면 전역 크레딧까지
+          ...(f.creditTokens ?? []),
         ]
           .join(' ')
           .toLowerCase();
@@ -276,28 +300,41 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     edition, sectionCsv, dateCsv, q
   ]);
 
+  // 페이지네이션 계산
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const requestedPage = Number(search.get('page') ?? '1');
+  const currentPage = Number.isFinite(requestedPage)
+    ? Math.min(Math.max(1, requestedPage), totalPages)
+    : 1;
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageEnd = pageStart + PAGE_SIZE;
+  const pageRows = rows.slice(pageStart, pageEnd);
+
   // 평가 여부 세트
   const ratedSet = useMemo(
     () => new Set(ratedFilmIds.map((x) => normId(x))),
     [ratedFilmIds]
   );
 
-  // 검색 핸들러
+  // 검색 핸들러 (페이지 1로 리셋)
   const doSearch = (valueFromUi: string) => {
     const v = valueFromUi.trim();
-    setQuery(router, pathname, search, { q: v || undefined });
+    setQuery(router, pathname, search, { q: v || undefined, page: undefined });
   };
   const clearSearch = () => {
     setQLocal('');
-    setQuery(router, pathname, search, { q: undefined });
+    setQuery(router, pathname, search, { q: undefined, page: undefined });
   };
+
+  // 주말 텍스트 색상만 적용 (#8e5e3a)
+  const WEEKEND_TEXT_COLOR = '#8e5e3a';
 
   return (
     <>
       {/* 필터 바 */}
       <div className="bg-white border rounded-lg p-3 space-y-3">
-        {/* Festival 라디오: 붙여쓰기 라벨 + 손모양 */}
-        <div className="flex flex-wrap items-center gap-3 radio-accent-orange">
+        {/* Festival 라디오 */}
+        <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-gray-600 mr-2">Festival</span>
           {radioOptions.map((opt) => (
             <label key={opt.id} className="inline-flex items-center gap-1 text-sm cursor-pointer">
@@ -311,6 +348,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                     edition: opt.id,
                     section: undefined,
                     date: undefined,
+                    page: undefined,
                   })
                 }
               />
@@ -353,10 +391,10 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           )}
         </div>
 
-        {/* Section: 글씨 축소 + 손모양 */}
+        {/* Section: 제목은 크게(text-sm), 내부 옵션은 작게(이전값) */}
         {edition !== 'all' && (
           <details>
-            <summary className="cursor-pointer select-none text-[11px] text-gray-700 py-1">Section</summary>
+            <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Section</summary>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {availableSections.length === 0 ? (
                 <span className="text-[11px] text-gray-400">None</span>
@@ -365,7 +403,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                   <button
                     onClick={() => {
                       const allNow = isAllSelected(sectionCsv, availableSections);
-                      setQuery(router, pathname, search, { section: allNow ? undefined : csvOfAll(availableSections) });
+                      setQuery(router, pathname, search, { section: allNow ? undefined : csvOfAll(availableSections), page: undefined });
                     }}
                     className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${isAllSelected(sectionCsv, availableSections) ? 'bg-black text-white' : 'bg-white'}`}
                     title="Select all sections"
@@ -377,7 +415,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                     return (
                       <button
                         key={sec}
-                        onClick={() => setQuery(router, pathname, search, { section: toggleCsv(search.get('section'), sec) })}
+                        onClick={() => setQuery(router, pathname, search, { section: toggleCsv(search.get('section'), sec), page: undefined })}
                         className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${checked ? 'bg-black text-white' : 'bg-white'}`}
                         title={sec}
                       >
@@ -390,7 +428,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
               {sectionCsv && (
                 <button
                   className="ml-2 text-[11px] underline text-gray-600 whitespace-nowrap cursor-pointer"
-                  onClick={() => setQuery(router, pathname, search, { section: undefined })}
+                  onClick={() => setQuery(router, pathname, search, { section: undefined, page: undefined })}
                   title="Reset sections"
                 >
                   Reset
@@ -400,10 +438,10 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           </details>
         )}
 
-        {/* Date: 글씨 축소, 표시는 “M월 D일” + 손모양 */}
+        {/* Date: 제목은 크게(text-sm), 내부 옵션은 작게(이전값) + 주말 텍스트 색만 변경 */}
         {edition !== 'all' && (
           <details>
-            <summary className="cursor-pointer select-none text-[11px] text-gray-700 py-1">Date</summary>
+            <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Date</summary>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {availableDates.length === 0 ? (
                 <span className="text-[11px] text-gray-400">None</span>
@@ -412,21 +450,31 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                   <button
                     onClick={() => {
                       const allNow = isAllSelected(dateCsv, availableDates);
-                      setQuery(router, pathname, search, { date: allNow ? undefined : csvOfAll(availableDates) });
+                      setQuery(router, pathname, search, { date: allNow ? undefined : csvOfAll(availableDates), page: undefined });
                     }}
-                    className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${isAllSelected(dateCsv, availableDates) ? 'bg-black text-white' : 'bg-white'}`}
+                    className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${isAllSelected(dateCsv, availableDates) ? 'bg-black text-white border-black' : 'bg-white'}`}
                     title="Select all dates"
                   >
                     All
                   </button>
                   {availableDates.map((d) => {
                     const checked = dateSet.has(d);
+                    const weekend = isWeekendISO(d);
+
+                    // 선택되지 않은 주말: 글자색만 변경(배경/테두리 불변)
+                    const style = !checked && weekend ? { color: WEEKEND_TEXT_COLOR } : undefined;
+
+                    // 테두리는 항상 검정, 선택 시만 배경/글자 반전
+                    const base = 'px-2 py-1 rounded border text-[11px] cursor-pointer border-black';
+                    const sel = checked ? 'bg-black text-white' : 'bg-white';
+
                     return (
                       <button
                         key={d}
-                        onClick={() => setQuery(router, pathname, search, { date: toggleCsv(search.get('date'), d) })}
-                        className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${checked ? 'bg-black text-white' : 'bg-white'}`}
-                        title={d}
+                        onClick={() => setQuery(router, pathname, search, { date: toggleCsv(search.get('date'), d), page: undefined })}
+                        className={`${base} ${sel}`}
+                        title={mdK(d)}
+                        style={style}
                       >
                         {mdK(d)}
                       </button>
@@ -437,7 +485,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
               {dateCsv && (
                 <button
                   className="ml-2 text-[11px] underline text-gray-600 whitespace-nowrap cursor-pointer"
-                  onClick={() => setQuery(router, pathname, search, { date: undefined })}
+                  onClick={() => setQuery(router, pathname, search, { date: undefined, page: undefined })}
                   title="Reset dates"
                 >
                   Reset
@@ -452,7 +500,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           <div>
             <button
               className="text-xs underline text-gray-600 whitespace-nowrap cursor-pointer"
-              onClick={() => setQuery(router, pathname, search, { section: undefined, date: undefined })}
+              onClick={() => setQuery(router, pathname, search, { section: undefined, date: undefined, page: undefined })}
               title="Clear all filters"
             >
               Clear all
@@ -461,11 +509,14 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
         ) : null}
       </div>
 
-      {/* Results */}
-      <div className="text-sm text-gray-600 mb-6">Results {rows.length}</div>
+      {/* Results + 페이지 정보 */}
+      <div className="text-sm text-gray-600 mb-6">
+        Results {rows.length} · Page {currentPage} / {totalPages}
+      </div>
 
+      {/* List (페이지 슬라이스) */}
       <ul className="space-y-3">
-        {rows.map(({ f, entry, ratingHint }) => (
+        {pageRows.map(({ f, entry, ratingHint }) => (
           <FilmListCard
             key={f.id}
             film={f}
@@ -475,6 +526,25 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           />
         ))}
       </ul>
+
+      {/* Pagination: 1 2 3 ... 끝번호 */}
+      {totalPages > 1 && (
+        <nav className="mt-6 flex flex-wrap items-center gap-1.5" aria-label="Pagination">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => setQuery(router, pathname, search, { page: String(p) })}
+              className={`inline-flex items-center justify-center border rounded cursor-pointer
+                          min-w-[28px] h-7 px-0 text-[10px]
+                          ${p === currentPage ? 'bg-black text-white border-black' : 'bg-white border-black'}`}
+              aria-current={p === currentPage ? 'page' : undefined}
+              title={`Page ${p}`}
+            >
+              {p}
+            </button>
+          ))}
+        </nav>
+      )}
     </>
   );
 }

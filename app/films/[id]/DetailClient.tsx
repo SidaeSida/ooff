@@ -1,6 +1,8 @@
+// app/films/[id]/DetailClient.tsx
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import creditOrder from '@/data/credit_order.json';
 
 type Film = {
   id: string;
@@ -33,8 +35,8 @@ type Screening = {
   endsAt?: string | null;      // ISO or null
   venue?: string | null;
   rating?: string | null;      // All | 12 | 15 | 19
-  dialogue?: string | null;    // E/H/K/KE/X
-  subtitles?: string | null;   // E/K/KE/X
+  dialogue?: string | null;    // JIFF: E/H/K/KE/X, BIFF: 거의 미제공
+  subtitles?: string | null;   // JIFF: E/K/KE/X,  BIFF: Y/N
   withGV?: boolean;
 };
 
@@ -50,27 +52,52 @@ function mdK(iso?: string | null) {
   return `${m}월 ${d}일`;
 }
 function hm(iso?: string | null) { return iso ? iso.slice(11, 16) : ''; }
+function makeBadges(rating?: string, lang?: string, withGV?: boolean) {
+  const out: Array<{ key: string; type: 'rating'|'lang'|'gv'; label: string }> = [];
+  if (rating) out.push({ key: `r:${rating}`, type: 'rating', label: rating });
+  if (lang)   out.push({ key: `l:${lang}`,   type: 'lang',   label: lang });
+  if (withGV) out.push({ key: 'gv',          type: 'gv',     label: 'GV'  });
+  return out;
+}
+// label 길이에 따라 원형(<=2글자) 또는 알약형(>2글자) 자동 선택
+function badgeClass(t: 'rating'|'lang'|'gv', label: string) {
+  const isCircle = (label?.length ?? 0) <= 2; // '12','KE','GV' 등
+  const base = 'inline-flex items-center justify-center border leading-none';
+
+  // 공통 폰트(원형은 더 작게)
+  const font = isCircle ? ' text-[10px]' : ' text-[11px]';
+  // 굵기
+  const weight =
+    t === 'rating' ? ' font-medium' :
+    t === 'gv'     ? ' font-semibold' : '';
+
+  if (isCircle) {
+    // 완전 원형: 폭=높이(24px), 패딩 제거
+    return base + font + weight + ' rounded-full h-6 w-6 p-0';
+  }
+  // 알약형: 높이 고정, 좌우 여백
+  return base + font + weight + ' rounded-full h-6 px-2';
+}
+// 역할 라벨을 Title Case로 통일(원치 않으시면 role 그대로 쓰셔도 됩니다)
+function formatRoleLabel(role: string) {
+  return role.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 
 export default function DetailClient({
   film,
   entries,
   screenings,
   entryToFilm,
-  posterCandidates,
   creditRows,
 }: {
   film: Film;
   entries: Entry[];
   screenings: Screening[];
   entryToFilm: EntryToFilm;
-  posterCandidates: string[];
   creditRows: CreditRow[];
 }) {
-  // 포스터 onError 대체(후보 순회)
-  const [posterIdx, setPosterIdx] = useState(0);
-  const posterSrc = posterCandidates[posterIdx] ?? '';
-
-  // 그룹핑: 동일 code 묶음(+ 코드 없음은 날짜/시간/장소로 Fallback), 날짜 기준 정렬
+  // 상영 묶기: 동일 code 묶음(+ 코드 없음은 날짜/시간/장소로 Fallback), 날짜 기준 정렬
   const groups = useMemo(() => {
     const byCode = new Map<string, Screening[]>();
     for (const s of screenings) {
@@ -93,7 +120,41 @@ export default function DetailClient({
     return arr;
   }, [screenings]);
 
-  // 크레딧: 역할별 그룹 + 정렬(Director 우선, 나머지는 알파벳)
+  // entryId -> editionId 맵 (언어/자막 표기 정규화용)
+  const editionByEntryId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const e of entries) m.set(e.id, e.editionId);
+    return m;
+  }, [entries]);
+
+  // 언어/자막 라벨 정규화
+  function makeLangLabel(dialogue?: string | null, subtitles?: string | null, editionId?: string) {
+    const d = (dialogue ?? '').trim();
+    const s = (subtitles ?? '').trim();
+
+    if (editionId?.startsWith('edition_jiff_')) {
+      // JIFF: dialogue {E/H/K/KE/X}, subtitles {E/K/KE/X}; X=없음 → 숨김
+      const dShow = d && d !== 'X' ? d : '';
+      const sShow = s && s !== 'X' ? s : '';
+      if (dShow && sShow) return `${dShow}/${sShow}`;
+      return dShow || sShow || '';
+    }
+
+    if (editionId?.startsWith('edition_biff_')) {
+      // BIFF: 값이 subtitles 또는 dialogue 어느 쪽으로 와도 처리
+      // 정책: 'N' → 미표시, 'Y' → 'KE'로 표시, 그 외(KE/K/E 등)는 그대로 표시
+      const markRaw = (s || d || '').trim().toUpperCase();
+      if (!markRaw || markRaw === 'N') return '';
+      if (markRaw === 'Y') return 'KE';
+      return markRaw;
+    }
+
+    // 기본
+    if (d && s) return `${d}/${s}`;
+    return d || s || '';
+  }
+
+  // 크레딧: 역할별 그룹 + 정렬(credit_order.json 우선, 나머지는 알파벳)
   const creditByRole = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const c of creditRows) {
@@ -120,7 +181,7 @@ export default function DetailClient({
 
   const orderedRoles = useMemo(() => {
     const present = Array.from(creditByRole.keys());
-    const preferred = ['Director', 'Cast', 'Producer', 'Screenwriter', 'Cinematography', 'Editor', 'Music', 'Sound', 'Art Director'];
+    const preferred: string[] = Array.isArray(creditOrder) ? creditOrder.filter(Boolean) : [];
     const head = preferred.filter((r) => present.includes(r));
     const tail = present.filter((r) => !head.includes(r)).sort((a, b) => a.localeCompare(b));
     return [...head, ...tail];
@@ -139,9 +200,8 @@ export default function DetailClient({
             const venue = a.venue ?? '';
 
             const rating = (a.rating ?? '').trim();
-            const dialog = (a.dialogue ?? '').trim();
-            const subs = (a.subtitles ?? '').trim();
-            const lang = dialog && subs ? `${dialog}/${subs}` : (dialog || subs || '');
+            const editionId = editionByEntryId.get(a.entryId);
+            const lang = makeLangLabel(a.dialogue, a.subtitles, editionId);
 
             // 동시상영 묶음 타이틀(원본 순서 유지, 현재 작품만 굵게)
             const entryIds = Array.from(new Set(items.map((s) => s.entryId)));
@@ -169,8 +229,13 @@ export default function DetailClient({
                     <div className="text-[12px] text-gray-700">
                       {dateLabel} · {timeLabel} · {venue}
                     </div>
-                    <div className="text-[12px] text-gray-600 mt-0.5">
-                      {[rating, lang].filter(Boolean).join(' · ')} {a.withGV ? <strong>· GV</strong> : null}
+                    {/* 등급/언어/GV — 동그란 배지 */}
+                    <div className="mt-1 flex items-center gap-1.5 text-gray-700">
+                      {makeBadges(rating, lang, a.withGV).map(b => (
+                        <span key={b.key} className={badgeClass(b.type, b.label)}>
+                          {b.label}
+                        </span>
+                      ))}
                     </div>
                   </div>
                   {/* 즐겨찾기(후속 연동) */}
@@ -200,14 +265,16 @@ export default function DetailClient({
         {Array.from(creditByRole.keys()).length === 0 ? (
           <div className="text-sm text-gray-500">등록된 크레딧 정보가 없습니다.</div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {orderedRoles.map((role) => {
               const vals = creditByRole.get(role) ?? [];
               if (vals.length === 0) return null;
               return (
-                <div key={role} className="text-[0.95rem] leading-relaxed">
-                  <span className="font-medium">{role}</span>
-                  <span className="text-gray-700"> : {vals.join(', ')}</span>
+                <div key={role} className="text-[0.85rem] leading-tight">
+                  {/* 역할만 굵게 */}
+                  <span className="font-semibold">{formatRoleLabel(role)}</span>
+                  {/* 값은 보통 두께(상속 방지용으로 font-normal 명시) */}
+                  <span className="font-normal text-gray-700"> : {vals.join(', ')}</span>
                 </div>
               );
             })}

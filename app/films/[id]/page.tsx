@@ -1,9 +1,14 @@
+// app/films/[id]/page.tsx
 import { notFound } from 'next/navigation';
 
 import filmsData from '@/data/films.json';
 import entriesData from '@/data/entries.json';
 import screeningsData from '@/data/screenings.json';
 import creditsFull from '@/data/credits_full.json';
+
+// 동시상영 코드→묶음 추론을 위한 원본 스냅샷
+import ooffJIFF from '@/data/ooff_jiff2025.json';
+import ooffBIFF from '@/data/ooff_biff2025.json';
 
 import DetailClient from './DetailClient';
 import RatingEditorClient from './RatingEditorClient';
@@ -22,13 +27,15 @@ type Film = {
   genres?: string[];
   synopsis?: string;
   credits?: { directors?: string[] };
-  posters?: string[];
+  posters?: string[];               // 예: ["JIFF2025/images/film_5754.png", ...]
+  film_num_id?: string;             // 단일 id 보강 시
+  film_num_ids?: string[];          // 복수 id 보강 시
 };
 
 type Entry = {
   id: string;
   filmId: string;
-  editionId: string;           // edition_jiff_2025 | edition_biff_2025
+  editionId: string;                // edition_jiff_2025 | edition_biff_2025
   section?: string | null;
   format?: string | null;
   color?: string | null;
@@ -40,17 +47,17 @@ type Screening = {
   id: string;
   entryId: string;
   code?: string | null;
-  startsAt?: string | null;    // ISO
-  endsAt?: string | null;      // ISO or null
+  startsAt?: string | null;         // ISO
+  endsAt?: string | null;           // ISO or null
   venue?: string | null;
-  rating?: string | null;      // All | 12 | 15 | 19
-  dialogue?: string | null;    // E/H/K/KE/X
-  subtitles?: string | null;   // E/K/KE/X
+  rating?: string | null;           // All | 12 | 15 | 19
+  dialogue?: string | null;         // E/H/K/KE/X
+  subtitles?: string | null;        // E/K/KE/X
   withGV?: boolean;
 };
 
 type CreditFullRow = {
-  filmId: string;
+  filmId: string;                   // "5754" 등 숫자 문자열
   role: string;
   value: string;
   order?: number | null;
@@ -60,12 +67,45 @@ function normId(v: unknown): string {
   try { return decodeURIComponent(String(v ?? '')).trim().toLowerCase(); }
   catch { return String(v ?? '').trim().toLowerCase(); }
 }
-
 function edLabel(editionId: string) {
   if (editionId === 'edition_jiff_2025') return 'JIFF2025';
   if (editionId === 'edition_biff_2025') return 'BIFF2025';
   return editionId;
 }
+function isJIFF(editionId: string) { return editionId.startsWith('edition_jiff_'); }
+function isBIFF(editionId: string) { return editionId.startsWith('edition_biff_'); }
+
+function extractPosterNumIds(posters?: string[] | null): Set<string> {
+  const out = new Set<string>();
+  for (const p of posters ?? []) {
+    const s = String(p);
+    const re = /film_(\d+)/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(s)) !== null) out.add(m[1]);
+  }
+  return out;
+}
+
+// 원본 JSON에서 code -> bundleFilmIds 인덱스 생성
+function buildCodeToBundleMap(ooff: any): Map<string, Set<string>> {
+  const map = new Map<string, Set<string>>();
+  const arr: any[] = Array.isArray(ooff) ? ooff : [];
+  for (const item of arr) {
+    const scrs: any[] = Array.isArray(item?.screenings) ? item.screenings : [];
+    for (const s of scrs) {
+      const code = (s?.code ?? '').toString().trim();
+      if (!code) continue;
+      const ids: string[] = Array.isArray(s?.bundleFilmIds) ? s.bundleFilmIds.map((x: any) => String(x)) : [];
+      if (!ids.length) continue;
+      const cur = map.get(code) ?? new Set<string>();
+      ids.forEach(id => cur.add(id));
+      map.set(code, cur);
+    }
+  }
+  return map;
+}
+const codeToBundle_JIFF = buildCodeToBundleMap(ooffJIFF);
+const codeToBundle_BIFF = buildCodeToBundleMap(ooffBIFF);
 
 export default async function FilmDetailPage({
   params,
@@ -84,8 +124,13 @@ export default async function FilmDetailPage({
   const film = films.find((f) => normId(f.id) === paramId);
   if (!film) return notFound();
 
-  // 이 작품의 엔트리/상영
+  // 이 작품의 엔트리/에디션
   const filmEntries = entries.filter((e) => normId(e.filmId) === paramId);
+  const allowedEditionIds = new Set(filmEntries.map((e) => e.editionId));
+
+  // entryId -> editionId
+  const entryIdToEdition = new Map<string, string>();
+  for (const e of entries) entryIdToEdition.set(e.id, e.editionId);
 
   // entryId -> screenings
   const screeningsByEntry = new Map<string, Screening[]>();
@@ -96,16 +141,21 @@ export default async function FilmDetailPage({
   }
   const screeningsThisFilm = filmEntries.flatMap((e) => screeningsByEntry.get(e.id) ?? []);
 
-  // 동시상영 A+B+C: 이 영화가 포함된 모든 code 집합 → 전체 screenings 중 그 code를 가진 상영을 포함
+  // 동시상영(A+B+C): 이 영화가 포함된 code 집합(문자열 그대로)
   const codeSet = new Set<string>(
-    screeningsThisFilm.map((s) => (s.code ?? '').trim()).filter(Boolean)
+    screeningsThisFilm.map((s) => (s.code ?? '').toString().trim()).filter(Boolean)
   );
+
+  // 같은 code 이더라도 **같은 에디션**인 상영만 포함
   const screeningsForCodes = screenings.filter((s) => {
-    const c = (s.code ?? '').trim();
-    return c && codeSet.has(c);
+    const c = (s.code ?? '').toString().trim();
+    if (!c || !codeSet.has(c)) return false;
+    const ed = entryIdToEdition.get(s.entryId);
+    return ed ? allowedEditionIds.has(ed) : false;
   });
-  // 코드가 없는 상영은 이 영화분만 포함(Fallback용)
-  const screeningsNoCode = screeningsThisFilm.filter((s) => !(s.code ?? '').trim());
+
+  // 코드 없음은 이 영화분만 포함(Fallback)
+  const screeningsNoCode = screeningsThisFilm.filter((s) => !((s.code ?? '').toString().trim()));
   const screeningsForDetail = [...screeningsForCodes, ...screeningsNoCode];
 
   // entryId -> film 타이틀 매핑(동시상영 타 작품 표기용)
@@ -123,7 +173,7 @@ export default async function FilmDetailPage({
   // 대표 등급(상영정보 최빈값)
   const ratingFreq = new Map<string, number>();
   for (const s of screeningsThisFilm) {
-    const r = (s.rating ?? '').trim();
+    const r = (s.rating ?? '').toString().trim();
     if (!r) continue;
     ratingFreq.set(r, (ratingFreq.get(r) ?? 0) + 1);
   }
@@ -131,7 +181,7 @@ export default async function FilmDetailPage({
   let topN = -1;
   for (const [k, v] of ratingFreq) if (v > topN) { topRating = k; topN = v; }
 
-  // 메타라인(목록 규칙과 동일)
+  // 메타라인
   const first = filmEntries[0];
   const metaBits = [
     (film.countries ?? []).join(', '),
@@ -144,10 +194,10 @@ export default async function FilmDetailPage({
     (first?.premiere ?? undefined),
   ].filter(Boolean) as string[];
 
-  // 포스터 후보
+  // 포스터 후보(원본 비율 그대로 표시)
   const posterCandidates = (film.posters ?? []).map((p) => `/${p}`);
 
-  // 섹션 배지(중복 key 방지)
+  // 섹션 배지
   const sectionBadges = filmEntries
     .filter((e) => e.section && e.section.trim().length)
     .map((e, idx) => ({
@@ -155,45 +205,57 @@ export default async function FilmDetailPage({
       label: `${edLabel(e.editionId)} ${e.section!.trim()}`,
     }));
 
-  // 시놉시스/Program Note 라벨: 시놉시스 우선
+  // 시놉시스/Program Note 라벨
   const hasBIFF = filmEntries.some((e) => e.editionId === 'edition_biff_2025');
   const synopsisLabel = film.synopsis ? '시놉시스' : (hasBIFF ? 'Program Note' : '시놉시스');
 
-  // credits_full.json → 이 작품 행만
-  const creditRows = (creditsFull as CreditFullRow[]).filter((c) => normId(c.filmId) === paramId);
+  // ===== Credit 매칭: 명시 ID(단일/복수) ∪ code 기반 bundle ∪ 포스터 숫자 =====
+  const explicitIds = new Set<string>();
+  if ((film as any).film_num_id) explicitIds.add(String((film as any).film_num_id));
+  if (Array.isArray((film as any).film_num_ids)) {
+    for (const v of (film as any).film_num_ids) if (v != null) explicitIds.add(String(v));
+  }
+
+  // 이 작품 상영들의 code 집합(문자열 그대로)
+  const thisCodes = new Set<string>(
+    screeningsThisFilm.map(s => (s.code ?? '').toString().trim()).filter(Boolean)
+  );
+
+  // 에디션 스코프에 맞춰 원본 맵에서 bundleFilmIds 수집
+  const bundleIds = new Set<string>();
+  for (const e of filmEntries) {
+    for (const c of thisCodes) {
+      if (isJIFF(e.editionId)) codeToBundle_JIFF.get(c)?.forEach(id => bundleIds.add(String(id)));
+      else if (isBIFF(e.editionId)) codeToBundle_BIFF.get(c)?.forEach(id => bundleIds.add(String(id)));
+    }
+  }
+
+  // 포스터 파일명에서 추출한 숫자도 보강
+  const posterIds = extractPosterNumIds(film.posters);
+  posterIds.forEach(id => bundleIds.add(id));
+
+  const allIds = new Set<string>([...explicitIds, ...bundleIds]);
+
+  // credits_full.json → 매칭되는 행만
+  const creditRows = (creditsFull as CreditFullRow[]).filter((c) => allIds.has(String(c.filmId)));
 
   return (
-    // 컨테이너: 상단 패딩 제거, 네비 보더선에 밀착
     <section className="max-w-3xl mx-auto pt-0 pb-4 px-3 sm:px-4 space-y-3">
-      {/* 히어로: 헤더 하단 보더선을 가리기 위해 -mt-px, 블러 제거, 하단 그라데이션만 */}
+      {/* 히어로: 그라데이션/배경 제거, 원본 비율 그대로 */}
       {posterCandidates.length > 0 && (
-        <div className="-mt-px relative overflow-hidden rounded-none" style={{ height: '42vw', maxHeight: 420 }}>
-          {/* 배경(동일 이미지, 블러 없음) */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${posterCandidates[0]})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-          {/* 하단 그라데이션(배경 → 페이지 배경색으로 소프트 페더) */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(to bottom, rgba(255,255,255,0) 70%, rgba(255,255,255,0.85) 100%)',
-            }}
-          />
-          {/* 원본 이미지(컨테이너에 맞춰 꽉 채움) */}
+        <div className="-mt-px relative overflow-hidden rounded-none">
           <img
             src={posterCandidates[0]}
             alt={`${film.title_ko ?? film.title} poster`}
-            className="relative z-10 h-full w-full object-cover"
+            className="relative z-10 w-full h-auto object-contain"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
         </div>
       )}
 
-      {/* 배지/타이틀/메타 — 상단 간격 최소화 */}
+      {/* 배지/타이틀/메타 */}
       <header className="space-y-1">
         {!!sectionBadges.length && (
           <div className="flex flex-wrap gap-1 -mt-1">
@@ -205,26 +267,22 @@ export default async function FilmDetailPage({
           </div>
         )}
 
-        {/* 한글 제목(연도 제거, 사이즈 상향) */}
         <h1 className="text-[1.25rem] sm:text-[1.35rem] font-semibold leading-snug">
           {film.title_ko ?? film.title}
         </h1>
 
-        {/* 영어 제목(조금 작게) */}
         {film.title_en && (
           <div className="text-[0.95rem] sm:text-[1.0rem] leading-snug text-gray-800">
             {film.title_en}
           </div>
         )}
 
-        {/* 감독 */}
         {!!(film.credits?.directors?.length) && (
           <div className="text-[0.875rem] text-gray-700">
             Director : {film.credits!.directors!.join(', ')}
           </div>
         )}
 
-        {/* 메타라인 */}
         {metaBits.length > 0 && (
           <p className="text-[0.875rem] text-gray-600 whitespace-pre-wrap break-words">
             {metaBits.join(' | ')}
@@ -232,7 +290,7 @@ export default async function FilmDetailPage({
         )}
       </header>
 
-      {/* 시놉시스/Program Note — 제목은 굵게·동일 크기, 본문 크기는 유지 */}
+      {/* 시놉시스 / Program Note */}
       {(film.synopsis || hasBIFF) && (
         <section>
           <h2 className="text-base font-semibold mb-1">{synopsisLabel}</h2>
@@ -246,7 +304,7 @@ export default async function FilmDetailPage({
         </section>
       )}
 
-      {/* 상영시간 + 크레딧은 Client에서 렌더 */}
+      {/* 상영시간 + 크레딧 */}
       <DetailClient
         film={{
           id: film.id,
@@ -263,12 +321,11 @@ export default async function FilmDetailPage({
         entries={filmEntries}
         screenings={screeningsForDetail}
         entryToFilm={entryToFilm}
-        posterCandidates={posterCandidates}
         creditRows={creditRows}
       />
-
-      {/* 평점 에디터 */}
-      <RatingEditorClient filmId={film.id} />
+      <div className="mt-6 sm:mt-8">
+        <RatingEditorClient filmId={film.id} />
+      </div>
     </section>
   );
 }

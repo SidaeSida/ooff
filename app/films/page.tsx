@@ -1,3 +1,4 @@
+// films/page.tsx
 import { Suspense } from 'react';
 import FilmsClient from './FilmsClient';
 import { auth } from '@/auth';
