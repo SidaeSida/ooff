@@ -10,12 +10,13 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String             @id @default(cuid())
+  email        String             @unique
   passwordHash String
-  createdAt    DateTime      @default(now())
+  createdAt    DateTime           @default(now())
   UserEntry    UserEntry[]
   UserPrivacy  UserPrivacy?
+  FavoriteScreening FavoriteScreening[]
 }
 
 model LoginAttempt {
@@ -56,4 +57,20 @@ model UserPrivacy {
   updatedAt        DateTime   @updatedAt
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model FavoriteScreening {
+  id          String   @id @default(cuid())
+  userId      String
+  screeningId String
+  /// 나중에 1·2순위용으로 쓰기 위해 미리 추가
+  priority    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, screeningId])
+  @@index([userId])
+  @@index([screeningId])
 }

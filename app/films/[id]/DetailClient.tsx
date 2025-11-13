@@ -1,7 +1,6 @@
-// app/films/[id]/DetailClient.tsx
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import creditOrder from '@/data/credit_order.json';
 
 type Film = {
@@ -31,12 +30,12 @@ type Screening = {
   id: string;
   entryId: string;
   code?: string | null;
-  startsAt?: string | null;    // ISO
-  endsAt?: string | null;      // ISO or null
+  startsAt?: string | null; // ISO
+  endsAt?: string | null;   // ISO or null
   venue?: string | null;
-  rating?: string | null;      // All | 12 | 15 | 19
-  dialogue?: string | null;    // JIFF: E/H/K/KE/X, BIFF: 거의 미제공
-  subtitles?: string | null;   // JIFF: E/K/KE/X,  BIFF: Y/N
+  rating?: string | null;   // All | 12 | 15 | 19
+  dialogue?: string | null; // JIFF: E/H/K/KE/X, BIFF: 거의 미제공
+  subtitles?: string | null; // JIFF: E/K/KE/X,  BIFF: Y/N
   withGV?: boolean;
 };
 
@@ -44,32 +43,34 @@ type EntryToFilm = Record<string, { filmId: string; title_ko: string; title_en: 
 
 type CreditRow = { filmId: string; role: string; value: string; order?: number | null };
 
-function ymd(iso?: string | null) { return iso ? iso.slice(0, 10) : ''; }
+function ymd(iso?: string | null) {
+  return iso ? iso.slice(0, 10) : '';
+}
 function mdK(iso?: string | null) {
   if (!iso) return '';
   const m = Number(iso.slice(5, 7));
   const d = Number(iso.slice(8, 10));
   return `${m}월 ${d}일`;
 }
-function hm(iso?: string | null) { return iso ? iso.slice(11, 16) : ''; }
+function hm(iso?: string | null) {
+  return iso ? iso.slice(11, 16) : '';
+}
 function makeBadges(rating?: string, lang?: string, withGV?: boolean) {
-  const out: Array<{ key: string; type: 'rating'|'lang'|'gv'; label: string }> = [];
+  const out: Array<{ key: string; type: 'rating' | 'lang' | 'gv'; label: string }> = [];
   if (rating) out.push({ key: `r:${rating}`, type: 'rating', label: rating });
-  if (lang)   out.push({ key: `l:${lang}`,   type: 'lang',   label: lang });
-  if (withGV) out.push({ key: 'gv',          type: 'gv',     label: 'GV'  });
+  if (lang) out.push({ key: `l:${lang}`, type: 'lang', label: lang });
+  if (withGV) out.push({ key: 'gv', type: 'gv', label: 'GV' });
   return out;
 }
 // label 길이에 따라 원형(<=2글자) 또는 알약형(>2글자) 자동 선택
-function badgeClass(t: 'rating'|'lang'|'gv', label: string) {
+function badgeClass(t: 'rating' | 'lang' | 'gv', label: string) {
   const isCircle = (label?.length ?? 0) <= 2; // '12','KE','GV' 등
   const base = 'inline-flex items-center justify-center border leading-none';
 
   // 공통 폰트(원형은 더 작게)
   const font = isCircle ? ' text-[10px]' : ' text-[11px]';
   // 굵기
-  const weight =
-    t === 'rating' ? ' font-medium' :
-    t === 'gv'     ? ' font-semibold' : '';
+  const weight = t === 'rating' ? ' font-medium' : t === 'gv' ? ' font-semibold' : '';
 
   if (isCircle) {
     // 완전 원형: 폭=높이(24px), 패딩 제거
@@ -78,11 +79,10 @@ function badgeClass(t: 'rating'|'lang'|'gv', label: string) {
   // 알약형: 높이 고정, 좌우 여백
   return base + font + weight + ' rounded-full h-6 px-2';
 }
-// 역할 라벨을 Title Case로 통일(원치 않으시면 role 그대로 쓰셔도 됩니다)
+// 역할 라벨을 Title Case로 통일
 function formatRoleLabel(role: string) {
   return role.replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
 
 export default function DetailClient({
   film,
@@ -90,12 +90,14 @@ export default function DetailClient({
   screenings,
   entryToFilm,
   creditRows,
+  initialFavoriteIds,
 }: {
   film: Film;
   entries: Entry[];
   screenings: Screening[];
   entryToFilm: EntryToFilm;
   creditRows: CreditRow[];
+  initialFavoriteIds: string[];
 }) {
   // 상영 묶기: 동일 code 묶음(+ 코드 없음은 날짜/시간/장소로 Fallback), 날짜 기준 정렬
   const groups = useMemo(() => {
@@ -173,7 +175,7 @@ export default function DetailClient({
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
-        })
+        }),
       );
     }
     return map;
@@ -186,6 +188,71 @@ export default function DetailClient({
     const tail = present.filter((r) => !head.includes(r)).sort((a, b) => a.localeCompare(b));
     return [...head, ...tail];
   }, [creditByRole]);
+
+  // 하트 상태 (screeningId 기준)
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(
+    () => new Set(initialFavoriteIds ?? []),
+  );
+  // 상영별 로딩 상태
+  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
+
+  async function toggleFavorite(screeningId: string) {
+    if (!screeningId) return;
+
+    // 이 순간 기준으로 이전 상태 저장
+    const wasFavorite = favoriteIds.has(screeningId);
+
+    // optimistic update
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (wasFavorite) next.delete(screeningId);
+      else next.add(screeningId);
+      return next;
+    });
+
+    // pending 표시
+    setPendingIds((prev) => {
+      const next = new Set(prev);
+      next.add(screeningId);
+      return next;
+    });
+
+    try {
+      const resp = await fetch('/api/favorite-screening', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          screeningId,
+          favorite: !wasFavorite,
+        }),
+      });
+
+      if (!resp.ok) {
+        // 실패 시 롤백
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          if (wasFavorite) next.add(screeningId);
+          else next.delete(screeningId);
+          return next;
+        });
+      }
+    } catch {
+      // 네트워크 등 에러 시 롤백
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (wasFavorite) next.add(screeningId);
+        else next.delete(screeningId);
+        return next;
+      });
+    } finally {
+      // 로딩 해제 (해당 상영만)
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(screeningId);
+        return next;
+      });
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -215,15 +282,25 @@ export default function DetailClient({
               })
               .filter(Boolean);
 
+            const isFavorite = favoriteIds.has(a.id);
+            const isPending = pendingIds.has(a.id);
+
             return (
               <article key={code} className="border rounded-xl p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     {pieces.length > 0 && (
                       <div className="text-[0.9rem] font-medium mb-0.5">
-                        {pieces.join(' + ').split('**').map((chunk, i) =>
-                          i % 2 === 1 ? <strong key={i}>{chunk}</strong> : <span key={i}>{chunk}</span>
-                        )}
+                        {pieces
+                          .join(' + ')
+                          .split('**')
+                          .map((chunk, i) =>
+                            i % 2 === 1 ? (
+                              <strong key={i}>{chunk}</strong>
+                            ) : (
+                              <span key={i}>{chunk}</span>
+                            ),
+                          )}
                       </div>
                     )}
                     <div className="text-[12px] text-gray-700">
@@ -231,20 +308,33 @@ export default function DetailClient({
                     </div>
                     {/* 등급/언어/GV — 동그란 배지 */}
                     <div className="mt-1 flex items-center gap-1.5 text-gray-700">
-                      {makeBadges(rating, lang, a.withGV).map(b => (
+                      {makeBadges(rating, lang, a.withGV).map((b) => (
                         <span key={b.key} className={badgeClass(b.type, b.label)}>
                           {b.label}
                         </span>
                       ))}
                     </div>
                   </div>
-                  {/* 즐겨찾기(후속 연동) */}
+                  {/* 즐겨찾기(타임테이블 후보) */}
                   <button
                     type="button"
-                    className="shrink-0 cursor-pointer rounded-full border px-2 py-1 text-[12px]"
-                    title="즐겨찾기(추후 Timetable 연동)"
+                    onClick={() => toggleFavorite(a.id)}
+                    disabled={isPending}
+                    aria-pressed={isFavorite}
+                    className={
+                      'shrink-0 rounded-full border px-2 py-1 text-[12px]' +
+                      (isFavorite
+                        ? ' bg-black text-white border-black'
+                        : ' bg-white text-gray-700') +
+                      (isPending ? ' opacity-60 cursor-default' : ' cursor-pointer')
+                    }
+                    title={
+                      isFavorite
+                        ? '타임테이블 후보에서 제거'
+                        : '타임테이블 후보에 추가'
+                    }
                   >
-                    ♥
+                    {isFavorite ? '♥' : '♡'}
                   </button>
                 </div>
                 {code && !code.startsWith('__') && (
@@ -271,9 +361,7 @@ export default function DetailClient({
               if (vals.length === 0) return null;
               return (
                 <div key={role} className="text-[0.85rem] leading-tight">
-                  {/* 역할만 굵게 */}
                   <span className="font-semibold">{formatRoleLabel(role)}</span>
-                  {/* 값은 보통 두께(상속 방지용으로 font-normal 명시) */}
                   <span className="font-normal text-gray-700"> : {vals.join(', ')}</span>
                 </div>
               );

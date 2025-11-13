@@ -327,7 +327,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
   };
 
   // 주말 텍스트 색상만 적용 (#8e5e3a)
-  const WEEKEND_TEXT_COLOR = '#8e5e3a';
+  const WEEKEND_TEXT_COLOR = '#D30000';
 
   return (
     <>

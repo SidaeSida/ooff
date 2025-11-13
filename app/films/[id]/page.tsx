@@ -10,6 +10,9 @@ import creditsFull from '@/data/credits_full.json';
 import ooffJIFF from '@/data/ooff_jiff2025.json';
 import ooffBIFF from '@/data/ooff_biff2025.json';
 
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+
 import DetailClient from './DetailClient';
 import RatingEditorClient from './RatingEditorClient';
 
@@ -95,10 +98,12 @@ function buildCodeToBundleMap(ooff: any): Map<string, Set<string>> {
     for (const s of scrs) {
       const code = (s?.code ?? '').toString().trim();
       if (!code) continue;
-      const ids: string[] = Array.isArray(s?.bundleFilmIds) ? s.bundleFilmIds.map((x: any) => String(x)) : [];
+      const ids: string[] = Array.isArray(s?.bundleFilmIds)
+        ? s.bundleFilmIds.map((x: any) => String(x))
+        : [];
       if (!ids.length) continue;
       const cur = map.get(code) ?? new Set<string>();
-      ids.forEach(id => cur.add(id));
+      ids.forEach((id) => cur.add(id));
       map.set(code, cur);
     }
   }
@@ -113,7 +118,14 @@ export default async function FilmDetailPage({
   params: Promise<{ id: string }> | { id: string };
 }) {
   // Next 16: params가 Promise일 수 있음
-  const p = (params as any)?.then ? await (params as Promise<{ id: string }>) : (params as { id: string });
+  const p =
+    (params as any)?.then
+      ? await (params as Promise<{ id: string }>)
+      : (params as { id: string });
+
+  const session = await auth();
+  const currentUserId = session?.user?.id ?? null;
+
   const paramId = normId(p?.id);
   if (!paramId) return notFound();
 
@@ -143,7 +155,9 @@ export default async function FilmDetailPage({
 
   // 동시상영(A+B+C): 이 영화가 포함된 code 집합(문자열 그대로)
   const codeSet = new Set<string>(
-    screeningsThisFilm.map((s) => (s.code ?? '').toString().trim()).filter(Boolean)
+    screeningsThisFilm
+      .map((s) => (s.code ?? '').toString().trim())
+      .filter(Boolean),
   );
 
   // 같은 code 이더라도 **같은 에디션**인 상영만 포함
@@ -155,12 +169,36 @@ export default async function FilmDetailPage({
   });
 
   // 코드 없음은 이 영화분만 포함(Fallback)
-  const screeningsNoCode = screeningsThisFilm.filter((s) => !((s.code ?? '').toString().trim()));
+  const screeningsNoCode = screeningsThisFilm.filter(
+    (s) => !((s.code ?? '').toString().trim()),
+  );
   const screeningsForDetail = [...screeningsForCodes, ...screeningsNoCode];
+
+  // 이 영화 상세에 등장하는 상영들 중, 내가 하트 찍은 것
+  let favoriteScreeningIds: string[] = [];
+  if (currentUserId && screeningsForDetail.length > 0) {
+    const ids = screeningsForDetail
+      .map((s) => s.id)
+      .filter((id): id is string => Boolean(id));
+
+    if (ids.length > 0) {
+      const favRows = await prisma.favoriteScreening.findMany({
+        where: {
+          userId: currentUserId,
+          screeningId: { in: ids },
+        },
+        select: {
+          screeningId: true,
+        },
+      });
+      favoriteScreeningIds = favRows.map((r) => r.screeningId);
+    }
+  }
 
   // entryId -> film 타이틀 매핑(동시상영 타 작품 표기용)
   const filmById = new Map(films.map((f) => [normId(f.id), f]));
-  const entryToFilm: Record<string, { filmId: string; title_ko: string; title_en: string }> = {};
+  const entryToFilm: Record<string, { filmId: string; title_ko: string; title_en: string }> =
+    {};
   for (const e of entries) {
     const f = filmById.get(normId(e.filmId));
     entryToFilm[e.id] = {
@@ -179,7 +217,12 @@ export default async function FilmDetailPage({
   }
   let topRating: string | undefined;
   let topN = -1;
-  for (const [k, v] of ratingFreq) if (v > topN) { topRating = k; topN = v; }
+  for (const [k, v] of ratingFreq) {
+    if (v > topN) {
+      topRating = k;
+      topN = v;
+    }
+  }
 
   // 메타라인
   const first = filmEntries[0];
@@ -189,9 +232,9 @@ export default async function FilmDetailPage({
     film.runtime != null ? `${film.runtime}min` : undefined,
     (first?.format ?? '') || undefined,
     (first?.color ?? '') || undefined,
-    (film.genres?.length ? film.genres.join(', ') : undefined),
-    (topRating ?? undefined),
-    (first?.premiere ?? undefined),
+    film.genres?.length ? film.genres.join(', ') : undefined,
+    topRating ?? undefined,
+    first?.premiere ?? undefined,
   ].filter(Boolean) as string[];
 
   // 포스터 후보(원본 비율 그대로 표시)
@@ -207,7 +250,11 @@ export default async function FilmDetailPage({
 
   // 시놉시스/Program Note 라벨
   const hasBIFF = filmEntries.some((e) => e.editionId === 'edition_biff_2025');
-  const synopsisLabel = film.synopsis ? '시놉시스' : (hasBIFF ? 'Program Note' : '시놉시스');
+  const synopsisLabel = film.synopsis
+    ? '시놉시스'
+    : hasBIFF
+    ? 'Program Note'
+    : '시놉시스';
 
   // ===== Credit 매칭: 명시 ID(단일/복수) ∪ code 기반 bundle ∪ 포스터 숫자 =====
   const explicitIds = new Set<string>();
@@ -218,26 +265,31 @@ export default async function FilmDetailPage({
 
   // 이 작품 상영들의 code 집합(문자열 그대로)
   const thisCodes = new Set<string>(
-    screeningsThisFilm.map(s => (s.code ?? '').toString().trim()).filter(Boolean)
+    screeningsThisFilm
+      .map((s) => (s.code ?? '').toString().trim())
+      .filter(Boolean),
   );
 
   // 에디션 스코프에 맞춰 원본 맵에서 bundleFilmIds 수집
   const bundleIds = new Set<string>();
   for (const e of filmEntries) {
     for (const c of thisCodes) {
-      if (isJIFF(e.editionId)) codeToBundle_JIFF.get(c)?.forEach(id => bundleIds.add(String(id)));
-      else if (isBIFF(e.editionId)) codeToBundle_BIFF.get(c)?.forEach(id => bundleIds.add(String(id)));
+      if (isJIFF(e.editionId)) codeToBundle_JIFF.get(c)?.forEach((id) => bundleIds.add(String(id)));
+      else if (isBIFF(e.editionId))
+        codeToBundle_BIFF.get(c)?.forEach((id) => bundleIds.add(String(id)));
     }
   }
 
   // 포스터 파일명에서 추출한 숫자도 보강
   const posterIds = extractPosterNumIds(film.posters);
-  posterIds.forEach(id => bundleIds.add(id));
+  posterIds.forEach((id) => bundleIds.add(id));
 
   const allIds = new Set<string>([...explicitIds, ...bundleIds]);
 
   // credits_full.json → 매칭되는 행만
-  const creditRows = (creditsFull as CreditFullRow[]).filter((c) => allIds.has(String(c.filmId)));
+  const creditRows = (creditsFull as CreditFullRow[]).filter((c) =>
+    allIds.has(String(c.filmId)),
+  );
 
   return (
     <section className="max-w-3xl mx-auto pt-0 pb-4 px-3 sm:px-4 space-y-3">
@@ -260,7 +312,10 @@ export default async function FilmDetailPage({
         {!!sectionBadges.length && (
           <div className="flex flex-wrap gap-1 -mt-1">
             {sectionBadges.map((b) => (
-              <span key={b.key} className="text-[11px] px-2 py-0.5 rounded-full border">
+              <span
+                key={b.key}
+                className="text-[11px] px-2 py-0.5 rounded-full border"
+              >
                 {b.label}
               </span>
             ))}
@@ -277,7 +332,7 @@ export default async function FilmDetailPage({
           </div>
         )}
 
-        {!!(film.credits?.directors?.length) && (
+        {!!film.credits?.directors?.length && (
           <div className="text-[0.875rem] text-gray-700">
             Director : {film.credits!.directors!.join(', ')}
           </div>
@@ -295,10 +350,13 @@ export default async function FilmDetailPage({
         <section>
           <h2 className="text-base font-semibold mb-1">{synopsisLabel}</h2>
           {film.synopsis ? (
-            <p className="text-[0.875rem] leading-relaxed text-gray-800">{film.synopsis}</p>
+            <p className="text-[0.875rem] leading-relaxed text-gray-800">
+              {film.synopsis}
+            </p>
           ) : hasBIFF ? (
             <p className="text-[0.875rem] leading-relaxed text-gray-800">
-              Program note is not separately provided in JSON. Please refer to festival source if needed.
+              Program note is not separately provided in JSON. Please refer to
+              festival source if needed.
             </p>
           ) : null}
         </section>
@@ -322,6 +380,7 @@ export default async function FilmDetailPage({
         screenings={screeningsForDetail}
         entryToFilm={entryToFilm}
         creditRows={creditRows}
+        initialFavoriteIds={favoriteScreeningIds}
       />
       <div className="mt-6 sm:mt-8">
         <RatingEditorClient filmId={film.id} />

@@ -19,8 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <div className="mx-auto w-full max-w-[420px] px-4">
             <Header />
-            {/* 서버/클라이언트 DOM 차이 억제 */}
-            <main className="py-6" suppressHydrationWarning>
+            <main className="py-6">
               {children}
             </main>
           </div>
