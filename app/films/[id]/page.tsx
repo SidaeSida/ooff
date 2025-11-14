@@ -175,6 +175,7 @@ export default async function FilmDetailPage({
   const screeningsForDetail = [...screeningsForCodes, ...screeningsNoCode];
 
   // 이 영화 상세에 등장하는 상영들 중, 내가 하트 찍은 것
+    // 이 영화 상세에 등장하는 상영들 중, 내가 하트 찍은 것
   let favoriteScreeningIds: string[] = [];
   if (currentUserId && screeningsForDetail.length > 0) {
     const ids = screeningsForDetail
@@ -182,18 +183,25 @@ export default async function FilmDetailPage({
       .filter((id): id is string => Boolean(id));
 
     if (ids.length > 0) {
-      const favRows = await prisma.favoriteScreening.findMany({
-        where: {
-          userId: currentUserId,
-          screeningId: { in: ids },
-        },
-        select: {
-          screeningId: true,
-        },
-      });
-      favoriteScreeningIds = favRows.map((r) => r.screeningId);
+      try {
+        const favRows = await prisma.favoriteScreening.findMany({
+          where: {
+            userId: currentUserId,
+            screeningId: { in: ids },
+          },
+          select: {
+            screeningId: true,
+          },
+        });
+        favoriteScreeningIds = favRows.map((r) => r.screeningId);
+      } catch (err) {
+        // 배포 DB에 FavoriteScreening 테이블이 없는 경우 등
+        console.error("favoriteScreening.findMany failed in FilmDetailPage", err);
+        favoriteScreeningIds = [];
+      }
     }
   }
+
 
   // entryId -> film 타이틀 매핑(동시상영 타 작품 표기용)
   const filmById = new Map(films.map((f) => [normId(f.id), f]));

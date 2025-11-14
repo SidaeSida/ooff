@@ -113,10 +113,18 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   const userId = session.user.id;
 
   // 2) 내가 하트한 상영 목록 (priority 포함)
-  const favoriteRows = await prisma.favoriteScreening.findMany({
-    where: { userId },
-    select: { screeningId: true, priority: true },
-  });
+  let favoriteRows: { screeningId: string; priority: number | null }[] = [];
+
+  try {
+    favoriteRows = await prisma.favoriteScreening.findMany({
+      where: { userId },
+      select: { screeningId: true, priority: true },
+    });
+  } catch (err) {
+    // 배포 DB에 FavoriteScreening 테이블이 없는 경우 등
+    console.error("favoriteScreening.findMany failed", err);
+    favoriteRows = [];
+  }
 
   if (!favoriteRows.length) {
     return (
