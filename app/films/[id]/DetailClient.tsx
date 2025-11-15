@@ -1,3 +1,4 @@
+// app/films/[id]/DetailClient.tsx
 'use client';
 
 import { useMemo, useState } from 'react';

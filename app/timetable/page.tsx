@@ -54,6 +54,11 @@ type PageProps = {
   searchParams: Promise<SearchParams>;
 };
 
+type BundleFilm = {
+  filmId: string;
+  title: string;
+};
+
 type ViewRow = {
   id: string;
   filmId: string;
@@ -71,6 +76,9 @@ type ViewRow = {
   startMin: number;
   endMin: number;
   priority: number | null;
+
+  // 동시상영(A+B+C+D)용 타이틀/링크 목록
+  bundleFilms?: BundleFilm[];
 };
 
 // TimetableClient 에서 사용할 타입 별칭
@@ -102,6 +110,12 @@ function isWeekend(dateIso: string) {
   return dow === 0 || dow === 6;
 }
 
+function buildBundleKey(editionId: string | undefined, code: string | null) {
+  const c = (code ?? "").trim();
+  if (!editionId || !c) return null;
+  return `${editionId}__${c}`;
+}
+
 // ---------- 페이지 컴포넌트 ----------
 
 export default async function TimetablePage({ searchParams }: PageProps) {
@@ -121,7 +135,6 @@ export default async function TimetablePage({ searchParams }: PageProps) {
       select: { screeningId: true, priority: true },
     });
   } catch (err) {
-    // 배포 DB에 FavoriteScreening 테이블이 없는 경우 등
     console.error("favoriteScreening.findMany failed", err);
     favoriteRows = [];
   }
@@ -129,10 +142,9 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   if (!favoriteRows.length) {
     return (
       <main className="p-4 space-y-3">
-        <h1 className="text-xl font-semibold">나의 타임테이블</h1>
+        <h1 className="text-xl font-semibold">My Timetable</h1>
         <p className="text-sm text-gray-600">
-          아직 하트한 상영이 없습니다. 영화 상세 페이지에서 보고 싶은 상영에
-          하트를 누르면 이곳에 모여서 보입니다.
+          No favorite screenings yet. Add ♥ on a screening to build your timetable.
         </p>
       </main>
     );
@@ -150,11 +162,35 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   const screenings = screeningsRaw as Screening[];
 
   const filmById: Record<string, Film> = Object.fromEntries(
-    films.map((f) => [f.id, f])
+    films.map((f) => [f.id, f]),
   );
   const entryById: Record<string, Entry> = Object.fromEntries(
-    entries.map((e) => [e.id, e])
+    entries.map((e) => [e.id, e]),
   );
+
+  // 3-1) edition+code 기준 동시상영 프로그램 → 영화 목록 인덱스
+  const bundleMap = new Map<string, BundleFilm[]>();
+
+  for (const s of screenings) {
+    const entry = entryById[s.entryId];
+    if (!entry) continue;
+
+    const key = buildBundleKey(entry.editionId, s.code);
+    if (!key) continue;
+
+    const film = filmById[entry.filmId];
+    const title =
+      film?.title_ko ||
+      film?.title ||
+      film?.title_en ||
+      entry.filmId;
+
+    const list = bundleMap.get(key) ?? [];
+    if (!list.some((x) => x.filmId === entry.filmId)) {
+      list.push({ filmId: entry.filmId, title });
+    }
+    bundleMap.set(key, list);
+  }
 
   // 4) 상영 + 영화 + 출품 정보 → ViewRow
   const merged: ViewRow[] = screenings
@@ -179,18 +215,40 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         endMin = startMin + runtime;
       }
 
-      return {
-        id: s.id,
-        filmId: entry?.filmId ?? s.entryId,
-        filmTitle:
+      const editionId = entry?.editionId ?? "unknown";
+      const primaryFilmId = entry?.filmId ?? s.entryId;
+
+      let filmTitle: string;
+      let bundleFilms: BundleFilm[] | undefined;
+
+      const bundleKey = buildBundleKey(editionId, s.code);
+      const bundleList = bundleKey ? bundleMap.get(bundleKey) ?? [] : [];
+
+      if (bundleList.length > 1) {
+        const sorted = [...bundleList].sort((a, b) => {
+          if (a.filmId === primaryFilmId) return -1;
+          if (b.filmId === primaryFilmId) return 1;
+          return a.title.localeCompare(b.title, "ko");
+        });
+        filmTitle = sorted.map((x) => x.title).join(" + ");
+        bundleFilms = sorted;
+      } else {
+        filmTitle =
           film?.title_ko ||
           film?.title ||
           film?.title_en ||
           entry?.filmId ||
-          s.entryId,
+          s.entryId;
+        bundleFilms = undefined;
+      }
+
+      return {
+        id: s.id,
+        filmId: primaryFilmId,
+        filmTitle,
         date,
         time,
-        editionId: entry?.editionId ?? "unknown",
+        editionId,
         section: entry?.section ?? null,
         venue: s.venue,
         code: s.code,
@@ -200,6 +258,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         startMin,
         endMin,
         priority: favoritePriority.get(s.id) ?? null,
+        bundleFilms,
       };
     })
     .filter((row) => row.editionId !== "unknown");
@@ -207,10 +266,9 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   if (!merged.length) {
     return (
       <main className="p-4 space-y-3">
-        <h1 className="text-xl font-semibold">나의 타임테이블</h1>
+        <h1 className="text-xl font-semibold">My Timetable</h1>
         <p className="text-sm text-gray-600">
-          아직 하트한 상영이 없습니다. 영화 상세 페이지에서 보고 싶은 상영에
-          하트를 누르면 이곳에 모여서 보입니다.
+          No favorite screenings yet. Add ♥ on a screening to build your timetable.
         </p>
       </main>
     );
@@ -219,10 +277,19 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   // 5) searchParams Promise 해제
   const sp = await searchParams;
 
-  // 6) 영화제(edition) 목록
-  const editions = Array.from(
-    new Set(merged.map((m) => m.editionId))
-  ).sort((a, b) => a.localeCompare(b));
+  // 6) 영화제(edition) 목록 — JIFF → BIFF 우선 정렬
+  const editions = Array.from(new Set(merged.map((m) => m.editionId)));
+  editions.sort((a, b) => {
+    const order = (id: string) => {
+      if (id.startsWith("edition_jiff_")) return 0;
+      if (id.startsWith("edition_biff_")) return 1;
+      return 99;
+    };
+    const oa = order(a);
+    const ob = order(b);
+    if (oa !== ob) return oa - ob;
+    return a.localeCompare(b);
+  });
 
   const currentEdition =
     sp.edition && editions.includes(sp.edition) ? sp.edition : editions[0];
@@ -232,8 +299,8 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     new Set(
       merged
         .filter((m) => m.editionId === currentEdition)
-        .map((m) => m.date)
-    )
+        .map((m) => m.date),
+    ),
   ).sort((a, b) => a.localeCompare(b));
 
   const currentDate =
