@@ -16,14 +16,13 @@ import type { TimetableRow } from "./page";
 
 // ---------------------------------------------------
 // 1) 타임라인 설정 (08:00 ~ 27:00 = 다음날 03:00 직전까지)
-//    → 02:00까지 그리드, 03:00까지 여유 높이
 // ---------------------------------------------------
 const DAY_START_MIN = 8 * 60;
 const DAY_END_MIN = 27 * 60; // 03:00
 const TOTAL_MIN = DAY_END_MIN - DAY_START_MIN;
 
-const PX_PER_MIN_PC = 2.0;   // 데스크톱용
-const PX_PER_MIN_MOBILE = 2.0; // 모바일용 (원하시는 값으로 조정)
+const PX_PER_MIN_PC = 2.0;
+const PX_PER_MIN_MOBILE = 2.0;
 
 // ---------------------------------------------------
 // 2) 좌측 시간 표시 너비 및 카드 시작 위치
@@ -36,7 +35,6 @@ const baseLeftPx = LABEL_COL_WIDTH + GRID_GAP_LEFT;
 const basePaddingPx = baseLeftPx + GRID_RIGHT_PADDING;
 
 // 시간 표시 라인: 08:00 ~ 26:00(=02:00)
-// 03:00(27:00)은 라인 없이 여백만
 const HOUR_MARKS: number[] = [];
 for (let h = 8; h <= 26; h++) HOUR_MARKS.push(h);
 
@@ -60,7 +58,7 @@ const CONF_PC = {
 };
 
 const CONF_MOBILE = {
-  steps: [120, 93, 68, 54, 45], // 1116 mobile s 튜닝값 유지
+  steps: [120, 93, 68, 54, 45], // 모바일 튜닝값 유지
   widths: [] as string[],
 };
 
@@ -68,7 +66,12 @@ CONF_PC.widths = makeDefaultWidths(CONF_PC.steps);
 CONF_MOBILE.widths = makeDefaultWidths(CONF_MOBILE.steps);
 
 // ---------------------------------------------------
-// 겹침 그룹 계산
+// 삭제존 설정 (오른쪽 끝 32px 카드형 DEL)
+// ---------------------------------------------------
+const DELETE_ZONE_WIDTH = 32;
+
+// ---------------------------------------------------
+// 유틸
 // ---------------------------------------------------
 function groupByOverlap(list: TimetableRow[]): TimetableRow[][] {
   if (!list.length) return [];
@@ -101,6 +104,13 @@ function idxFromSize(size: number) {
   return size >= 5 ? 4 : size - 1;
 }
 
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+// ---------------------------------------------------
+// 타입
+// ---------------------------------------------------
 type Props = {
   rows: TimetableRow[];
   editionLabel: string;
@@ -115,7 +125,8 @@ type PlacedRow = TimetableRow & {
   z: number;
 };
 
-type Priority = 1 | 2 | null;
+type Priority = 0 | 1 | 2; // 0,1,2 세 가지 색상 모드
+type PriorityOrNull = Priority | null;
 
 type PriorityMenuState = {
   screeningId: string;
@@ -123,7 +134,7 @@ type PriorityMenuState = {
   y: number;
 } | null;
 
-// 롱프레스용 상태
+// 롱프레스용 상태 (하트 메뉴)
 type LongPressState = {
   timer: number | null;
   id: string | null;
@@ -132,13 +143,65 @@ type LongPressState = {
   y: number;
 };
 
+// 카드 정렬용 롱프레스 상태
+type CardLongPressState = {
+  timer: number | null;
+  id: string | null;
+  startClientX: number;
+};
+
+// 드래그 상태 (카드 재정렬)
+type DragState = {
+  id: string;
+  groupIds: string[]; // 같은 겹침 그룹에 속한 카드 id들
+  originIndex: number;
+  startClientX: number;
+  visualClientX: number; // 그룹 안에서 정렬용(클램프된 X)
+  pointerClientX: number; // 실제 포인터 위치(삭제존 판정용, 클램프 안 함)
+};
+
+// ---------------------------------------------------
+// 우선순위(색상) 스타일 헬퍼
+// ---------------------------------------------------
+function getPriorityStyles(priority: PriorityOrNull) {
+  if (priority === 1) {
+    return {
+      cardBg: "rgba(244, 215, 170, 0.92)",
+      cardBorder: "var(--badge-rated-bg)",
+      heartBorder: "var(--badge-rated-bg)",
+      heartColor: "var(--badge-rated-bg)",
+    };
+  }
+  if (priority === 2) {
+    return {
+      cardBg: "rgba(219, 196, 255, 0.92)",
+      cardBorder: "var(--bar-fill-rated)",
+      heartBorder: "var(--bar-fill-rated)",
+      heartColor: "var(--bar-fill-rated)",
+    };
+  }
+  return {
+    cardBg: "rgba(255,255,255,0.92)",
+    cardBorder: "rgba(209,213,219,1)",
+    heartBorder: "var(--bar-fill-unrated)",
+    heartColor: "var(--bar-fill-unrated)",
+  };
+}
+
+// 순환: 0 → 1 → 2 → 0
+function getNextPriority(p: PriorityOrNull): Priority {
+  if (p === 0 || p === null) return 1;
+  if (p === 1) return 2;
+  return 0;
+}
+
 export default function TimetableClient({
   rows = [],
   editionLabel,
   dateIso,
 }: Props) {
   // ---------------------------------------------------
-  // 3) 모바일/PC 판정 안정화
+  // 3) 모바일/PC 판정
   // ---------------------------------------------------
   const getIsMobile = () =>
     typeof window !== "undefined" && window.innerWidth < 420;
@@ -159,33 +222,50 @@ export default function TimetableClient({
   const pxPerMin = isMobile ? PX_PER_MIN_MOBILE : PX_PER_MIN_PC;
   const timelineHeight = TOTAL_MIN * pxPerMin;
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   // ---------------------------------------------------
-  // 카드 상태 관리
+  // 카드 표시 여부 / 우선순위 / 정렬순서
   // ---------------------------------------------------
   const [activeIds, setActiveIds] = useState<Set<string>>(
     () => new Set(rows.map((r) => r.id)),
   );
 
-  const [priorityMap, setPriorityMap] = useState<Map<string, Priority>>(
+  const [priorityMap, setPriorityMap] = useState<
+    Map<string, PriorityOrNull>
+  >(() => {
+    const m = new Map<string, PriorityOrNull>();
+    for (const r of rows) {
+      const base =
+        typeof r.priority === "number"
+          ? (r.priority as Priority)
+          : null;
+      m.set(r.id, base);
+    }
+    return m;
+  });
+
+  const [orderMap, setOrderMap] = useState<Map<string, number | null>>(
     () => {
-      const m = new Map<string, Priority>();
+      const m = new Map<string, number | null>();
       for (const r of rows) {
-        m.set(r.id, (r.priority as Priority) ?? null);
+        m.set(
+          r.id,
+          typeof r.order === "number" ? (r.order as number) : null,
+        );
       }
       return m;
     },
   );
 
-  // 클릭 z-index override
   const [zOverrides, setZOverrides] = useState<Map<string, number>>(
     () => new Map(),
   );
   const [zSeq, setZSeq] = useState(1);
 
-  // 롱프레스 메뉴 상태
-  const [priorityMenu, setPriorityMenu] = useState<PriorityMenuState>(null);
-
-  // 롱프레스 타이머
+  const [priorityMenu, setPriorityMenu] = useState<PriorityMenuState>(
+    null,
+  );
   const longPressRef = useRef<LongPressState>({
     timer: null,
     id: null,
@@ -194,16 +274,39 @@ export default function TimetableClient({
     y: 0,
   });
 
+  const cardLongPressRef = useRef<CardLongPressState>({
+    timer: null,
+    id: null,
+    startClientX: 0,
+  });
+  const [dragState, setDragState] = useState<DragState | null>(null);
+
+  const [deleteZoneActive, setDeleteZoneActive] = useState(false);
+
+  // rows 변경 시 상태 초기화
   useEffect(() => {
     setActiveIds(new Set(rows.map((r) => r.id)));
     setZOverrides(new Map());
     setZSeq(1);
 
-    const m = new Map<string, Priority>();
+    const m1 = new Map<string, PriorityOrNull>();
     for (const r of rows) {
-      m.set(r.id, (r.priority as Priority) ?? null);
+      const base =
+        typeof r.priority === "number"
+          ? (r.priority as Priority)
+          : null;
+      m1.set(r.id, base);
     }
-    setPriorityMap(m);
+    setPriorityMap(m1);
+
+    const m2 = new Map<string, number | null>();
+    for (const r of rows) {
+      m2.set(
+        r.id,
+        typeof r.order === "number" ? (r.order as number) : null,
+      );
+    }
+    setOrderMap(m2);
   }, [rows]);
 
   const visibleRows = useMemo(
@@ -211,47 +314,83 @@ export default function TimetableClient({
     [rows, activeIds],
   );
 
-  const getPriority = (id: string): Priority => {
+  const getPriority = (id: string): PriorityOrNull => {
     const local = priorityMap.get(id);
     if (local !== undefined) return local;
     const found = rows.find((r) => r.id === id);
-    return (found?.priority as Priority) ?? null;
+    return (found?.priority as PriorityOrNull) ?? null;
+  };
+
+  const getOrder = (id: string): number | null => {
+    const v = orderMap.get(id);
+    return v == null ? null : v;
   };
 
   // ---------------------------------------------------
   // 카드 배치(top, height, left, width, z-index)
-  //  - 그룹 안 정렬: priority(1 → 2 → none) + startMin
   // ---------------------------------------------------
   const placedRows: PlacedRow[] = useMemo(() => {
     const groups = groupByOverlap(visibleRows);
     const placed: PlacedRow[] = [];
 
     for (const group of groups) {
-      const groupWithPriority = group.map((row) => ({
+      let groupWithMeta = group.map((row) => ({
         row,
         priority: getPriority(row.id),
+        order: getOrder(row.id),
       }));
 
-      groupWithPriority.sort((a, b) => {
-        const pa = a.priority ?? 99;
-        const pb = b.priority ?? 99;
-        if (pa !== pb) return pa - pb;
+      // 기본 정렬: sortOrder → 없으면 시간 순
+      groupWithMeta.sort((a, b) => {
+        const oa = a.order;
+        const ob = b.order;
+        if (oa != null && ob != null && oa !== ob) return oa - ob;
+        if (oa != null && ob == null) return -1;
+        if (oa == null && ob != null) return 1;
         return a.row.startMin - b.row.startMin;
       });
 
-      const size = groupWithPriority.length;
+      const size = groupWithMeta.length;
       const idx = idxFromSize(size);
-
       const step = CONF.steps[idx];
       const width = CONF.widths[idx];
       const isSingle = size === 1;
 
-      groupWithPriority.forEach(({ row, priority }, indexInGroup) => {
-                // 자정을 넘는 상영(끝 시간이 시작 시간보다 빠른 경우)을 다음날로 보정
+      // 이 그룹에 드래그 중인 카드가 있는지 체크
+      let dragInfo:
+        | {
+            dragId: string;
+            originIndex: number;
+            newIndex: number;
+            delta: number;
+          }
+        | null = null;
+
+      if (dragState && size > 1) {
+        const dragId = dragState.id;
+        const baseIndex = groupWithMeta.findIndex(
+          (g) => g.row.id === dragId,
+        );
+        if (baseIndex >= 0) {
+          const delta =
+            dragState.visualClientX - dragState.startClientX;
+          const offset = Math.round(delta / step);
+          const newIndex = clamp(baseIndex + offset, 0, size - 1);
+          dragInfo = {
+            dragId,
+            originIndex: baseIndex,
+            newIndex,
+            delta,
+          };
+        }
+      }
+
+      groupWithMeta.forEach(({ row, priority }, baseIndex) => {
+        // 자정을 넘는 상영 보정
         let start = row.startMin;
         let end = row.endMin;
         if (end <= start) {
-          end += 24 * 60; // 다음날로 이동
+          end += 24 * 60;
         }
 
         const startClamped = Math.max(start, DAY_START_MIN);
@@ -261,25 +400,45 @@ export default function TimetableClient({
         const top = (startClamped - DAY_START_MIN) * pxPerMin;
         const height = duration * pxPerMin;
 
+        // 실시간 정렬용 visualIndex 계산
+        let visualIndex = baseIndex;
+
+        if (dragInfo && dragInfo.originIndex !== dragInfo.newIndex) {
+          const { dragId, originIndex, newIndex } = dragInfo;
+
+          if (row.id === dragId) {
+            visualIndex = originIndex;
+          } else if (newIndex > originIndex) {
+            if (baseIndex > originIndex && baseIndex <= newIndex) {
+              visualIndex = baseIndex - 1;
+            }
+          } else if (newIndex < originIndex) {
+            if (baseIndex >= newIndex && baseIndex < originIndex) {
+              visualIndex = baseIndex + 1;
+            }
+          }
+        }
+
         let left: number;
         if (isSingle) {
           left = baseLeftPx;
         } else {
-          left = baseLeftPx + indexInGroup * step;
+          left = baseLeftPx + visualIndex * step;
         }
 
-        let zBase = 100 + (size - indexInGroup);
+        // z-index 계산
+        let zBase = 100 + (size - baseIndex);
         if (priority === 1) zBase += 100;
         else if (priority === 2) zBase += 50;
 
         let z = zBase;
         const override = zOverrides.get(row.id);
         if (override != null) {
-          z = 1000 + override; // 클릭 시 항상 최상단
+          z = 1000 + override;
         }
 
         placed.push({
-          ...row,
+          ...(row as TimetableRow),
           top,
           height,
           left,
@@ -290,7 +449,29 @@ export default function TimetableClient({
     }
 
     return placed;
-  }, [visibleRows, zOverrides, pxPerMin, CONF.steps, CONF.widths, priorityMap]);
+  }, [
+    visibleRows,
+    zOverrides,
+    pxPerMin,
+    CONF.steps,
+    CONF.widths,
+    priorityMap,
+    orderMap,
+    dragState,
+  ]);
+
+  // ---------------------------------------------------
+  // 삭제존의 세로 위치(드래그 중 카드와 동일한 Y/height)
+// ---------------------------------------------------
+  let deleteZoneTop = timelineHeight / 2 - 40;
+  let deleteZoneHeight = 80;
+  if (dragState) {
+    const draggingRow = placedRows.find((r) => r.id === dragState.id);
+    if (draggingRow) {
+      deleteZoneTop = draggingRow.top;
+      deleteZoneHeight = draggingRow.height;
+    }
+  }
 
   // ---------------------------------------------------
   // 날짜 표시
@@ -322,7 +503,10 @@ export default function TimetableClient({
   // ---------------------------------------------------
   // priority 저장
   // ---------------------------------------------------
-  async function savePriority(screeningId: string, newPriority: Priority) {
+  async function savePriority(
+    screeningId: string,
+    newPriority: Priority,
+  ) {
     setPriorityMap((prev) => {
       const next = new Map(prev);
       next.set(screeningId, newPriority);
@@ -337,23 +521,32 @@ export default function TimetableClient({
           screeningId,
           favorite: true,
           priority: newPriority,
+          sortOrder: getOrder(screeningId),
         }),
       });
 
       if (!resp.ok) {
-        setPriorityMap((_) => {
-          const m = new Map<string, Priority>();
+        setPriorityMap(() => {
+          const m = new Map<string, PriorityOrNull>();
           for (const r of rows) {
-            m.set(r.id, (r.priority as Priority) ?? null);
+            const base =
+              typeof r.priority === "number"
+                ? (r.priority as Priority)
+                : null;
+            m.set(r.id, base);
           }
           return m;
         });
       }
     } catch {
-      setPriorityMap((_) => {
-        const m = new Map<string, Priority>();
+      setPriorityMap(() => {
+        const m = new Map<string, PriorityOrNull>();
         for (const r of rows) {
-          m.set(r.id, (r.priority as Priority) ?? null);
+          const base =
+            typeof r.priority === "number"
+              ? (r.priority as Priority)
+              : null;
+          m.set(r.id, base);
         }
         return m;
       });
@@ -373,6 +566,11 @@ export default function TimetableClient({
       return next;
     });
     setPriorityMap((prev) => {
+      const next = new Map(prev);
+      next.delete(screeningId);
+      return next;
+    });
+    setOrderMap((prev) => {
       const next = new Map(prev);
       next.delete(screeningId);
       return next;
@@ -405,29 +603,26 @@ export default function TimetableClient({
   }
 
   // ---------------------------------------------------
-  // 하트: 짧게 누르기 → priority 순환 (1 → 2 → none → 1 ...)
-// ---------------------------------------------------
+  // 하트: 짧게 누르기 → 0 → 1 → 2 → 0 순환
+  // ---------------------------------------------------
   function handleHeartQuickTap(screeningId: string) {
     const current = getPriority(screeningId);
-    let next: Priority;
-    if (current === 1) next = 2;
-    else if (current === 2) next = null;
-    else next = 1;
+    const next = getNextPriority(current);
     savePriority(screeningId, next);
   }
 
   // ---------------------------------------------------
-  // 롱프레스 메뉴 위치 계산
+  // 롱프레스 메뉴 위치 계산 (하트 메뉴)
   // ---------------------------------------------------
   function openPriorityMenuAt(
     screeningId: string,
     clientX: number,
     clientY: number,
-  ) {
+ ) {
     if (typeof window === "undefined") return;
 
     const MENU_WIDTH = 40;
-    const MENU_HEIGHT = 132; // 대략값
+    const MENU_HEIGHT = 132;
     const MARGIN = 8;
 
     const vw = window.innerWidth || 0;
@@ -463,18 +658,21 @@ export default function TimetableClient({
       return;
     }
 
-    const newPriority: Priority =
-      action === "first" ? 1 : action === "second" ? 2 : null;
+    let newPriority: Priority;
+    if (action === "first") newPriority = 1;
+    else if (action === "second") newPriority = 2;
+    else newPriority = 0;
 
     await savePriority(screeningId, newPriority);
   }
 
   // ---------------------------------------------------
-  // 롱프레스용 pointer 핸들러
+  // 롱프레스용 pointer 핸들러 (하트 메뉴)
   // ---------------------------------------------------
   function onHeartPointerDown(screeningId: string) {
     return (e: React.PointerEvent<HTMLButtonElement>) => {
       e.preventDefault();
+      e.stopPropagation();
       const st = longPressRef.current;
       if (st.timer) {
         window.clearTimeout(st.timer);
@@ -493,7 +691,7 @@ export default function TimetableClient({
     };
   }
 
-  function clearLongPressTimer() {
+  function clearHeartLongPressTimer() {
     const st = longPressRef.current;
     if (st.timer) {
       window.clearTimeout(st.timer);
@@ -504,9 +702,10 @@ export default function TimetableClient({
   function onHeartPointerUp(screeningId: string) {
     return (e: React.PointerEvent<HTMLButtonElement>) => {
       e.preventDefault();
+      e.stopPropagation();
       const st = longPressRef.current;
       const triggered = st.triggered;
-      clearLongPressTimer();
+      clearHeartLongPressTimer();
       st.id = null;
       st.triggered = false;
 
@@ -517,8 +716,10 @@ export default function TimetableClient({
   }
 
   function onHeartPointerLeave() {
-    return () => {
-      clearLongPressTimer();
+    return (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearHeartLongPressTimer();
       const st = longPressRef.current;
       st.triggered = false;
       st.id = null;
@@ -526,8 +727,253 @@ export default function TimetableClient({
   }
 
   // ---------------------------------------------------
+  // 카드 정렬용 롱프레스 + 드래그 핸들러
+  // ---------------------------------------------------
+  function clearCardLongPressTimer() {
+    const st = cardLongPressRef.current;
+    if (st.timer) {
+      window.clearTimeout(st.timer);
+      st.timer = null;
+    }
+  }
+
+  function handleCardPointerDown(id: string) {
+    return (e: React.PointerEvent<HTMLElement>) => {
+      if (dragState) return;
+
+      const target = e.target as HTMLElement;
+      if (target && target.closest("a, button")) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {
+      }
+
+      const st = cardLongPressRef.current;
+      clearCardLongPressTimer();
+      st.id = id;
+      st.startClientX = e.clientX;
+      st.timer = window.setTimeout(() => {
+        if (!st.id) return;
+
+        const row = placedRows.find((r) => r.id === st.id);
+        if (!row) return;
+
+        const group = placedRows
+          .filter((other) => {
+            if (other.id === row.id) return true;
+            const overlap =
+              !(other.endMin <= row.startMin || other.startMin >= row.endMin);
+            return overlap;
+          })
+          .sort((a, b) => a.left - b.left);
+
+        const originIndex = group.findIndex((g) => g.id === row.id);
+        const groupIds = group.map((g) => g.id);
+
+        setDragState({
+          id: row.id,
+          groupIds,
+          originIndex: originIndex < 0 ? 0 : originIndex,
+          startClientX: st.startClientX,
+          visualClientX: st.startClientX,
+          pointerClientX: st.startClientX,
+        });
+        setDeleteZoneActive(false);
+      }, 400) as unknown as number;
+    };
+  }
+
+
+  function handleCardPointerMove(id: string) {
+    return (e: React.PointerEvent<HTMLElement>) => {
+      if (!dragState || dragState.id !== id) return;
+
+      const target = e.target as HTMLElement;
+      if (target && target.closest("a, button")) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      const clientX = e.clientX;
+
+      setDragState((prev) => {
+        if (!prev || prev.id !== id) return prev;
+
+        const groupSize = prev.groupIds.length;
+
+        if (groupSize <= 1) {
+          return {
+            ...prev,
+            visualClientX: clientX,
+            pointerClientX: clientX,
+          };
+        }
+
+        const idx = idxFromSize(groupSize);
+        const step = CONF.steps[idx];
+
+        const minOffset = -prev.originIndex;
+        const maxOffset = groupSize - 1 - prev.originIndex;
+
+        const rawDelta = clientX - prev.startClientX;
+        const minDelta = minOffset * step;
+        const maxDelta = maxOffset * step;
+
+        const clampedDelta = clamp(rawDelta, minDelta, maxDelta);
+        const visualX = prev.startClientX + clampedDelta;
+
+        return {
+          ...prev,
+          visualClientX: visualX,
+          pointerClientX: clientX,
+        };
+      });
+
+      if (typeof window !== "undefined") {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect) {
+          const zoneLeft = rect.right - DELETE_ZONE_WIDTH;
+          setDeleteZoneActive(clientX >= zoneLeft);
+        }
+      }
+    };
+  }
+
+
+  async function finalizeDrag() {
+    if (!dragState) return;
+
+    const {
+      id,
+      groupIds,
+      originIndex,
+      startClientX,
+      visualClientX,
+      pointerClientX,
+    } = dragState;
+    const groupSize = groupIds.length;
+
+    // 1) 삭제 여부 판정 (포인터 위치 기준)
+    if (typeof window !== "undefined") {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const zoneLeft = rect.right - DELETE_ZONE_WIDTH;
+        if (pointerClientX >= zoneLeft) {
+          setDragState(null);
+          setDeleteZoneActive(false);
+          await removeFavorite(id);
+          return;
+        }
+      }
+    }
+
+    // 2) 정렬 변경 없음
+    if (groupSize <= 1) {
+      setDragState(null);
+      setDeleteZoneActive(false);
+      return;
+    }
+
+    // 3) 정렬 변경 계산
+    const idx = idxFromSize(groupSize);
+    const step = CONF.steps[idx];
+    const delta = visualClientX - startClientX;
+    const offset = Math.round(delta / step);
+
+    let targetIndex = originIndex + offset;
+    targetIndex = clamp(targetIndex, 0, groupSize - 1);
+
+    const finalIds = [...groupIds];
+    finalIds.splice(originIndex, 1);
+    finalIds.splice(targetIndex, 0, id);
+
+    // 4) 로컬 정렬 순서 업데이트와 드래그 종료를 한 번에 처리
+    setOrderMap((prev) => {
+      const next = new Map(prev);
+      finalIds.forEach((sid, index) => {
+        next.set(sid, index);
+      });
+      return next;
+    });
+    setDragState(null);
+    setDeleteZoneActive(false);
+
+    // 5) 서버에 sortOrder 저장 (비동기, UI는 즉시 안정)
+    try {
+      await Promise.all(
+        finalIds.map(async (sid, index) => {
+          const priority = getPriority(sid);
+          await fetch("/api/favorite-screening", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              screeningId: sid,
+              favorite: true,
+              priority: priority ?? 0,
+              sortOrder: index,
+            }),
+          });
+        }),
+      );
+    } catch (err) {
+      console.error("save sortOrder failed", err);
+    }
+  }
+
+  function handleCardPointerUp(id: string) {
+    return async (e: React.PointerEvent<HTMLElement>) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest("a, button")) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(
+          e.pointerId,
+        );
+      } catch {
+      }
+
+      clearCardLongPressTimer();
+
+      if (dragState && dragState.id === id) {
+        await finalizeDrag();
+      } else {
+        bringToFront(id);
+      }
+    };
+  }
+
+
+  function handleCardPointerLeave(id: string) {
+    return (e: React.PointerEvent<HTMLElement>) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest("a, button")) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      clearCardLongPressTimer();
+    };
+  }
+
+
+  // ---------------------------------------------------
   // 렌더링
   // ---------------------------------------------------
+  const isDraggingAny = !!dragState;
+
   return (
     <section className="space-y-3">
       <div className="text-sm text-gray-700">{dateLabel}</div>
@@ -539,43 +985,48 @@ export default function TimetableClient({
       )}
 
       {visibleRows.length > 0 && (
-        <div className="mt-1 bg-gray-50/90 px-1.5 py-2">
-          <div className="relative" style={{ height: timelineHeight  }}>
+        <div className="mt-1 bg-white px-1.5 py-2">
+          <div
+            ref={containerRef}
+            className="relative"
+            style={{
+              height: timelineHeight,
+              userSelect: isDraggingAny ? "none" : "auto",
+            }}
+          >
             {/* 시간 그리드 */}
-                        {HOUR_MARKS.map((h) => {
-                          const minutesFromStart = h * 60 - DAY_START_MIN;
-                          const top = minutesFromStart * pxPerMin;
+            {HOUR_MARKS.map((h) => {
+              const minutesFromStart = h * 60 - DAY_START_MIN;
+              const top = minutesFromStart * pxPerMin;
 
-                          // 12:00, 18:00, 24:00 강조
-                          const 강조 = h === 12 || h === 18 || h === 24;
+              const 강조 = h === 12 || h === 18 || h === 24;
 
-                          // 24시는 24:00 그대로, 그 이후(25,26)는 01:00, 02:00으로 표기
-                          let labelHour = h;
-                          if (h > 24) {
-                            labelHour = h - 24; // 25→1, 26→2
-                          }
+              let labelHour = h;
+              if (h > 24) {
+                labelHour = h - 24; // 25→1, 26→2
+              }
 
-                          return (
-                            <div
-                              key={h}
-                              className="absolute left-0 right-0"
-                              style={{ top }}
-                            >
-                              <div className="flex items-center">
-                                <div
-                                  className={
-                                    강조
-                                      ? "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-900 font-semibold"
-                                      : "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-400"
-                                  }
-                                >
-                                  {labelHour.toString().padStart(2, "0")}:00
-                                </div>
-                                <div className="flex-1 border-t border-dashed border-gray-200" />
-                              </div>
-                            </div>
-                          );
-                        })}
+              return (
+                <div
+                  key={h}
+                  className="absolute left-0 right-0"
+                  style={{ top }}
+                >
+                  <div className="flex items-center">
+                    <div
+                      className={
+                        강조
+                          ? "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-900 font-semibold"
+                          : "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-400"
+                      }
+                    >
+                      {labelHour.toString().padStart(2, "0")}:00
+                    </div>
+                    <div className="flex-1 border-t border-dashed border-gray-200" />
+                  </div>
+                </div>
+              );
+            })}
 
             {/* 상영 카드 */}
             {placedRows.map((s) => {
@@ -584,26 +1035,16 @@ export default function TimetableClient({
               const hasGV = !!s.withGV;
               const priority = getPriority(s.id);
 
+              const isDragging = dragState?.id === s.id;
+              const dragDeltaX =
+                isDragging && dragState
+                  ? dragState.visualClientX - dragState.startClientX
+                  : 0;
+
+              const palette = getPriorityStyles(priority);
+
               let heartClass =
                 "shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border bg-white cursor-pointer text-[12px]";
-              let heartStyle: React.CSSProperties | undefined;
-
-              if (priority === 1) {
-                heartStyle = {
-                  borderColor: "var(--badge-rated-bg)",
-                  color: "var(--badge-rated-bg)",
-                };
-              } else if (priority === 2) {
-                heartStyle = {
-                  borderColor: "var(--bar-fill-rated)",
-                  color: "var(--bar-fill-rated)",
-                };
-              } else {
-                heartStyle = {
-                  borderColor: "var(--bar-fill-unrated)",
-                  color: "var(--bar-fill-unrated)",
-                };
-              }
 
               const hasBundle =
                 Array.isArray(s.bundleFilms) && s.bundleFilms.length > 1;
@@ -612,8 +1053,8 @@ export default function TimetableClient({
                 <article
                   key={s.id}
                   className="
-                    absolute border border-gray-200 rounded-3xl bg-white/85
-                    px-3 py-2 shadow-sm text-[10px] cursor-pointer
+                    absolute rounded-3xl
+                    px-3 py-2 shadow-sm text-[10px]
                     overflow-hidden
                   "
                   style={{
@@ -621,9 +1062,29 @@ export default function TimetableClient({
                     left: s.left,
                     width: s.width,
                     height: s.height,
-                    zIndex: s.z,
+                    zIndex: isDragging ? 3000 : s.z,
+                    cursor: isDraggingAny ? "grabbing" : "pointer",
+                    boxShadow: isDragging
+                      ? "0 10px 24px rgba(0,0,0,0.25)"
+                      : "0 4px 12px rgba(0,0,0,0.06)",
+                    borderWidth: 1,
+                    borderStyle: "solid",
+                    borderColor: isDragging
+                      ? "var(--badge-rated-bg)"
+                      : palette.cardBorder,
+                    backgroundColor: palette.cardBg,
+                    transform: isDragging
+                      ? `translateX(${dragDeltaX}px)`
+                      : undefined,
+                    transition: isDragging
+                      ? "none"
+                      : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
                   }}
-                  onClick={() => bringToFront(s.id)}
+                  onPointerDown={handleCardPointerDown(s.id)}
+                  onPointerMove={handleCardPointerMove(s.id)}
+                  onPointerUp={handleCardPointerUp(s.id)}
+                  onPointerCancel={handleCardPointerUp(s.id)}
+                  onPointerLeave={handleCardPointerLeave(s.id)}
                 >
                   {/* 1행: 시간 + 하트 */}
                   <div className="flex items-start justify-between gap-2">
@@ -636,8 +1097,11 @@ export default function TimetableClient({
                       onPointerUp={onHeartPointerUp(s.id)}
                       onPointerLeave={onHeartPointerLeave()}
                       className={heartClass}
-                      style={heartStyle}
-                      title="Priority / remove"
+                      style={{
+                        borderColor: palette.heartBorder,
+                        color: palette.heartColor,
+                      }}
+                      title="Color / remove"
                     >
                       <span className="text-[12px] leading-none">♥</span>
                     </button>
@@ -666,7 +1130,9 @@ export default function TimetableClient({
                               </span>
                             )}
                             <Link
-                              href={`/films/${encodeURIComponent(bf.filmId)}`}
+                              href={`/films/${encodeURIComponent(
+                                bf.filmId,
+                              )}`}
                               className="hover:underline underline-offset-2"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -705,6 +1171,31 @@ export default function TimetableClient({
                 </article>
               );
             })}
+
+            {/* 삭제 영역 (드래그 중에만, 선택 카드 높이에 맞춰 표시) */}
+            {dragState && (
+              <div
+                className="pointer-events-none absolute right-0 flex items-center justify-center text-[10px]"
+                style={{
+                  top: deleteZoneTop,
+                  height: deleteZoneHeight,
+                  width: DELETE_ZONE_WIDTH,
+                  borderRadius: 4,
+                  zIndex: 5000,
+                  backgroundColor: deleteZoneActive
+                    ? "rgba(220,38,38,0.40)"
+                    : "rgba(148,163,184,0.55)",
+                  color: deleteZoneActive ? "#B91C1C" : "#111827",
+                  boxShadow: deleteZoneActive
+                    ? "0 0 0 1px rgba(220,38,38,0.7)"
+                    : "0 0 0 1px rgba(148,163,184,0.7)",
+                }}
+              >
+                <span className="font-semibold text-[11px] leading-none">
+                  DEL
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -712,20 +1203,20 @@ export default function TimetableClient({
       {/* 우선순위 롱프레스 메뉴 */}
       {priorityMenu && (
         <div
-          className="fixed inset-0 z-[2000] bg-black/10"
+          className="fixed inset-0 z-[6000] bg-black/10"
           onClick={closePriorityMenu}
         >
           <div
             className="
-        absolute rounded-xl bg-white/95 
-        border border-gray-300 shadow-[0_8px_20px_rgba(0,0,0,0.18)]
-        w-[40px] text-[14px]
-      "
+              absolute rounded-xl bg-white/95 
+              border border-gray-300 shadow-[0_8px_20px_rgba(0,0,0,0.18)]
+              w-[40px] text-[14px]
+            "
             style={{ left: priorityMenu.x, top: priorityMenu.y }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col divide-y divide-gray-200">
-              {/* 1순위: badge-rated-bg */}
+              {/* 모드 1 */}
               <button
                 type="button"
                 className="w-full py-1 text-center hover:bg-gray-50"
@@ -737,11 +1228,11 @@ export default function TimetableClient({
                   className="font-medium"
                   style={{ color: "var(--badge-rated-bg)" }}
                 >
-                  1♡
+                  1
                 </span>
               </button>
 
-              {/* 2순위: bar-fill-rated */}
+              {/* 모드 2 */}
               <button
                 type="button"
                 className="w-full py-1 text-center hover:bg-gray-50"
@@ -753,11 +1244,11 @@ export default function TimetableClient({
                   className="font-medium"
                   style={{ color: "var(--bar-fill-rated)" }}
                 >
-                  2♡
+                  2
                 </span>
               </button>
 
-              {/* 무순위: bar-fill-unrated */}
+              {/* 기본색 */}
               <button
                 type="button"
                 className="w-full py-1 text-center hover:bg-gray-50"
@@ -765,7 +1256,7 @@ export default function TimetableClient({
                   handlePriorityAction(priorityMenu.screeningId, "normal")
                 }
               >
-                <span style={{ color: "var(--bar-fill-unrated)" }}>-♥</span>
+                <span style={{ color: "var(--bar-fill-unrated)" }}>0</span>
               </button>
 
               {/* Remove */}

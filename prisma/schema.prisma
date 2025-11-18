@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,12 +8,12 @@ datasource db {
 }
 
 model User {
-  id           String             @id @default(cuid())
-  email        String             @unique
-  passwordHash String
-  createdAt    DateTime           @default(now())
-  UserEntry    UserEntry[]
-  UserPrivacy  UserPrivacy?
+  id                String              @id @default(cuid())
+  email             String              @unique
+  passwordHash      String
+  createdAt         DateTime            @default(now())
+  UserEntry         UserEntry[]
+  UserPrivacy       UserPrivacy?
   FavoriteScreening FavoriteScreening[]
 }
 
@@ -60,13 +58,18 @@ model UserPrivacy {
 }
 
 model FavoriteScreening {
-  id          String   @id @default(cuid())
+  id          String @id @default(cuid())
   userId      String
   screeningId String
-  /// 나중에 1·2순위용으로 쓰기 위해 미리 추가
-  priority    Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  /// 1·2순위 하트 색상용
+  priority Int?
+
+  /// 동일 날짜/영화제에서 좌우 순서를 저장 (0부터 시작)
+  sortOrder Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 

@@ -8,7 +8,7 @@ export default async function Header() {
   const isLoggedIn = !!session;
 
   return (
-    <header className="w-full border-b sticky top-0 bg-white">
+    <header className="w-full border-b sticky top-0 bg-white z-[2000]">
       <div className="mx-auto max-w-[390px] px-4 py-3">
         <a href="/" className="block font-semibold text-base sm:text-lg whitespace-nowrap">
           OOFF · Our Own Film Festival

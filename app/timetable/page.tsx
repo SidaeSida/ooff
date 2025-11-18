@@ -1,5 +1,3 @@
-// app/timetable/page.tsx
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -9,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import filmsData from "@/data/films.json";
 import entriesData from "@/data/entries.json";
 import screeningsRaw from "@/data/screenings.json";
-import TimetableClient from "./TimetableClient";
+import TimetableShellClient from "./TimetableShellClient";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +73,12 @@ type ViewRow = {
 
   startMin: number;
   endMin: number;
+
+  // 하트 1·2순위 (색상/레이어용)
   priority: number | null;
+
+  // 같은 날짜/영화제에서 좌우 순서를 위한 값
+  order: number | null;
 
   // 동시상영(A+B+C+D)용 타이틀/링크 목록
   bundleFilms?: BundleFilm[];
@@ -126,13 +129,17 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   }
   const userId = session.user.id;
 
-  // 2) 내가 하트한 상영 목록 (priority 포함)
-  let favoriteRows: { screeningId: string; priority: number | null }[] = [];
+  // 2) 내가 하트한 상영 목록 (priority + sortOrder)
+  let favoriteRows: {
+    screeningId: string;
+    priority: number | null;
+    sortOrder: number | null;
+  }[] = [];
 
   try {
     favoriteRows = await prisma.favoriteScreening.findMany({
       where: { userId },
-      select: { screeningId: true, priority: true },
+      select: { screeningId: true, priority: true, sortOrder: true },
     });
   } catch (err) {
     console.error("favoriteScreening.findMany failed", err);
@@ -144,15 +151,19 @@ export default async function TimetablePage({ searchParams }: PageProps) {
       <main className="p-4 space-y-3">
         <h1 className="text-xl font-semibold">My Timetable</h1>
         <p className="text-sm text-gray-600">
-          No favorite screenings yet. Add ♥ on a screening to build your timetable.
+          No favorite screenings yet. Add ♥ on a screening to build your
+          timetable.
         </p>
       </main>
     );
   }
 
   const favoritePriority = new Map<string, number | null>();
+  const favoriteOrder = new Map<string, number | null>();
+
   for (const row of favoriteRows) {
     favoritePriority.set(row.screeningId, row.priority ?? null);
+    favoriteOrder.set(row.screeningId, row.sortOrder ?? null);
   }
   const favoriteIds = new Set(favoritePriority.keys());
 
@@ -180,10 +191,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
 
     const film = filmById[entry.filmId];
     const title =
-      film?.title_ko ||
-      film?.title ||
-      film?.title_en ||
-      entry.filmId;
+      film?.title_ko || film?.title || film?.title_en || entry.filmId;
 
     const list = bundleMap.get(key) ?? [];
     if (!list.some((x) => x.filmId === entry.filmId)) {
@@ -258,6 +266,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         startMin,
         endMin,
         priority: favoritePriority.get(s.id) ?? null,
+        order: favoriteOrder.get(s.id) ?? null,
         bundleFilms,
       };
     })
@@ -268,7 +277,8 @@ export default async function TimetablePage({ searchParams }: PageProps) {
       <main className="p-4 space-y-3">
         <h1 className="text-xl font-semibold">My Timetable</h1>
         <p className="text-sm text-gray-600">
-          No favorite screenings yet. Add ♥ on a screening to build your timetable.
+          No favorite screenings yet. Add ♥ on a screening to build your
+          timetable.
         </p>
       </main>
     );
@@ -389,9 +399,9 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* 타임라인 영역 (클라이언트 컴포넌트) */}
+      {/* 타임라인 영역 (클라이언트 컴포넌트 래퍼) */}
       <section>
-        <TimetableClient
+        <TimetableShellClient
           rows={filtered}
           editionLabel={currentEditionLabel}
           dateIso={currentDate}
