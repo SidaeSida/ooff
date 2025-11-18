@@ -972,7 +972,33 @@ export default function TimetableClient({
   // ---------------------------------------------------
   // 렌더링
   // ---------------------------------------------------
+  // ---------------------------------------------------
+  // 드래그 중에는 전역 touchmove 막아서 스크롤 완전히 차단 (iOS 대응)
+  // ---------------------------------------------------
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!dragState) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // 드래그 중에는 페이지/컨테이너 스크롤 모두 막기
+      e.preventDefault();
+    };
+
+    window.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+
+    return () => {
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [dragState]);
+
+  // ---------------------------------------------------
+  // 렌더링
+  // ---------------------------------------------------
   const isDraggingAny = !!dragState;
+
+  
 
   return (
     <section className="space-y-3">
