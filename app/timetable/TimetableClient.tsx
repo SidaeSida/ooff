@@ -1079,6 +1079,8 @@ export default function TimetableClient({
                     transition: isDragging
                       ? "none"
                       : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
                   }}
                   onPointerDown={handleCardPointerDown(s.id)}
                   onPointerMove={handleCardPointerMove(s.id)}
@@ -1086,6 +1088,7 @@ export default function TimetableClient({
                   onPointerCancel={handleCardPointerUp(s.id)}
                   onPointerLeave={handleCardPointerLeave(s.id)}
                 >
+
                   {/* 1행: 시간 + 하트 */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="text-[12px] font-semibold text-gray-900 truncate">
