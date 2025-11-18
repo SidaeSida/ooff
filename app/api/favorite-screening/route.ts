@@ -97,18 +97,31 @@ export async function PUT(req: NextRequest) {
     }
 
     // true → upsert (priority + sortOrder 함께 저장)
+        // true → upsert (priority + sortOrder 함께 저장)
+    // 요청에 priority / sortOrder가 없으면 해당 필드는 건드리지 않도록 처리
+    const updateData: any = {};
+    if (priority !== undefined) {
+      updateData.priority = priority;
+    }
+    if (sortOrder !== undefined) {
+      updateData.sortOrder = sortOrder;
+    }
+
+    const createData: any = {
+      userId,
+      screeningId,
+    };
+    if (priority !== undefined) {
+      createData.priority = priority;
+    }
+    if (sortOrder !== undefined) {
+      createData.sortOrder = sortOrder;
+    }
+
     const saved = await prisma.favoriteScreening.upsert({
       where: { userId_screeningId: { userId, screeningId } },
-      update: {
-        priority: priority ?? null,
-        sortOrder: sortOrder ?? null,
-      },
-      create: {
-        userId,
-        screeningId,
-        priority: priority ?? null,
-        sortOrder: sortOrder ?? null,
-      },
+      update: updateData,
+      create: createData,
       select: {
         id: true,
         screeningId: true,
@@ -116,6 +129,9 @@ export async function PUT(req: NextRequest) {
         sortOrder: true,
       },
     });
+
+    return NextResponse.json(saved, { status: 200 });
+
 
     return NextResponse.json(saved, { status: 200 });
   } catch (err) {
