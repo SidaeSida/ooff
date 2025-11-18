@@ -1081,7 +1081,10 @@ export default function TimetableClient({
                       ? "none"
                       : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
                     touchAction: isDraggingAny ? "none" : "auto",
+                    userSelect: isDraggingAny ? "none" : "auto",
+                    WebkitUserSelect: isDraggingAny ? "none" : "auto",
                   }}
+
                   onPointerDown={handleCardPointerDown(s.id)}
                   onPointerMove={handleCardPointerMove(s.id)}
                   onPointerUp={handleCardPointerUp(s.id)}
