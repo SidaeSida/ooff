@@ -991,7 +991,7 @@ export default function TimetableClient({
             className="relative"
             style={{
               height: timelineHeight,
-              userSelect: isDraggingAny ? "none" : "auto",
+              WebkitUserSelect: "none",
               touchAction: isDraggingAny ? "none" : "auto",
             }}
           >
