@@ -1194,6 +1194,8 @@ export default function TimetableClient({
                   boxShadow: deleteZoneActive
                     ? "0 0 0 1px rgba(220,38,38,0.7)"
                     : "0 0 0 1px rgba(148,163,184,0.7)",
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
                 }}
               >
                 <span className="font-semibold text-[11px] leading-none">
