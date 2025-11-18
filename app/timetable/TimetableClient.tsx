@@ -992,7 +992,7 @@ export default function TimetableClient({
             style={{
               height: timelineHeight,
               userSelect: isDraggingAny ? "none" : "auto",
-              touchAction: isDraggingAny ? "none" : "pan-y",
+              touchAction: isDraggingAny ? "none" : "auto",
             }}
           >
             {/* 시간 그리드 */}
