@@ -1,3 +1,4 @@
+// app/timetable/page.tsx
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -47,7 +48,6 @@ type SearchParams = {
   date?: string;
 };
 
-// Next 16: searchParams 가 Promise 로 들어옴
 type PageProps = {
   searchParams: Promise<SearchParams>;
 };
@@ -61,8 +61,8 @@ type ViewRow = {
   id: string;
   filmId: string;
   filmTitle: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
+  date: string;
+  time: string;
   editionId: string;
   section?: string | null;
   venue: string;
@@ -70,24 +70,16 @@ type ViewRow = {
   withGV?: boolean | null;
   subtitles?: string | null;
   rating?: string | null;
-
   startMin: number;
   endMin: number;
-
-  // 하트 1·2순위 (색상/레이어용)
   priority: number | null;
-
-  // 같은 날짜/영화제에서 좌우 순서를 위한 값
   order: number | null;
-
-  // 동시상영(A+B+C+D)용 타이틀/링크 목록
   bundleFilms?: BundleFilm[];
 };
 
-// TimetableClient 에서 사용할 타입 별칭
 export type TimetableRow = ViewRow;
 
-// ---------- 상수/헬퍼 ----------
+// ---------- 헬퍼 ----------
 
 const EDITION_LABEL: Record<string, string> = {
   edition_jiff_2025: "JIFF 2025",
@@ -99,7 +91,6 @@ const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 function formatDateLabel(dateIso: string) {
   const d = new Date(dateIso);
   if (Number.isNaN(d.getTime())) return dateIso;
-
   const month = d.getMonth() + 1;
   const day = d.getDate();
   const w = WEEKDAYS[d.getDay()];
@@ -119,30 +110,24 @@ function buildBundleKey(editionId: string | undefined, code: string | null) {
   return `${editionId}__${c}`;
 }
 
-// ---------- 페이지 컴포넌트 ----------
+// ---------- 페이지 ----------
 
 export default async function TimetablePage({ searchParams }: PageProps) {
-  // 1) 로그인 확인
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login?next=/timetable");
   }
   const userId = session.user.id;
 
-  // 2) 내가 하트한 상영 목록 (priority + sortOrder)
-  let favoriteRows: {
-    screeningId: string;
-    priority: number | null;
-    sortOrder: number | null;
-  }[] = [];
+  // 즐겨찾기 조회
+  let favoriteRows: { screeningId: string; priority: number | null; sortOrder: number | null }[] = [];
 
   try {
     favoriteRows = await prisma.favoriteScreening.findMany({
       where: { userId },
       select: { screeningId: true, priority: true, sortOrder: true },
     });
-  } catch (err) {
-    console.error("favoriteScreening.findMany failed", err);
+  } catch {
     favoriteRows = [];
   }
 
@@ -151,8 +136,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
       <main className="p-4 space-y-3">
         <h1 className="text-xl font-semibold">My Timetable</h1>
         <p className="text-sm text-gray-600">
-          No favorite screenings yet. Add ♥ on a screening to build your
-          timetable.
+          No favorite screenings yet. Add ♥ on a screening to build your timetable.
         </p>
       </main>
     );
@@ -165,21 +149,18 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     favoritePriority.set(row.screeningId, row.priority ?? null);
     favoriteOrder.set(row.screeningId, row.sortOrder ?? null);
   }
+
   const favoriteIds = new Set(favoritePriority.keys());
 
-  // 3) JSON → 인덱스
+  // JSON 로드
   const films = filmsData as Film[];
   const entries = entriesData as Entry[];
   const screenings = screeningsRaw as Screening[];
 
-  const filmById: Record<string, Film> = Object.fromEntries(
-    films.map((f) => [f.id, f]),
-  );
-  const entryById: Record<string, Entry> = Object.fromEntries(
-    entries.map((e) => [e.id, e]),
-  );
+  const filmById = Object.fromEntries(films.map((f) => [f.id, f]));
+  const entryById = Object.fromEntries(entries.map((e) => [e.id, e]));
 
-  // 3-1) edition+code 기준 동시상영 프로그램 → 영화 목록 인덱스
+  // bundleMap: editionId + code → 해당 상영에 포함된 영화 리스트
   const bundleMap = new Map<string, BundleFilm[]>();
 
   for (const s of screenings) {
@@ -190,8 +171,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     if (!key) continue;
 
     const film = filmById[entry.filmId];
-    const title =
-      film?.title_ko || film?.title || film?.title_en || entry.filmId;
+    const title = film?.title_ko || film?.title || film?.title_en || entry.filmId;
 
     const list = bundleMap.get(key) ?? [];
     if (!list.some((x) => x.filmId === entry.filmId)) {
@@ -200,37 +180,58 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     bundleMap.set(key, list);
   }
 
-  // 4) 상영 + 영화 + 출품 정보 → ViewRow
+  // merged rows
   const merged: ViewRow[] = screenings
     .filter((s) => favoriteIds.has(s.id))
     .map((s) => {
       const entry = entryById[s.entryId];
       const film = entry ? filmById[entry.filmId] : undefined;
 
-      const date = s.startsAt.slice(0, 10); // YYYY-MM-DD
-      const time = s.startsAt.slice(11, 16); // HH:mm
+      const date = s.startsAt.slice(0, 10);
+      const time = s.startsAt.slice(11, 16);
 
       const [hh, mm] = time.split(":").map((v) => Number(v) || 0);
       const startMin = hh * 60 + mm;
 
+      const editionId = entry?.editionId ?? "unknown";
+      const primaryFilmId = entry?.filmId ?? s.entryId;
+
+      // bundleList 먼저 선언
+      const bundleKey = buildBundleKey(editionId, s.code);
+      const bundleList = bundleKey ? bundleMap.get(bundleKey) ?? [] : [];
+
+      // runtime 계산
       let endMin: number;
+
       if (s.endsAt) {
         const t2 = s.endsAt.slice(11, 16);
         const [hh2, mm2] = t2.split(":").map((v) => Number(v) || 0);
         endMin = hh2 * 60 + mm2;
       } else {
-        const runtime = film?.runtime ?? 120;
+        // 기본값
+        let runtime = 120;
+
+        // 다중상영 영화 → 구성 영화 runtime 합산
+        if (bundleList.length > 1) {
+          const runtimes = bundleList.map((bf) => {
+            const rt = filmById[bf.filmId]?.runtime;
+            return typeof rt === "number" ? rt : null;
+          });
+
+          // 모두 runtime이 있을 때만 합산
+          if (runtimes.every((x) => x !== null)) {
+            runtime = (runtimes as number[]).reduce((a, b) => a + b, 0);
+          }
+        } else {
+          runtime = typeof film?.runtime === "number" ? film.runtime : 120;
+        }
+
         endMin = startMin + runtime;
       }
 
-      const editionId = entry?.editionId ?? "unknown";
-      const primaryFilmId = entry?.filmId ?? s.entryId;
-
+      // filmTitle / bundleFilms
       let filmTitle: string;
       let bundleFilms: BundleFilm[] | undefined;
-
-      const bundleKey = buildBundleKey(editionId, s.code);
-      const bundleList = bundleKey ? bundleMap.get(bundleKey) ?? [] : [];
 
       if (bundleList.length > 1) {
         const sorted = [...bundleList].sort((a, b) => {
@@ -247,7 +248,6 @@ export default async function TimetablePage({ searchParams }: PageProps) {
           film?.title_en ||
           entry?.filmId ||
           s.entryId;
-        bundleFilms = undefined;
       }
 
       return {
@@ -276,25 +276,17 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     return (
       <main className="p-4 space-y-3">
         <h1 className="text-xl font-semibold">My Timetable</h1>
-        <p className="text-sm text-gray-600">
-          No favorite screenings yet. Add ♥ on a screening to build your
-          timetable.
-        </p>
+        <p className="text-sm text-gray-600">No favorite screenings yet.</p>
       </main>
     );
   }
 
-  // 5) searchParams Promise 해제
   const sp = await searchParams;
 
-  // 6) 영화제(edition) 목록 — JIFF → BIFF 우선 정렬
   const editions = Array.from(new Set(merged.map((m) => m.editionId)));
   editions.sort((a, b) => {
-    const order = (id: string) => {
-      if (id.startsWith("edition_jiff_")) return 0;
-      if (id.startsWith("edition_biff_")) return 1;
-      return 99;
-    };
+    const order = (id: string) =>
+      id.startsWith("edition_jiff_") ? 0 : id.startsWith("edition_biff_") ? 1 : 99;
     const oa = order(a);
     const ob = order(b);
     if (oa !== ob) return oa - ob;
@@ -304,35 +296,24 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   const currentEdition =
     sp.edition && editions.includes(sp.edition) ? sp.edition : editions[0];
 
-  // 7) 현재 영화제 안에서 날짜 목록
   const days = Array.from(
-    new Set(
-      merged
-        .filter((m) => m.editionId === currentEdition)
-        .map((m) => m.date),
-    ),
-  ).sort((a, b) => a.localeCompare(b));
+    new Set(merged.filter((m) => m.editionId === currentEdition).map((m) => m.date))
+  ).sort();
 
-  const currentDate =
-    sp.date && days.includes(sp.date) ? sp.date : days[0];
+  const currentDate = sp.date && days.includes(sp.date) ? sp.date : days[0];
 
-  // 8) 최종 필터링 (영화제 + 날짜)
   const filtered = merged
     .filter((m) => m.editionId === currentEdition && m.date === currentDate)
     .sort((a, b) => a.time.localeCompare(b.time));
 
-  const currentEditionLabel =
-    EDITION_LABEL[currentEdition] ?? currentEdition;
+  const currentEditionLabel = EDITION_LABEL[currentEdition] ?? currentEdition;
 
   const pillBase =
     "text-[12px] px-3 py-1 rounded-full border transition-colors duration-150";
 
-  // 9) 렌더링
   return (
     <main className="p-4 space-y-4">
-      {/* 상단 필터 바 */}
       <section className="space-y-3">
-        {/* 영화제 선택 */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] text-gray-500">영화제</span>
           {editions.map((eid) => {
@@ -340,12 +321,10 @@ export default async function TimetablePage({ searchParams }: PageProps) {
             const params = new URLSearchParams();
             params.set("edition", eid);
             params.set("date", currentDate);
-            const href = `/timetable?${params.toString()}`;
-
             return (
               <Link
                 key={eid}
-                href={href}
+                href={`/timetable?${params.toString()}`}
                 className={
                   pillBase +
                   " " +
@@ -362,7 +341,6 @@ export default async function TimetablePage({ searchParams }: PageProps) {
           })}
         </div>
 
-        {/* 날짜 선택 */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] text-gray-500">날짜</span>
           {days.map((d) => {
@@ -370,7 +348,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
             const params = new URLSearchParams();
             params.set("edition", currentEdition);
             params.set("date", d);
-            const href = `/timetable?${params.toString()}`;
+
             const weekend = isWeekend(d);
             const label = formatDateLabel(d);
 
@@ -383,7 +361,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
             return (
               <Link
                 key={d}
-                href={href}
+                href={`/timetable?${params.toString()}`}
                 className={
                   pillBase +
                   " " +
@@ -399,7 +377,6 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* 타임라인 영역 (클라이언트 컴포넌트 래퍼) */}
       <section>
         <TimetableShellClient
           rows={filtered}

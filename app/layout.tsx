@@ -19,9 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <div className="mx-auto w-full max-w-[420px] px-4">
             <Header />
-            <main className="py-6">
+            <div className="py-6">
               {children}
-            </main>
+            </div>
           </div>
         </AuthProvider>
       </body>

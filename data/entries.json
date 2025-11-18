@@ -5278,5 +5278,21 @@
     "color": "Color",
     "premiere": null,
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82859&c_idx=426"
+  },
+  {
+    "id": "ent_biff_2025_festival",
+    "filmId": "film_biff_2025_festival",
+    "editionId": "edition_biff_2025",
+    "section": "영화제",
+    "program": null,
+    "isCompetition": false
+  },
+  {
+    "id": "ent_jiff_2025_festival",
+    "filmId": "film_jiff_2025_festival",
+    "editionId": "edition_jiff_2025",
+    "section": "영화제",
+    "program": null,
+    "isCompetition": false
   }
 ]

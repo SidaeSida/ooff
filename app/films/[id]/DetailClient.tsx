@@ -256,8 +256,9 @@ export default function DetailClient({
   }
 
   return (
-    <div className="space-y-8">
-      {/* 상영시간 */}
+  <div className="space-y-8">
+    {/* 상영시간: 상영 정보가 있을 때만 섹션 표시 */}
+    {groups.length > 0 && (
       <section>
         <h2 className="text-base font-semibold mb-2">상영시간</h2>
         <div className="space-y-2">
@@ -344,32 +345,28 @@ export default function DetailClient({
               </article>
             );
           })}
-          {groups.length === 0 && (
-            <div className="text-sm text-gray-500">등록된 상영 정보가 없습니다.</div>
-          )}
         </div>
       </section>
+    )}
 
-      {/* 크레딧 */}
+    {/* 크레딧: 실제 크레딧이 있을 때만 섹션 표시 */}
+    {orderedRoles.some((role) => (creditByRole.get(role) ?? []).length > 0) && (
       <section>
         <h2 className="text-base font-semibold mb-2">Credit</h2>
-        {Array.from(creditByRole.keys()).length === 0 ? (
-          <div className="text-sm text-gray-500">등록된 크레딧 정보가 없습니다.</div>
-        ) : (
-          <div className="space-y-1">
-            {orderedRoles.map((role) => {
-              const vals = creditByRole.get(role) ?? [];
-              if (vals.length === 0) return null;
-              return (
-                <div key={role} className="text-[0.85rem] leading-tight">
-                  <span className="font-semibold">{formatRoleLabel(role)}</span>
-                  <span className="font-normal text-gray-700"> : {vals.join(', ')}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div className="space-y-1">
+          {orderedRoles.map((role) => {
+            const vals = creditByRole.get(role) ?? [];
+            if (vals.length === 0) return null;
+            return (
+              <div key={role} className="text-[0.85rem] leading-tight">
+                <span className="font-semibold">{formatRoleLabel(role)}</span>
+                <span className="font-normal text-gray-700"> : {vals.join(', ')}</span>
+              </div>
+            );
+          })}
+        </div>
       </section>
-    </div>
-  );
+    )}
+  </div>
+);
 }
