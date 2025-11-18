@@ -991,7 +991,10 @@ export default function TimetableClient({
             className="relative"
             style={{
               height: timelineHeight,
+              userSelect: "none",
               WebkitUserSelect: "none",
+              WebkitTouchCallout: "none",
+             // 평소에는 스크롤 허용, 드래그 중에만 잠금
               touchAction: isDraggingAny ? "none" : "auto",
             }}
           >
@@ -1080,10 +1083,15 @@ export default function TimetableClient({
                     transition: isDragging
                       ? "none"
                       : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
-                    touchAction: isDraggingAny ? "none" : "auto",
-                    userSelect: isDraggingAny ? "none" : "auto",
-                    WebkitUserSelect: isDraggingAny ? "none" : "auto",
+
+                    // 카드 안 텍스트는 항상 선택 금지
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    WebkitTouchCallout: "none",
+                    // 이 카드가 드래그 중일 때만 스크롤 잠금
+                    touchAction: isDragging ? "none" : "auto",
                   }}
+
 
                   onPointerDown={handleCardPointerDown(s.id)}
                   onPointerMove={handleCardPointerMove(s.id)}
