@@ -58,7 +58,7 @@ const CONF_PC = {
 };
 
 const CONF_MOBILE = {
-  steps: [120, 93, 68, 54, 45], // 모바일 튜닝값 유지
+  steps: [120, 120, 80, 60, 48], // 모바일 튜닝값 유지
   widths: [] as string[],
 };
 
@@ -70,11 +70,18 @@ CONF_MOBILE.widths = makeDefaultWidths(CONF_MOBILE.steps);
 // ---------------------------------------------------
 const DELETE_ZONE_WIDTH = 32;
 
+const SINGLE_CARD_DRAG_LIMIT_LEFT = 10;   // 왼쪽으로 최대 80px
+const SINGLE_CARD_DRAG_LIMIT_RIGHT = 40;  // 오른쪽으로 최대 80px
+// ---------------------------------------------------
+// 유틸
+// ---------------------------------------------------
 // ---------------------------------------------------
 // 유틸
 // ---------------------------------------------------
 function groupByOverlap(list: TimetableRow[]): TimetableRow[][] {
   if (!list.length) return [];
+
+  // 시작 시간 기준 정렬
   const sorted = [...list].sort((a, b) => a.startMin - b.startMin);
 
   const groups: TimetableRow[][] = [];
@@ -82,23 +89,40 @@ function groupByOverlap(list: TimetableRow[]): TimetableRow[][] {
   let curEnd = -1;
 
   for (const row of sorted) {
+    const rowStart = row.startMin;
+
+    // 자정 넘는 상영 보정:
+    // endMin이 startMin보다 작거나 같으면 다음날로 넘어간 것으로 보고 +24시간
+    const rawEnd = row.endMin;
+    const rowEnd =
+      rawEnd <= rowStart ? rawEnd + 24 * 60 : rawEnd;
+
     if (!cur.length) {
+      // 첫 카드
       cur = [row];
-      curEnd = row.endMin;
+      curEnd = rowEnd;
       groups.push(cur);
       continue;
     }
-    if (row.startMin < curEnd) {
+
+    // 겹침 여부 판단 (보정된 rowEnd 사용)
+    if (rowStart < curEnd) {
+      // 기존 그룹과 시간 겹침 → 같은 그룹에 추가
       cur.push(row);
-      if (row.endMin > curEnd) curEnd = row.endMin;
+      if (rowEnd > curEnd) {
+        curEnd = rowEnd;
+      }
     } else {
+      // 시간 안 겹침 → 새 그룹 시작
       cur = [row];
-      curEnd = row.endMin;
+      curEnd = rowEnd;
       groups.push(cur);
     }
   }
+
   return groups;
 }
+
 
 function idxFromSize(size: number) {
   return size >= 5 ? 4 : size - 1;
@@ -106,6 +130,16 @@ function idxFromSize(size: number) {
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
+}
+function stepOffset(delta: number, step: number) {
+  const r = delta / step;
+
+  // 오른쪽 이동은 기존처럼 0.5 기준
+  if (r >= 0) return Math.round(r);
+
+  // 왼쪽 이동은 "한 칸 더 나갔다가 되돌아오는" 걸 막기 위해
+  // 항상 안쪽으로만 스냅되게 처리 (ceil 사용)
+  return Math.ceil(r);
 }
 
 // ---------------------------------------------------
@@ -125,7 +159,7 @@ type PlacedRow = TimetableRow & {
   z: number;
 };
 
-type Priority = 0 | 1 | 2; // 0,1,2 세 가지 색상 모드
+type Priority = 0 | 1 | 2;
 type PriorityOrNull = Priority | null;
 
 type PriorityMenuState = {
@@ -134,7 +168,6 @@ type PriorityMenuState = {
   y: number;
 } | null;
 
-// 롱프레스용 상태 (하트 메뉴)
 type LongPressState = {
   timer: number | null;
   id: string | null;
@@ -143,25 +176,23 @@ type LongPressState = {
   y: number;
 };
 
-// 카드 정렬용 롱프레스 상태
 type CardLongPressState = {
   timer: number | null;
   id: string | null;
   startClientX: number;
 };
 
-// 드래그 상태 (카드 재정렬)
 type DragState = {
   id: string;
-  groupIds: string[]; // 같은 겹침 그룹에 속한 카드 id들
+  groupIds: string[];
   originIndex: number;
   startClientX: number;
-  visualClientX: number; // 그룹 안에서 정렬용(클램프된 X)
-  pointerClientX: number; // 실제 포인터 위치(삭제존 판정용, 클램프 안 함)
+  visualClientX: number;
+  pointerClientX: number;
 };
 
 // ---------------------------------------------------
-// 우선순위(색상) 스타일 헬퍼
+// 우선순위 스타일
 // ---------------------------------------------------
 function getPriorityStyles(priority: PriorityOrNull) {
   if (priority === 1) {
@@ -188,7 +219,6 @@ function getPriorityStyles(priority: PriorityOrNull) {
   };
 }
 
-// 순환: 0 → 1 → 2 → 0
 function getNextPriority(p: PriorityOrNull): Priority {
   if (p === 0 || p === null) return 1;
   if (p === 1) return 2;
@@ -201,7 +231,7 @@ export default function TimetableClient({
   dateIso,
 }: Props) {
   // ---------------------------------------------------
-  // 3) 모바일/PC 판정
+  // 모바일 판정
   // ---------------------------------------------------
   const getIsMobile = () =>
     typeof window !== "undefined" && window.innerWidth < 420;
@@ -225,7 +255,7 @@ export default function TimetableClient({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // ---------------------------------------------------
-  // 카드 표시 여부 / 우선순위 / 정렬순서
+  // 상태
   // ---------------------------------------------------
   const [activeIds, setActiveIds] = useState<Set<string>>(
     () => new Set(rows.map((r) => r.id)),
@@ -258,14 +288,11 @@ export default function TimetableClient({
     },
   );
 
-  const [zOverrides, setZOverrides] = useState<Map<string, number>>(
-    () => new Map(),
-  );
+  const [zOverrides, setZOverrides] = useState(new Map<string, number>());
   const [zSeq, setZSeq] = useState(1);
 
-  const [priorityMenu, setPriorityMenu] = useState<PriorityMenuState>(
-    null,
-  );
+  const [priorityMenu, setPriorityMenu] = useState<PriorityMenuState>(null);
+
   const longPressRef = useRef<LongPressState>({
     timer: null,
     id: null,
@@ -279,11 +306,12 @@ export default function TimetableClient({
     id: null,
     startClientX: 0,
   });
+
   const [dragState, setDragState] = useState<DragState | null>(null);
 
   const [deleteZoneActive, setDeleteZoneActive] = useState(false);
 
-  // rows 변경 시 상태 초기화
+  // rows 변경 시 reset
   useEffect(() => {
     setActiveIds(new Set(rows.map((r) => r.id)));
     setZOverrides(new Map());
@@ -309,6 +337,9 @@ export default function TimetableClient({
     setOrderMap(m2);
   }, [rows]);
 
+  // ---------------------------------------------------
+  // 필터
+  // ---------------------------------------------------
   const visibleRows = useMemo(
     () => rows.filter((r) => activeIds.has(r.id)),
     [rows, activeIds],
@@ -327,55 +358,71 @@ export default function TimetableClient({
   };
 
   // ---------------------------------------------------
-  // 카드 배치(top, height, left, width, z-index)
+  // 카드 배치 (column 분리 핵심)
   // ---------------------------------------------------
   const placedRows: PlacedRow[] = useMemo(() => {
     const groups = groupByOverlap(visibleRows);
     const placed: PlacedRow[] = [];
 
     for (const group of groups) {
-      let groupWithMeta = group.map((row) => ({
+      let meta = group.map((row) => ({
         row,
         priority: getPriority(row.id),
         order: getOrder(row.id),
       }));
 
-      // 기본 정렬: sortOrder → 없으면 시간 순
-      groupWithMeta.sort((a, b) => {
+      // 기본 정렬: order → 시간
+            // 기본 정렬:
+      // 1) order가 있으면 order 우선
+      // 2) 둘 다 order 없으면 code → 시작 시간 순
+      meta.sort((a, b) => {
         const oa = a.order;
         const ob = b.order;
+
+        // 둘 다 order가 있는 경우: order 우선
         if (oa != null && ob != null && oa !== ob) return oa - ob;
+
+        // a만 order가 있으면 a를 앞으로
         if (oa != null && ob == null) return -1;
+
+        // b만 order가 있으면 b를 앞으로
         if (oa == null && ob != null) return 1;
+
+        // 여기까지 왔다는 것은 둘 다 order가 없거나(둘 다 null),
+        // 둘 다 있고 값이 같은 경우 → code + 시작 시간으로 fallback
+        const ca = parseInt(a.row.code ?? "0", 10);
+        const cb = parseInt(b.row.code ?? "0", 10);
+        if (ca !== cb) return ca - cb;
+
         return a.row.startMin - b.row.startMin;
       });
 
-      const size = groupWithMeta.length;
+
+      const size = meta.length;
       const idx = idxFromSize(size);
       const step = CONF.steps[idx];
       const width = CONF.widths[idx];
       const isSingle = size === 1;
 
-      // 이 그룹에 드래그 중인 카드가 있는지 체크
-      let dragInfo:
-        | {
-            dragId: string;
-            originIndex: number;
-            newIndex: number;
-            delta: number;
-          }
-        | null = null;
+      let dragInfo: {
+        dragId: string;
+        originIndex: number;
+        newIndex: number;
+        delta: number;
+      } | null = null;
 
       if (dragState && size > 1) {
         const dragId = dragState.id;
-        const baseIndex = groupWithMeta.findIndex(
-          (g) => g.row.id === dragId,
-        );
+        const baseIndex = meta.findIndex((g) => g.row.id === dragId);
         if (baseIndex >= 0) {
           const delta =
             dragState.visualClientX - dragState.startClientX;
-          const offset = Math.round(delta / step);
-          const newIndex = clamp(baseIndex + offset, 0, size - 1);
+          const offset = stepOffset(delta, step);
+          const newIndex = clamp(
+            baseIndex + offset,
+            0,
+            size - 1,
+          );
           dragInfo = {
             dragId,
             originIndex: baseIndex,
@@ -385,13 +432,11 @@ export default function TimetableClient({
         }
       }
 
-      groupWithMeta.forEach(({ row, priority }, baseIndex) => {
-        // 자정을 넘는 상영 보정
+      meta.forEach(({ row, priority }, baseIndex) => {
+        // 자정 보정
         let start = row.startMin;
         let end = row.endMin;
-        if (end <= start) {
-          end += 24 * 60;
-        }
+        if (end <= start) end += 1440;
 
         const startClamped = Math.max(start, DAY_START_MIN);
         const endClamped = Math.min(end, DAY_END_MIN);
@@ -400,7 +445,7 @@ export default function TimetableClient({
         const top = (startClamped - DAY_START_MIN) * pxPerMin;
         const height = duration * pxPerMin;
 
-        // 실시간 정렬용 visualIndex 계산
+        // visualIndex 계산
         let visualIndex = baseIndex;
 
         if (dragInfo && dragInfo.originIndex !== dragInfo.newIndex) {
@@ -419,23 +464,19 @@ export default function TimetableClient({
           }
         }
 
-        let left: number;
-        if (isSingle) {
-          left = baseLeftPx;
-        } else {
-          left = baseLeftPx + visualIndex * step;
-        }
+        // column 위치
+        const left = isSingle
+          ? baseLeftPx
+          : baseLeftPx + visualIndex * step;
 
-        // z-index 계산
+        // zIndex
         let zBase = 100 + (size - baseIndex);
         if (priority === 1) zBase += 100;
         else if (priority === 2) zBase += 50;
 
         let z = zBase;
         const override = zOverrides.get(row.id);
-        if (override != null) {
-          z = 1000 + override;
-        }
+        if (override != null) z = 1000 + override;
 
         placed.push({
           ...(row as TimetableRow),
@@ -461,20 +502,20 @@ export default function TimetableClient({
   ]);
 
   // ---------------------------------------------------
-  // 삭제존의 세로 위치(드래그 중 카드와 동일한 Y/height)
-// ---------------------------------------------------
+  // 삭제존 위치
+  // ---------------------------------------------------
   let deleteZoneTop = timelineHeight / 2 - 40;
   let deleteZoneHeight = 80;
   if (dragState) {
-    const draggingRow = placedRows.find((r) => r.id === dragState.id);
-    if (draggingRow) {
-      deleteZoneTop = draggingRow.top;
-      deleteZoneHeight = draggingRow.height;
+    const dragging = placedRows.find((r) => r.id === dragState.id);
+    if (dragging) {
+      deleteZoneTop = dragging.top;
+      deleteZoneHeight = dragging.height;
     }
   }
 
   // ---------------------------------------------------
-  // 날짜 표시
+  // 날짜 라벨
   // ---------------------------------------------------
   const dateLabel = useMemo(() => {
     const d = new Date(dateIso);
@@ -489,7 +530,7 @@ export default function TimetableClient({
   }, [editionLabel, dateIso, visibleRows.length]);
 
   // ---------------------------------------------------
-  // Bring to front
+  // 우선순위 메뉴
   // ---------------------------------------------------
   function bringToFront(id: string) {
     setZOverrides((prev) => {
@@ -500,133 +541,18 @@ export default function TimetableClient({
     setZSeq((n) => n + 1);
   }
 
-  // ---------------------------------------------------
-  // priority 저장
-  // ---------------------------------------------------
-  async function savePriority(
-    screeningId: string,
-    newPriority: Priority,
-  ) {
-    setPriorityMap((prev) => {
-      const next = new Map(prev);
-      next.set(screeningId, newPriority);
-      return next;
-    });
-
-    try {
-      const resp = await fetch("/api/favorite-screening", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          screeningId,
-          favorite: true,
-          priority: newPriority,
-          sortOrder: getOrder(screeningId),
-        }),
-      });
-
-      if (!resp.ok) {
-        setPriorityMap(() => {
-          const m = new Map<string, PriorityOrNull>();
-          for (const r of rows) {
-            const base =
-              typeof r.priority === "number"
-                ? (r.priority as Priority)
-                : null;
-            m.set(r.id, base);
-          }
-          return m;
-        });
-      }
-    } catch {
-      setPriorityMap(() => {
-        const m = new Map<string, PriorityOrNull>();
-        for (const r of rows) {
-          const base =
-            typeof r.priority === "number"
-              ? (r.priority as Priority)
-              : null;
-          m.set(r.id, base);
-        }
-        return m;
-      });
-    }
-  }
-
-  // ---------------------------------------------------
-  // favorite 제거
-  // ---------------------------------------------------
-  async function removeFavorite(screeningId: string) {
-    const wasActive = activeIds.has(screeningId);
-    if (!wasActive) return;
-
-    setActiveIds((prev) => {
-      const next = new Set(prev);
-      next.delete(screeningId);
-      return next;
-    });
-    setPriorityMap((prev) => {
-      const next = new Map(prev);
-      next.delete(screeningId);
-      return next;
-    });
-    setOrderMap((prev) => {
-      const next = new Map(prev);
-      next.delete(screeningId);
-      return next;
-    });
-
-    try {
-      const resp = await fetch("/api/favorite-screening", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          screeningId,
-          favorite: false,
-        }),
-      });
-
-      if (!resp.ok) {
-        setActiveIds((prev) => {
-          const next = new Set(prev);
-          if (wasActive) next.add(screeningId);
-          return next;
-        });
-      }
-    } catch {
-      setActiveIds((prev) => {
-        const next = new Set(prev);
-        if (wasActive) next.add(screeningId);
-        return next;
-      });
-    }
-  }
-
-  // ---------------------------------------------------
-  // 하트: 짧게 누르기 → 0 → 1 → 2 → 0 순환
-  // ---------------------------------------------------
-  function handleHeartQuickTap(screeningId: string) {
-    const current = getPriority(screeningId);
-    const next = getNextPriority(current);
-    savePriority(screeningId, next);
-  }
-
-  // ---------------------------------------------------
-  // 롱프레스 메뉴 위치 계산 (하트 메뉴)
-  // ---------------------------------------------------
   function openPriorityMenuAt(
     screeningId: string,
     clientX: number,
     clientY: number,
- ) {
+  ) {
     if (typeof window === "undefined") return;
 
     const MENU_WIDTH = 40;
     const MENU_HEIGHT = 132;
     const MARGIN = 8;
-
-    const vw = window.innerWidth || 0;
-    const vh = window.innerHeight || 0;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
     let x = clientX - MENU_WIDTH / 2;
     if (x < MARGIN) x = MARGIN;
@@ -658,26 +584,108 @@ export default function TimetableClient({
       return;
     }
 
-    let newPriority: Priority;
+    let newPriority: Priority = 0;
     if (action === "first") newPriority = 1;
-    else if (action === "second") newPriority = 2;
-    else newPriority = 0;
+    if (action === "second") newPriority = 2;
 
     await savePriority(screeningId, newPriority);
   }
 
   // ---------------------------------------------------
-  // 롱프레스용 pointer 핸들러 (하트 메뉴)
+  // priority 저장
+  // ---------------------------------------------------
+  async function savePriority(
+    screeningId: string,
+    newPriority: Priority,
+  ) {
+    setPriorityMap((prev) => {
+      const next = new Map(prev);
+      next.set(screeningId, newPriority);
+      return next;
+    });
+
+    try {
+      const resp = await fetch("/api/favorite-screening", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          screeningId,
+          favorite: true,
+          priority: newPriority,
+          sortOrder: getOrder(screeningId),
+        }),
+      });
+
+      if (!resp.ok) throw new Error();
+    } catch {
+      // rollback
+      const m = new Map<string, PriorityOrNull>();
+      for (const r of rows) {
+        const base =
+          typeof r.priority === "number"
+            ? (r.priority as Priority)
+            : null;
+        m.set(r.id, base);
+      }
+      setPriorityMap(m);
+    }
+  }
+
+  // ---------------------------------------------------
+  // favorite 제거
+  // ---------------------------------------------------
+  async function removeFavorite(screeningId: string) {
+    const wasActive = activeIds.has(screeningId);
+    if (!wasActive) return;
+
+    setActiveIds((prev) => {
+      const next = new Set(prev);
+      next.delete(screeningId);
+      return next;
+    });
+
+    setPriorityMap((prev) => {
+      const next = new Map(prev);
+      next.delete(screeningId);
+      return next;
+    });
+
+    setOrderMap((prev) => {
+      const next = new Map(prev);
+      next.delete(screeningId);
+      return next;
+    });
+
+    try {
+      const resp = await fetch("/api/favorite-screening", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          screeningId,
+          favorite: false,
+        }),
+      });
+
+      if (!resp.ok) throw new Error();
+    } catch {
+      // rollback
+      setActiveIds((prev) => {
+        const next = new Set(prev);
+        if (wasActive) next.add(screeningId);
+        return next;
+      });
+    }
+  }
+
+  // ---------------------------------------------------
+  // 하트 롱프레스
   // ---------------------------------------------------
   function onHeartPointerDown(screeningId: string) {
     return (e: React.PointerEvent<HTMLButtonElement>) => {
       e.preventDefault();
       e.stopPropagation();
       const st = longPressRef.current;
-      if (st.timer) {
-        window.clearTimeout(st.timer);
-        st.timer = null;
-      }
+      if (st.timer) clearTimeout(st.timer);
       st.id = screeningId;
       st.triggered = false;
       st.x = e.clientX;
@@ -687,14 +695,14 @@ export default function TimetableClient({
         st.triggered = true;
         st.timer = null;
         openPriorityMenuAt(st.id, st.x, st.y);
-      }, 500) as unknown as number;
+      }, 500) as any;
     };
   }
 
   function clearHeartLongPressTimer() {
     const st = longPressRef.current;
     if (st.timer) {
-      window.clearTimeout(st.timer);
+      clearTimeout(st.timer);
       st.timer = null;
     }
   }
@@ -710,7 +718,9 @@ export default function TimetableClient({
       st.triggered = false;
 
       if (!triggered) {
-        handleHeartQuickTap(screeningId);
+        const current = getPriority(screeningId);
+        const next = getNextPriority(current);
+        savePriority(screeningId, next);
       }
     };
   }
@@ -721,18 +731,18 @@ export default function TimetableClient({
       e.stopPropagation();
       clearHeartLongPressTimer();
       const st = longPressRef.current;
-      st.triggered = false;
       st.id = null;
+      st.triggered = false;
     };
   }
 
   // ---------------------------------------------------
-  // 카드 정렬용 롱프레스 + 드래그 핸들러
+  // 카드 드래그 핸들링
   // ---------------------------------------------------
   function clearCardLongPressTimer() {
     const st = cardLongPressRef.current;
     if (st.timer) {
-      window.clearTimeout(st.timer);
+      clearTimeout(st.timer);
       st.timer = null;
     }
   }
@@ -742,17 +752,14 @@ export default function TimetableClient({
       if (dragState) return;
 
       const target = e.target as HTMLElement;
-      if (target && target.closest("a, button")) {
-        return;
-      }
+      if (target.closest("a, button")) return;
 
       e.preventDefault();
       e.stopPropagation();
 
       try {
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-      } catch {
-      }
+      } catch {}
 
       const st = cardLongPressRef.current;
       clearCardLongPressTimer();
@@ -764,14 +771,26 @@ export default function TimetableClient({
         const row = placedRows.find((r) => r.id === st.id);
         if (!row) return;
 
+        // 기준 카드의 시간(자정 보정 포함)
+        const rowStart = row.startMin;
+        let rowEnd = row.endMin;
+        if (rowEnd <= rowStart) rowEnd += 24 * 60;
+
         const group = placedRows
           .filter((other) => {
             if (other.id === row.id) return true;
+
+            const otherStart = other.startMin;
+            let otherEnd = other.endMin;
+            if (otherEnd <= otherStart) otherEnd += 24 * 60;
+
             const overlap =
-              !(other.endMin <= row.startMin || other.startMin >= row.endMin);
+              !(otherEnd <= rowStart || otherStart >= rowEnd);
+
             return overlap;
           })
           .sort((a, b) => a.left - b.left);
+
 
         const originIndex = group.findIndex((g) => g.id === row.id);
         const groupIds = group.map((g) => g.id);
@@ -784,20 +803,18 @@ export default function TimetableClient({
           visualClientX: st.startClientX,
           pointerClientX: st.startClientX,
         });
+
         setDeleteZoneActive(false);
-      }, 400) as unknown as number;
+      }, 400) as any;
     };
   }
-
 
   function handleCardPointerMove(id: string) {
     return (e: React.PointerEvent<HTMLElement>) => {
       if (!dragState || dragState.id !== id) return;
 
       const target = e.target as HTMLElement;
-      if (target && target.closest("a, button")) {
-        return;
-      }
+      if (target.closest("a, button")) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -805,16 +822,27 @@ export default function TimetableClient({
 
       setDragState((prev) => {
         if (!prev || prev.id !== id) return prev;
-
         const groupSize = prev.groupIds.length;
 
         if (groupSize <= 1) {
+          const rawDelta = clientX - prev.startClientX;
+
+          // 시작 지점 기준으로 좌/우 한계를 픽셀 단위로 클램프
+          const clampedDelta = clamp(
+            rawDelta,
+            -SINGLE_CARD_DRAG_LIMIT_LEFT,
+            SINGLE_CARD_DRAG_LIMIT_RIGHT,
+          );
+
+          const visualX = prev.startClientX + clampedDelta;
+
           return {
             ...prev,
-            visualClientX: clientX,
-            pointerClientX: clientX,
+            visualClientX: visualX,   // 카드는 한계까지만 이동
+            pointerClientX: clientX,  // 포인터 실제 위치는 그대로(DEL 판정용)
           };
         }
+
 
         const idx = idxFromSize(groupSize);
         const step = CONF.steps[idx];
@@ -846,7 +874,6 @@ export default function TimetableClient({
     };
   }
 
-
   async function finalizeDrag() {
     if (!dragState) return;
 
@@ -858,9 +885,10 @@ export default function TimetableClient({
       visualClientX,
       pointerClientX,
     } = dragState;
+
     const groupSize = groupIds.length;
 
-    // 1) 삭제 여부 판정 (포인터 위치 기준)
+    // 삭제
     if (typeof window !== "undefined") {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
@@ -874,18 +902,17 @@ export default function TimetableClient({
       }
     }
 
-    // 2) 정렬 변경 없음
+    // 정렬 없음
     if (groupSize <= 1) {
       setDragState(null);
       setDeleteZoneActive(false);
       return;
     }
 
-    // 3) 정렬 변경 계산
     const idx = idxFromSize(groupSize);
     const step = CONF.steps[idx];
     const delta = visualClientX - startClientX;
-    const offset = Math.round(delta / step);
+    const offset = stepOffset(delta, step);
 
     let targetIndex = originIndex + offset;
     targetIndex = clamp(targetIndex, 0, groupSize - 1);
@@ -894,7 +921,6 @@ export default function TimetableClient({
     finalIds.splice(originIndex, 1);
     finalIds.splice(targetIndex, 0, id);
 
-    // 4) 로컬 정렬 순서 업데이트와 드래그 종료를 한 번에 처리
     setOrderMap((prev) => {
       const next = new Map(prev);
       finalIds.forEach((sid, index) => {
@@ -902,10 +928,10 @@ export default function TimetableClient({
       });
       return next;
     });
+
     setDragState(null);
     setDeleteZoneActive(false);
 
-    // 5) 서버에 sortOrder 저장 (비동기, UI는 즉시 안정)
     try {
       await Promise.all(
         finalIds.map(async (sid, index) => {
@@ -922,17 +948,13 @@ export default function TimetableClient({
           });
         }),
       );
-    } catch (err) {
-      console.error("save sortOrder failed", err);
-    }
+    } catch (e) {}
   }
 
   function handleCardPointerUp(id: string) {
     return async (e: React.PointerEvent<HTMLElement>) => {
       const target = e.target as HTMLElement;
-      if (target && target.closest("a, button")) {
-        return;
-      }
+      if (target.closest("a, button")) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -941,8 +963,7 @@ export default function TimetableClient({
         (e.currentTarget as HTMLElement).releasePointerCapture(
           e.pointerId,
         );
-      } catch {
-      }
+      } catch {}
 
       clearCardLongPressTimer();
 
@@ -954,51 +975,30 @@ export default function TimetableClient({
     };
   }
 
-
   function handleCardPointerLeave(id: string) {
     return (e: React.PointerEvent<HTMLElement>) => {
       const target = e.target as HTMLElement;
-      if (target && target.closest("a, button")) {
-        return;
-      }
-
+      if (target.closest("a, button")) return;
       e.preventDefault();
       e.stopPropagation();
       clearCardLongPressTimer();
     };
   }
 
-
   // ---------------------------------------------------
-  // 렌더링
-  // ---------------------------------------------------
-  // ---------------------------------------------------
-  // 드래그 중에는 전역 touchmove 막아서 스크롤 완전히 차단 (iOS 대응)
+  // touchmove 방지 (iOS)
   // ---------------------------------------------------
   useEffect(() => {
-    if (typeof window === "undefined") return;
     if (!dragState) return;
-
-    const handleTouchMove = (e: TouchEvent) => {
-      // 드래그 중에는 페이지/컨테이너 스크롤 모두 막기
-      e.preventDefault();
-    };
-
-    window.addEventListener("touchmove", handleTouchMove, {
-      passive: false,
-    });
-
-    return () => {
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
+    const block = (e: TouchEvent) => e.preventDefault();
+    window.addEventListener("touchmove", block, { passive: false });
+    return () => window.removeEventListener("touchmove", block);
   }, [dragState]);
 
   // ---------------------------------------------------
   // 렌더링
   // ---------------------------------------------------
   const isDraggingAny = !!dragState;
-
-  
 
   return (
     <section className="space-y-3">
@@ -1020,7 +1020,6 @@ export default function TimetableClient({
               userSelect: "none",
               WebkitUserSelect: "none",
               WebkitTouchCallout: "none",
-             // 평소에는 스크롤 허용, 드래그 중에만 잠금
               touchAction: isDraggingAny ? "none" : "auto",
             }}
           >
@@ -1028,20 +1027,13 @@ export default function TimetableClient({
             {HOUR_MARKS.map((h) => {
               const minutesFromStart = h * 60 - DAY_START_MIN;
               const top = minutesFromStart * pxPerMin;
-
               const 강조 = h === 12 || h === 18 || h === 24;
 
               let labelHour = h;
-              if (h > 24) {
-                labelHour = h - 24; // 25→1, 26→2
-              }
+              if (h > 24) labelHour = h - 24;
 
               return (
-                <div
-                  key={h}
-                  className="absolute left-0 right-0"
-                  style={{ top }}
-                >
+                <div key={h} className="absolute left-0 right-0" style={{ top }}>
                   <div className="flex items-center">
                     <div
                       className={
@@ -1073,20 +1065,14 @@ export default function TimetableClient({
 
               const palette = getPriorityStyles(priority);
 
-              let heartClass =
-                "shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border bg-white cursor-pointer text-[12px]";
-
               const hasBundle =
-                Array.isArray(s.bundleFilms) && s.bundleFilms.length > 1;
+                Array.isArray(s.bundleFilms) &&
+                s.bundleFilms.length > 1;
 
               return (
                 <article
                   key={s.id}
-                  className="
-                    absolute rounded-3xl
-                    px-3 py-2 shadow-sm text-[10px]
-                    overflow-hidden
-                  "
+                  className="absolute rounded-3xl px-3 py-2 shadow-sm text-[10px] overflow-hidden"
                   style={{
                     top: s.top,
                     left: s.left,
@@ -1109,23 +1095,18 @@ export default function TimetableClient({
                     transition: isDragging
                       ? "none"
                       : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
-
-                    // 카드 안 텍스트는 항상 선택 금지
                     userSelect: "none",
                     WebkitUserSelect: "none",
                     WebkitTouchCallout: "none",
-                    // 이 카드가 드래그 중일 때만 스크롤 잠금
                     touchAction: isDragging ? "none" : "auto",
                   }}
-
-
                   onPointerDown={handleCardPointerDown(s.id)}
                   onPointerMove={handleCardPointerMove(s.id)}
                   onPointerUp={handleCardPointerUp(s.id)}
                   onPointerCancel={handleCardPointerUp(s.id)}
                   onPointerLeave={handleCardPointerLeave(s.id)}
                 >
-                  {/* 1행: 시간 + 하트 */}
+                  {/* 시간 + 하트 */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="text-[12px] font-semibold text-gray-900 truncate">
                       {s.time}
@@ -1135,33 +1116,32 @@ export default function TimetableClient({
                       onPointerDown={onHeartPointerDown(s.id)}
                       onPointerUp={onHeartPointerUp(s.id)}
                       onPointerLeave={onHeartPointerLeave()}
-                      className={heartClass}
+                      className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border bg-white cursor-pointer text-[12px]"
                       style={{
                         borderColor: palette.heartBorder,
                         color: palette.heartColor,
                       }}
-                      title="Color / remove"
                     >
                       <span className="text-[12px] leading-none">♥</span>
                     </button>
                   </div>
 
-                  {/* 2행: 상영관 */}
+                  {/* 상영관 */}
                   <div className="mt-[1px] text-[10px] text-gray-700 truncate">
                     {s.venue}
                   </div>
 
-                  {/* 3행: 섹션 */}
+                  {/* 섹션 */}
                   {s.section && (
                     <div className="mt-[1px] text-[10px] text-gray-500 truncate">
                       {s.section}
                     </div>
                   )}
 
-                  {/* 4행: 제목 (동시상영 A+B+C+D 각기 링크) */}
+                  {/* 제목 */}
                   <div className="mt-[1px] text-[12px] font-semibold leading-snug line-clamp-2 break-words">
-                    {hasBundle && s.bundleFilms
-                      ? s.bundleFilms.map((bf, idx) => (
+                    {hasBundle
+                      ? s.bundleFilms!.map((bf, idx) => (
                           <span key={bf.filmId}>
                             {idx > 0 && (
                               <span className="mx-[1px] text-[11px] text-gray-700">
@@ -1190,7 +1170,7 @@ export default function TimetableClient({
                       )}
                   </div>
 
-                  {/* 5행: 등급/GV 및 code */}
+                  {/* rating, GV, code */}
                   {(hasRating || hasGV || s.code) && (
                     <div className="mt-[2px] flex items-center justify-between text-[9px]">
                       <div className="text-gray-600 truncate">
@@ -1211,7 +1191,7 @@ export default function TimetableClient({
               );
             })}
 
-            {/* 삭제 영역 (드래그 중에만, 선택 카드 높이에 맞춰 표시) */}
+            {/* 삭제 영역 */}
             {dragState && (
               <div
                 className="pointer-events-none absolute right-0 flex items-center justify-center text-[10px]"

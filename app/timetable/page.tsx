@@ -179,7 +179,6 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     }
     bundleMap.set(key, list);
   }
-
   // merged rows
   const merged: ViewRow[] = screenings
     .filter((s) => favoriteIds.has(s.id))
@@ -225,9 +224,9 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         } else {
           runtime = typeof film?.runtime === "number" ? film.runtime : 120;
         }
-
         endMin = startMin + runtime;
       }
+
 
       // filmTitle / bundleFilms
       let filmTitle: string;
