@@ -1,3 +1,4 @@
+// app/my/MyRatingsClient.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -5,6 +6,7 @@ import { useRouter } from "next/navigation";
 import filmsData from "@/data/films.json";
 
 type Vis = "private" | "friends" | "public";
+
 type Film = {
   id: string;
   title: string;
@@ -41,11 +43,18 @@ export default function MyRatingsClient() {
     return map;
   }, []);
 
-  const fetchWithTimeout = async (input: RequestInfo, init: RequestInit = {}, ms = 10000) => {
+  const fetchWithTimeout = async (
+    input: RequestInfo,
+    init: RequestInit = {},
+    ms = 10000,
+  ) => {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), ms);
     try {
-      const resp = await fetch(input, { ...init, signal: controller.signal });
+      const resp = await fetch(input, {
+        ...init,
+        signal: controller.signal,
+      });
       return resp;
     } finally {
       clearTimeout(id);
@@ -59,14 +68,18 @@ export default function MyRatingsClient() {
     setErr(null);
     setLoading(true);
     try {
-      const r = await fetchWithTimeout("/api/user-entry/list", {
-        cache: "no-store",
-        credentials: "same-origin",
-        headers: { "Accept": "application/json" },
-      }, 10000);
+      const r = await fetchWithTimeout(
+        "/api/user-entry/list",
+        {
+          cache: "no-store",
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+        },
+        10000,
+      );
       if (!mountedRef.current) return;
-      if (!r.ok) {
-        setErr(`Load error: ${r.status} ${r.statusText}`);
+      if (!r || !r.ok) {
+        setErr(`Load error: ${r?.status ?? "?"} ${r?.statusText ?? ""}`);
         setItems([]);
       } else {
         const j = (await r.json()) as Entry[];
@@ -85,7 +98,9 @@ export default function MyRatingsClient() {
   useEffect(() => {
     mountedRef.current = true;
     load();
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -100,8 +115,13 @@ export default function MyRatingsClient() {
         load();
       }, 120);
     };
-    const onPageShow = (e: PageTransitionEvent) => { if ((e as any).persisted) kick(true); };
-    const onVisibility = () => { if (document.visibilityState === "visible") kick(false); };
+    const onPageShow = (e: PageTransitionEvent) => {
+      // BFCache에서 돌아온 경우만
+      if ((e as any).persisted) kick(true);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") kick(false);
+    };
     window.addEventListener("pageshow", onPageShow as any);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
@@ -121,39 +141,69 @@ export default function MyRatingsClient() {
       </div>
     );
   }
-  if (err) return <p className="text-sm text-red-600">{err}</p>;
-  if (!items || items.length === 0) return <p className="text-sm text-gray-600">No ratings yet.</p>;
+
+  if (err) {
+    return <p className="text-sm text-red-600">{err}</p>;
+  }
+
+  if (!items || items.length === 0) {
+    return <p className="text-sm text-gray-600">No ratings yet.</p>;
+  }
 
   return (
     <div key={bfRev} className="space-y-3">
       {items.map((e) => {
         const f = filmMap.get(e.filmId);
-        const title = f ? `${f.title}${f.year ? ` (${f.year})` : ""}` : e.filmId;
-        const directors = f?.credits?.directors?.length ? f.credits.directors.join(", ") : undefined;
+        const title = f
+          ? `${f.title}${f.year ? ` (${f.year})` : ""}`
+          : e.filmId;
+        const directors = f?.credits?.directors?.length
+          ? f.credits.directors.join(", ")
+          : undefined;
 
         const d = new Date(e.updatedAt);
         const ymd = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
 
-        const badgeText = e.rating === null || e.rating === "" ? "-" : Number(e.rating).toFixed(1);
+        const badgeText =
+          e.rating === null || e.rating === ""
+            ? "-"
+            : Number(e.rating).toFixed(1);
 
         return (
           <article
             key={e.id}
             className="rounded-xl border px-3 py-2 transition-colors duration-300 ease-out"
-            style={{ background: "var(--bg-rated)", borderColor: "var(--bd-rated)", color: "#FFFFFF" }}
+            style={{
+              background: "var(--bg-rated)",
+              borderColor: "var(--bd-rated)",
+              color: "#FFFFFF",
+            }}
           >
             {/* 본문 클릭으로 상세 이동 */}
-            <div className="cursor-pointer" onClick={() => router.push(`/films/${e.filmId}`)}>
+            <div
+              className="cursor-pointer"
+              onClick={() => router.push(`/films/${e.filmId}`)}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-[15px] font-semibold truncate text-white">{title}</h3>
-                  {directors && <p className="text-xs truncate mt-0.5 text-white/80">{directors}</p>}
+                  <h3 className="text-[15px] font-semibold truncate text-white">
+                    {title}
+                  </h3>
+                  {directors && (
+                    <p className="text-xs truncate mt-0.5 text-white/80">
+                      {directors}
+                    </p>
+                  )}
                 </div>
 
-                {/* ★ 배지 확대: 패딩/폰트 상향, 고정 높이로 원형에 가깝게 */}
+                {/* 배지: 원형에 가까운 평점 표시 */}
                 <div
                   className="shrink-0 rounded-full min-w-10 h-10 px-3.5 flex items-center justify-center text-lg font-bold"
-                  style={{ background: "var(--badge-rated-bg)", color: "var(--badge-rated-fg)", border: "none" }}
+                  style={{
+                    background: "var(--badge-rated-bg)",
+                    color: "var(--badge-rated-fg)",
+                    border: "none",
+                  }}
                 >
                   {badgeText}
                 </div>

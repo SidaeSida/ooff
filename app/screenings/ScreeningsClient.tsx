@@ -1,7 +1,6 @@
-// app/screenings/ScreeningsClient.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -81,14 +80,6 @@ const EDITION_LABEL: Record<string, string> = {
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
-function normId(v: unknown): string {
-  try {
-    return decodeURIComponent(String(v ?? "")).trim().toLowerCase();
-  } catch {
-    return String(v ?? "").trim().toLowerCase();
-  }
-}
-
 function ymd(iso?: string | null) {
   return iso ? iso.slice(0, 10) : "";
 }
@@ -156,6 +147,7 @@ function makeLangLabel(dialogue?: string | null, subtitles?: string | null, edit
   const d = (dialogue ?? "").trim();
   const s = (subtitles ?? "").trim();
 
+  // JIFF: X는 숨기고 d/s 조합
   if (editionId?.startsWith("edition_jiff_")) {
     const dShow = d && d !== "X" ? d : "";
     const sShow = s && s !== "X" ? s : "";
@@ -163,6 +155,7 @@ function makeLangLabel(dialogue?: string | null, subtitles?: string | null, edit
     return dShow || sShow || "";
   }
 
+  // BIFF: Y -> KE, N/빈값 -> 없음, 그 외 그대로
   if (editionId?.startsWith("edition_biff_")) {
     const markRaw = (s || d || "").trim().toUpperCase();
     if (!markRaw || markRaw === "N") return "";
@@ -189,6 +182,266 @@ function setQuery(
   router.replace(qs ? `${pathname}?${qs}` : pathname);
 }
 
+// CSV 헬퍼(날짜/섹션 공용)
+function parseCSV(csv: string): string[] {
+  return csv
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function buildCSV(list: string[]): string {
+  const uniq = Array.from(new Set(list.filter(Boolean)));
+  return uniq.join(",");
+}
+
+// Time range 바 전용 헬퍼 (06:00 기준)
+const DAY_MINUTES = 24 * 60;
+const BASE_MIN = 6 * 60; // 06:00
+
+function hmFromMinutes(m: number): string {
+  const hh = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+// 06:00 = 0, 다음날 06:00 = 1440 으로 변환
+function hmToBandMinutes(hmStr: string | null): number | null {
+  const abs = parseHmToMin(hmStr);
+  if (abs == null) return null;
+  let v = abs - BASE_MIN;
+  if (v < 0) v += DAY_MINUTES;
+  return v;
+}
+
+// band(0~1440)를 실제 HH:MM 문자열로 변환
+function bandMinutesToHm(band: number): string {
+  let v = band;
+  if (v < 0) v = 0;
+  // 1440은 sentinel이라 1439로 클램프
+  if (v >= DAY_MINUTES) v = DAY_MINUTES - 1;
+  const abs = (v + BASE_MIN) % DAY_MINUTES;
+  return hmFromMinutes(abs);
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+type TimeRangeFilterProps = {
+  startParam: string;
+  endParam: string;
+  onChange: (start: string | undefined, end: string | undefined) => void;
+};
+
+function TimeRangeFilter({ startParam, endParam, onChange }: TimeRangeFilterProps) {
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const draggingRef = useRef<null | "start" | "end">(null);
+  const ignoreClickRef = useRef(false);
+
+  // URL 쿼리 → band 값으로 초기화
+  const [startBand, setStartBand] = useState<number>(() => {
+    const s = hmToBandMinutes(startParam || null);
+    const e = hmToBandMinutes(endParam || null);
+    if (s != null && e != null && e > s) return s;
+    return 0;
+  });
+  const [endBand, setEndBand] = useState<number>(() => {
+    const s = hmToBandMinutes(startParam || null);
+    const e = hmToBandMinutes(endParam || null);
+    if (s != null && e != null && e > s) return e;
+    return DAY_MINUTES;
+  });
+
+  // 쿼리 변경에 대응
+  useEffect(() => {
+    const s = hmToBandMinutes(startParam || null);
+    const e = hmToBandMinutes(endParam || null);
+    if (s != null && e != null && e > s) {
+      setStartBand(s);
+      setEndBand(e);
+    } else {
+      setStartBand(0);
+      setEndBand(DAY_MINUTES);
+    }
+  }, [startParam, endParam]);
+
+  const isFiltered = useMemo(() => {
+    const s = hmToBandMinutes(startParam || null);
+    const e = hmToBandMinutes(endParam || null);
+    return s != null && e != null && e > s;
+  }, [startParam, endParam]);
+
+  const startLabel = bandMinutesToHm(startBand);
+  const endLabel = bandMinutesToHm(endBand);
+
+  const updateFromClientX = (clientX: number, target: "start" | "end", step: number) => {
+    const rect = barRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const ratioRaw = (clientX - rect.left) / rect.width;
+    const ratio = clamp(ratioRaw, 0, 1);
+    let val = ratio * DAY_MINUTES;
+
+    // step 분 단위
+    val = Math.round(val / step) * step;
+
+    if (target === "start") {
+      const maxVal = endBand - 10;
+      if (maxVal <= 0) return;
+      const next = clamp(val, 0, maxVal);
+      setStartBand(next);
+      if (next === 0 && endBand === DAY_MINUTES) {
+        onChange(undefined, undefined);
+      } else {
+        onChange(bandMinutesToHm(next), bandMinutesToHm(endBand));
+      }
+    } else {
+      const minVal = startBand + 10;
+      if (minVal >= DAY_MINUTES) return;
+      const next = clamp(val, minVal, DAY_MINUTES);
+      setEndBand(next);
+      if (startBand === 0 && next === DAY_MINUTES) {
+        onChange(undefined, undefined);
+      } else {
+        onChange(bandMinutesToHm(startBand), bandMinutesToHm(next));
+      }
+    }
+  };
+
+  const onHandlePointerDown = (e: React.PointerEvent, target: "start" | "end") => {
+    e.preventDefault();
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    draggingRef.current = target;
+    ignoreClickRef.current = false;
+  };
+
+  const onHandlePointerMove = (e: React.PointerEvent) => {
+    if (!draggingRef.current) return;
+    e.preventDefault();
+    ignoreClickRef.current = true;
+    // 드래그: 10분 단위
+    updateFromClientX(e.clientX, draggingRef.current, 10);
+  };
+
+  const onHandlePointerUp = (e: React.PointerEvent) => {
+    if (!draggingRef.current) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    try {
+      el.releasePointerCapture(e.pointerId);
+    } catch {
+      // noop
+    }
+    draggingRef.current = null;
+  };
+
+  const onBarClick = (e: React.MouseEvent) => {
+    if (ignoreClickRef.current) {
+      ignoreClickRef.current = false;
+      return;
+    }
+    const rect = barRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const ratioRaw = (e.clientX - rect.left) / rect.width;
+    const ratio = clamp(ratioRaw, 0, 1);
+    let val = ratio * DAY_MINUTES;
+    // 클릭: 30분 단위
+    val = Math.round(val / 30) * 30;
+
+    const distToStart = Math.abs(val - startBand);
+    const distToEnd = Math.abs(val - endBand);
+    const target: "start" | "end" = distToStart <= distToEnd ? "start" : "end";
+    updateFromClientX(e.clientX, target, 30);
+  };
+
+  const reset = () => {
+    setStartBand(0);
+    setEndBand(DAY_MINUTES);
+    onChange(undefined, undefined);
+  };
+
+  const startPct = (startBand / DAY_MINUTES) * 100;
+  const endPct = (endBand / DAY_MINUTES) * 100;
+
+  const ticks = [
+    { label: "6시", value: 0 },
+    { label: "9시", value: 3 * 60 },
+    { label: "12시", value: 6 * 60 },
+    { label: "15시", value: 9 * 60 },
+    { label: "18시", value: 12 * 60 },
+    { label: "21시", value: 15 * 60 },
+    { label: "24시", value: 18 * 60 },
+    { label: "3시", value: 21 * 60 },
+    { label: "6시", value: DAY_MINUTES },
+  ];
+
+  return (
+    <div className="space-y-1">
+      <div className="text-center text-sm font-medium text-gray-800">
+        {isFiltered ? `${startLabel} ~ ${endLabel}` : "Any time"}
+      </div>
+
+      <div className="space-y-1">
+        {/* 바 영역 */}
+        <div
+          ref={barRef}
+          className="relative h-7 cursor-pointer select-none"
+          onClick={onBarClick}
+        >
+          {/* 배경 바 */}
+          <div className="absolute inset-y-[11px] left-0 right-0 rounded-full bg-gray-200" />
+
+          {/* 선택 구간 */}
+          <div
+            className="absolute inset-y-[11px] rounded-full bg-gray-900/70"
+            style={{ left: `${startPct}%`, right: `${100 - endPct}%` }}
+          />
+
+          {/* 핸들들 */}
+          <button
+            type="button"
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-gray-900 bg-white cursor-pointer"
+            style={{ left: `${startPct}%` }}
+            onPointerDown={(e) => onHandlePointerDown(e, "start")}
+            onPointerMove={onHandlePointerMove}
+            onPointerUp={onHandlePointerUp}
+          />
+          <button
+            type="button"
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-gray-900 bg-white cursor-pointer"
+            style={{ left: `${endPct}%` }}
+            onPointerDown={(e) => onHandlePointerDown(e, "end")}
+            onPointerMove={onHandlePointerMove}
+            onPointerUp={onHandlePointerUp}
+          />
+        </div>
+
+        {/* 눈금 라벨: 바 아래 한 줄 */}
+        <div className="flex justify-between text-[11px] text-gray-600 px-1">
+          {ticks.map((t) => (
+            <span key={`${t.label}-${t.value}`} className="whitespace-nowrap">
+              {t.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {isFiltered && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={reset}
+            className="text-xs underline text-gray-600 cursor-pointer"
+          >
+            Reset
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type Props = {
   initialFavoriteIds: string[];
 };
@@ -205,9 +458,11 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
   const startParam = search.get("start") ?? "";
   const endParam = search.get("end") ?? "";
 
-  const [startLocal, setStartLocal] = useState(startParam);
-  const [endLocal, setEndLocal] = useState(endParam);
-  const [qLocal, setQLocal] = useState(qParam);
+    const [qLocal, setQLocal] = useState(qParam);
+    // Time Range 토글 열림 상태: 최초에는 start/end 유무로 결정, 이후에는 사용자가 연·닫은 상태 유지
+    const [timeRangeOpen, setTimeRangeOpen] = useState<boolean>(
+      () => Boolean(startParam || endParam)
+    );
 
   const favoriteSetInitial = useMemo(
     () => new Set(initialFavoriteIds),
@@ -228,6 +483,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
       entries.map((e) => [e.id, e]),
     );
 
+    // code 단위로 묶어서 패키지 상영의 영화 목록 구성
     const bundleMap = new Map<string, BundleFilm[]>();
 
     for (const s of screenings) {
@@ -248,6 +504,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     }
 
     const rows: ScreeningRow[] = [];
+    const seen = new Set<string>(); // edition + code + date + time 기준 중복 제거
 
     for (const s of screenings) {
       const entry = entryById[s.entryId];
@@ -258,6 +515,10 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
 
       const date = ymd(s.startsAt);
       const time = hm(s.startsAt);
+
+      const dedupeKey = `${editionId}__${s.code ?? s.id}__${date}__${time}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
 
       const [hh, mm] = time.split(":").map((v) => Number(v) || 0);
       let startMin = hh * 60 + mm;
@@ -368,10 +629,9 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     return arr;
   }, [allRows, currentEdition]);
 
-  const currentDate =
-    dateParam && datesForEdition.includes(dateParam)
-      ? dateParam
-      : datesForEdition[0] ?? "";
+  // Date/Section 다중 선택 리스트
+  const dateList = useMemo(() => parseCSV(dateParam), [dateParam]);
+  const sectionList = useMemo(() => parseCSV(sectionParam), [sectionParam]);
 
   const sectionsForEdition = useMemo(() => {
     const set = new Set<string>();
@@ -394,11 +654,17 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     if (currentEdition) {
       rows = rows.filter((r) => r.editionId === currentEdition);
     }
-    if (currentDate) {
-      rows = rows.filter((r) => r.date === currentDate);
+
+    // Date OR 필터
+    if (dateList.length > 0) {
+      const ds = new Set(dateList);
+      rows = rows.filter((r) => r.date && ds.has(r.date));
     }
-    if (sectionParam) {
-      rows = rows.filter((r) => r.section === sectionParam);
+
+    // Section OR 필터
+    if (sectionList.length > 0) {
+      const ss = new Set(sectionList);
+      rows = rows.filter((r) => r.section && ss.has(r.section));
     }
 
     if (qParam) {
@@ -427,7 +693,18 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     }
 
     rows = [...rows].sort((a, b) => {
+      // 1) Date
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+
+      // 2) Time
       if (a.time !== b.time) return a.time.localeCompare(b.time);
+
+      // 3) Section
+      const secA = a.section ?? "";
+      const secB = b.section ?? "";
+      if (secA !== secB) return secA.localeCompare(secB, "ko");
+
+      // 이하 타이브레이커
       if (a.venue !== b.venue) return a.venue.localeCompare(b.venue, "ko");
       return a.filmTitle.localeCompare(b.filmTitle, "ko");
     });
@@ -436,8 +713,8 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
   }, [
     allRows,
     currentEdition,
-    currentDate,
-    sectionParam,
+    dateList,
+    sectionList,
     qParam,
     timeStartMin,
     timeEndMin,
@@ -446,12 +723,12 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
   const editionLabel =
     EDITION_LABEL[currentEdition] ?? currentEdition ?? "";
 
-  const weekdayText =
-    currentDate && weekdayKFromISO(`${currentDate}T00:00:00Z`);
   const dateLabel =
-    currentDate && weekdayText
-      ? mdK(`${currentDate}T00:00:00`)
-      : currentDate;
+    dateList.length === 0
+      ? "All dates"
+      : dateList.length === 1
+      ? mdK(`${dateList[0]}T00:00:00`)
+      : `${dateList.length}일 선택`;
 
   const totalCount = filtered.length;
 
@@ -534,6 +811,9 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                       date: undefined,
                       section: undefined,
                       page: undefined,
+                      start: undefined,
+                      end: undefined,
+                      q: undefined,
                     })
                   }
                 />
@@ -543,90 +823,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
           })}
         </div>
 
-        {/* Date (필수) */}
-        {datesForEdition.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-gray-600 mr-2">Date</span>
-            {datesForEdition.map((d) => {
-              const active = d === currentDate;
-              const weekend = weekdayKFromISO(`${d}T00:00:00Z`);
-              const isWeekend = weekend === "토" || weekend === "일";
-              const style = !active && isWeekend ? { color: WEEKEND_TEXT_COLOR } : undefined;
-
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() =>
-                    setQuery(router, pathname, search, {
-                      date: d,
-                    })
-                  }
-                  className={
-                    "px-2 py-1 rounded border text-[11px] cursor-pointer border-black " +
-                    (active ? "bg-black text-white" : "bg-white")
-                  }
-                  style={style}
-                  title={mdK(`${d}T00:00:00`)}
-                >
-                  {mdK(`${d}T00:00:00`)}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Section */}
-        {sectionsForEdition.length > 0 && (
-          <details>
-            <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">
-              Section
-            </summary>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setQuery(router, pathname, search, {
-                    section: undefined,
-                  })
-                }
-                className={
-                  "px-2 py-1 rounded border text-[11px] cursor-pointer " +
-                  (!sectionParam
-                    ? "bg-black text-white border-black"
-                    : "bg-white border-black")
-                }
-              >
-                All
-              </button>
-              {sectionsForEdition.map((sec) => {
-                const active = sec === sectionParam;
-                return (
-                  <button
-                    key={sec}
-                    type="button"
-                    onClick={() =>
-                      setQuery(router, pathname, search, {
-                        section: active ? undefined : sec,
-                      })
-                    }
-                    className={
-                      "px-2 py-1 rounded border text-[11px] cursor-pointer " +
-                      (active
-                        ? "bg-black text-white border-black"
-                        : "bg-white border-black")
-                    }
-                    title={sec}
-                  >
-                    {sec}
-                  </button>
-                );
-              })}
-            </div>
-          </details>
-        )}
-
-        {/* Search */}
+        {/* Search (Festival 바로 아래로 이동) */}
         <div className="flex items-center gap-2">
           <input
             type="search"
@@ -684,60 +881,153 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
           )}
         </div>
 
-        {/* Time range */}
-        <div className="space-y-1">
-          <div className="text-sm text-gray-700">Time range (optional)</div>
-          <div className="flex items-center gap-2">
-            <input
-              type="time"
-              value={startLocal}
-              onChange={(e) => setStartLocal(e.target.value)}
-              onBlur={() =>
+        {/* Date (다중 선택 + ALL 기본) */}
+        {datesForEdition.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-gray-600 mr-2">Date</span>
+
+            {/* ALL 버튼 */}
+            <button
+              type="button"
+              onClick={() =>
                 setQuery(router, pathname, search, {
-                  start: startLocal || undefined,
+                  date: undefined,
                 })
               }
-              className="border rounded px-2 py-1 text-sm"
-            />
-            <span className="text-xs text-gray-500">~</span>
-            <input
-              type="time"
-              value={endLocal}
-              onChange={(e) => setEndLocal(e.target.value)}
-              onBlur={() =>
-                setQuery(router, pathname, search, {
-                  end: endLocal || undefined,
-                })
+              className={
+                "px-2 py-1 rounded border text-[11px] cursor-pointer border-black " +
+                (dateList.length === 0 ? "bg-black text-white" : "bg-white")
               }
-              className="border rounded px-2 py-1 text-sm"
-            />
-            {(startParam || endParam) && (
+              title="All dates"
+            >
+              ALL
+            </button>
+
+
+            {datesForEdition.map((d) => {
+              const active = dateList.includes(d);
+              const weekend = weekdayKFromISO(`${d}T00:00:00Z`);
+              const isWeekend = weekend === "토" || weekend === "일";
+              const style =
+                !active && isWeekend ? { color: WEEKEND_TEXT_COLOR } : undefined;
+
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => {
+                    let next: string[];
+                    if (active) {
+                      next = dateList.filter((v) => v !== d);
+                    } else {
+                      next = [...dateList, d];
+                    }
+                    const csv = buildCSV(next);
+                    setQuery(router, pathname, search, {
+                      date: csv || undefined,
+                    });
+                  }}
+
+                  className={
+                    "px-2 py-1 rounded border text-[11px] cursor-pointer border-black " +
+                    (active ? "bg-black text-white" : "bg-white")
+                  }
+                  style={style}
+                  title={mdK(`${d}T00:00:00`)}
+                >
+                  {mdK(`${d}T00:00:00`)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Section (다중 선택) */}
+        {sectionsForEdition.length > 0 && (
+          <details>
+            <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">
+              Section
+            </summary>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="text-xs underline text-gray-600 whitespace-nowrap cursor-pointer"
-                onClick={() => {
-                  setStartLocal("");
-                  setEndLocal("");
+                onClick={() =>
                   setQuery(router, pathname, search, {
-                    start: undefined,
-                    end: undefined,
-                  });
-                }}
+                    section: undefined,
+                  })
+                }
+                className={
+                  "px-2 py-1 rounded border text-[11px] cursor-pointer " +
+                  (sectionList.length === 0
+                    ? "bg-black text-white border-black"
+                    : "bg-white border-black")
+                }
               >
-                Reset
+                All
               </button>
-            )}
+              {sectionsForEdition.map((sec) => {
+                const active = sectionList.includes(sec);
+                return (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => {
+                      let next: string[];
+                      if (active) {
+                        next = sectionList.filter((v) => v !== sec);
+                      } else {
+                        next = [...sectionList, sec];
+                      }
+                      const csv = buildCSV(next);
+                      setQuery(router, pathname, search, {
+                        section: csv || undefined,
+                      });
+                    }}
+                    className={
+                      "px-2 py-1 rounded border text-[11px] cursor-pointer " +
+                      (active
+                        ? "bg-black text-white border-black"
+                        : "bg-white border-black")
+                    }
+                    title={sec}
+                  >
+                    {sec}
+                  </button>
+                );
+              })}
+            </div>
+          </details>
+        )}
+
+        {/* Time range: Section처럼 토글 */}
+        <details
+          open={timeRangeOpen}
+          onToggle={(e) => {
+            const el = e.currentTarget as HTMLDetailsElement;
+            setTimeRangeOpen(el.open);
+          }}
+        >
+          <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">
+            Time Range
+          </summary>
+          <div className="mt-2">
+            <TimeRangeFilter
+              startParam={startParam}
+              endParam={endParam}
+              onChange={(start, end) =>
+                setQuery(router, pathname, search, {
+                  start: start || undefined,
+                  end: end || undefined,
+                })
+              }
+            />
           </div>
-          <div className="text-[11px] text-gray-500">
-            시작·끝 시간이 모두 설정된 경우에만 적용됩니다.
-          </div>
-        </div>
+        </details>
       </div>
 
       {/* 요약 */}
       <div className="text-sm text-gray-700">
-        {editionLabel &&
-          `${editionLabel} · `}{dateLabel} · {totalCount}개 상영
+        {editionLabel && `${editionLabel} · `}{dateLabel} · {totalCount}개 상영
       </div>
 
       {/* 리스트 */}
@@ -760,20 +1050,17 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  {/* 시간 / 장소 */}
                   <div className="text-[12px] text-gray-800">
                     {mdK(`${row.date}T00:00:00`)} · {row.time} ·{" "}
                     {row.venue}
                   </div>
 
-                  {/* 섹션 */}
                   {row.section && (
                     <div className="mt-[1px] text-[11px] text-gray-600 truncate">
                       {row.section}
                     </div>
                   )}
 
-                  {/* 제목 (다중 상영 포함) */}
                   <div className="mt-1 text-[13px] font-semibold leading-snug break-words">
                     {hasBundle
                       ? row.bundleFilms!.map((bf, idx) => (
@@ -803,7 +1090,6 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                       )}
                   </div>
 
-                  {/* 등급/언어/GV 배지 */}
                   {badges.length > 0 && (
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-gray-700">
                       {badges.map((b) => (
@@ -817,7 +1103,6 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                     </div>
                   )}
 
-                  {/* code */}
                   {row.code && (
                     <div className="mt-[2px] text-[11px] text-gray-500">
                       code: {row.code}
@@ -825,7 +1110,6 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                   )}
                 </div>
 
-                {/* 하트 */}
                 <button
                   type="button"
                   onClick={() => toggleFavorite(row.id)}

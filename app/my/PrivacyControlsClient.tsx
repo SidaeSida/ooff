@@ -1,3 +1,4 @@
+// app/my/PrivacyControlsClient.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -7,7 +8,8 @@ type Vis = "private" | "friends" | "public";
 const pillBase =
   "inline-flex items-center justify-center h-7 px-3 rounded-xl border text-[11px] sm:text-xs";
 const pillOn = "bg-gray-900 text-white border-gray-900";
-const pillOff = "bg-white text-gray-800 border-gray-300 hover:bg-gray-50";
+const pillOff =
+  "bg-white text-gray-800 border-gray-300 hover:bg-gray-50";
 
 export default function PrivacyControlsClient({
   initial,
@@ -24,7 +26,7 @@ export default function PrivacyControlsClient({
 
   async function save(
     patch: Partial<{ ratingVisibility: Vis; reviewVisibility: Vis }>,
-    rollback: () => void
+    rollback: () => void,
   ) {
     setPending(true);
     if (slowTimer.current) window.clearTimeout(slowTimer.current);
@@ -46,7 +48,7 @@ export default function PrivacyControlsClient({
         alert(
           `Save failed (${r.status})${
             msg ? `\n\n${msg.slice(0, 200)}` : ""
-          }`
+          }`,
         );
         return;
       }

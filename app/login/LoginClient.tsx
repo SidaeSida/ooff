@@ -1,5 +1,5 @@
 // app/login/LoginClient.tsx
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
@@ -71,7 +71,10 @@ export default function LoginClient() {
       setFailCount(null);
       return;
     }
-    const t = setInterval(() => setLockRemain((s) => (s == null ? null : s - 1)), 1000);
+    const t = setInterval(
+      () => setLockRemain((s) => (s == null ? null : s - 1)),
+      1000,
+    );
     return () => clearInterval(t);
   }, [lockRemain]);
 
@@ -88,7 +91,9 @@ export default function LoginClient() {
   // 잠금 상태 조회
   const checkLock = async (email: string) => {
     try {
-      const resp = await fetch(`/api/lock?email=${encodeURIComponent(email)}`, { cache: "no-store" });
+      const resp = await fetch(`/api/lock?email=${encodeURIComponent(email)}`, {
+        cache: "no-store",
+      });
       if (!resp.ok) return false;
       const data = await resp.json();
       if (data.locked) {
@@ -130,9 +135,15 @@ export default function LoginClient() {
 
       setLockRemain(null);
       setFailCount(null);
-      setInState((s) => ({ ...s, msg: "Email or password is incorrect." }));
+      setInState((s) => ({
+        ...s,
+        msg: "Email or password is incorrect.",
+      }));
     } catch {
-      setInState((s) => ({ ...s, msg: "Sign in failed. Please try again." }));
+      setInState((s) => ({
+        ...s,
+        msg: "Sign in failed. Please try again.",
+      }));
     } finally {
       setInState((s) => ({ ...s, loading: false }));
     }
@@ -155,16 +166,36 @@ export default function LoginClient() {
       });
 
       if (resp.status === 201) {
-        setUpState((s) => ({ ...s, loading: false, msg: "SIGNUP_SUCCESS" }));
+        setUpState((s) => ({
+          ...s,
+          loading: false,
+          msg: "SIGNUP_SUCCESS",
+        }));
       } else if (resp.status === 409) {
-        setUpState((s) => ({ ...s, loading: false, msg: "This email already exists." }));
+        setUpState((s) => ({
+          ...s,
+          loading: false,
+          msg: "This email already exists.",
+        }));
       } else if (resp.status === 400) {
-        setUpState((s) => ({ ...s, loading: false, msg: "Invalid input." }));
+        setUpState((s) => ({
+          ...s,
+          loading: false,
+          msg: "Invalid input.",
+        }));
       } else {
-        setUpState((s) => ({ ...s, loading: false, msg: "Sign up failed. Please try again." }));
+        setUpState((s) => ({
+          ...s,
+          loading: false,
+          msg: "Sign up failed. Please try again.",
+        }));
       }
     } catch {
-      setUpState((s) => ({ ...s, loading: false, msg: "Network error. Please retry." }));
+      setUpState((s) => ({
+        ...s,
+        loading: false,
+        msg: "Network error. Please retry.",
+      }));
     }
   };
 
@@ -175,12 +206,16 @@ export default function LoginClient() {
         <h2 className="text-base font-medium mb-3">Login</h2>
         <form onSubmit={onSubmitSignIn} className="space-y-3 max-w-sm">
           <div className="grid gap-1">
-            <label htmlFor="inEmail" className="text-sm text-gray-700">Email</label>
+            <label htmlFor="inEmail" className="text-sm text-gray-700">
+              Email
+            </label>
             <input
               id="inEmail"
               type="email"
               value={inState.email}
-              onChange={(e) => setInState((s) => ({ ...s, email: e.target.value }))}
+              onChange={(e) =>
+                setInState((s) => ({ ...s, email: e.target.value }))
+              }
               required
               className="border rounded-lg px-3 py-2 text-sm"
               placeholder="you@example.com"
@@ -188,15 +223,23 @@ export default function LoginClient() {
             />
           </div>
           <div className="grid gap-1">
-            <label htmlFor="inPw" className="text-sm text-gray-700">Password</label>
+            <label htmlFor="inPw" className="text-sm text-gray-700">
+              Password
+            </label>
             <div className="relative">
               <input
                 id="inPw"
                 type={showInPw ? "text" : "password"}
                 value={inState.password}
-                onChange={(e) => setInState((s) => ({ ...s, password: e.target.value }))}
-                onKeyDown={(e) => setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))}
-                onKeyUp={(e) => setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))}
+                onChange={(e) =>
+                  setInState((s) => ({ ...s, password: e.target.value }))
+                }
+                onKeyDown={(e) =>
+                  setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))
+                }
+                onKeyUp={(e) =>
+                  setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))
+                }
                 required
                 className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
                 placeholder="Password"
@@ -211,7 +254,9 @@ export default function LoginClient() {
                 {showInPw ? "Hide" : "Show"}
               </button>
             </div>
-            {capsIn && <p className="text-xs text-amber-700">Caps Lock is on.</p>}
+            {capsIn && (
+              <p className="text-xs text-amber-700">Caps Lock is on.</p>
+            )}
           </div>
 
           {/* 오류/잠금 메시지 */}
@@ -230,7 +275,9 @@ export default function LoginClient() {
             type="submit"
             disabled={!canSignIn}
             className={`px-3 py-2 text-sm rounded-lg border ${
-              canSignIn ? "hover:bg-gray-50 cursor-pointer" : "opacity-50 cursor-not-allowed"
+              canSignIn
+                ? "hover:bg-gray-50 cursor-pointer"
+                : "opacity-50 cursor-not-allowed"
             }`}
           >
             Sign in
@@ -261,12 +308,16 @@ export default function LoginClient() {
         <h2 className="sr-only">Sign up</h2>
         <form onSubmit={onSubmitSignUp} className="space-y-3 max-w-sm">
           <div className="grid gap-1">
-            <label htmlFor="upEmail" className="text-sm text-gray-700">Email</label>
+            <label htmlFor="upEmail" className="text-sm text-gray-700">
+              Email
+            </label>
             <input
               id="upEmail"
               type="email"
               value={upState.email}
-              onChange={(e) => setUpState((s) => ({ ...s, email: e.target.value }))}
+              onChange={(e) =>
+                setUpState((s) => ({ ...s, email: e.target.value }))
+              }
               required
               className="border rounded-lg px-3 py-2 text-sm"
               placeholder="you@example.com"
@@ -274,15 +325,23 @@ export default function LoginClient() {
             />
           </div>
           <div className="grid gap-1">
-            <label htmlFor="upPw" className="text-sm text-gray-700">Password (min 8)</label>
+            <label htmlFor="upPw" className="text-sm text-gray-700">
+              Password (min 8)
+            </label>
             <div className="relative">
               <input
                 id="upPw"
                 type={showUpPw ? "text" : "password"}
                 value={upState.password}
-                onChange={(e) => setUpState((s) => ({ ...s, password: e.target.value }))}
-                onKeyDown={(e) => setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))}
-                onKeyUp={(e) => setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))}
+                onChange={(e) =>
+                  setUpState((s) => ({ ...s, password: e.target.value }))
+                }
+                onKeyDown={(e) =>
+                  setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))
+                }
+                onKeyUp={(e) =>
+                  setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))
+                }
                 required
                 className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
                 placeholder="Password"
@@ -297,16 +356,22 @@ export default function LoginClient() {
                 {showUpPw ? "Hide" : "Show"}
               </button>
             </div>
-            {capsUp && <p className="text-xs text-amber-700">Caps Lock is on.</p>}
+            {capsUp && (
+              <p className="text-xs text-amber-700">Caps Lock is on.</p>
+            )}
           </div>
           <div className="grid gap-1">
-            <label htmlFor="upPw2" className="text-sm text-gray-700">Confirm password</label>
+            <label htmlFor="upPw2" className="text-sm text-gray-700">
+              Confirm password
+            </label>
             <div className="relative">
               <input
                 id="upPw2"
                 type={showUpPw2 ? "text" : "password"}
                 value={upState.confirm}
-                onChange={(e) => setUpState((s) => ({ ...s, confirm: e.target.value }))}
+                onChange={(e) =>
+                  setUpState((s) => ({ ...s, confirm: e.target.value }))
+                }
                 required
                 className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
                 placeholder="Confirm password"
@@ -325,7 +390,9 @@ export default function LoginClient() {
 
           {/* 검증 메시지 */}
           {upState.password && upState.password.length < 8 && (
-            <p className="text-xs text-red-600">Password must be at least 8 characters.</p>
+            <p className="text-xs text-red-600">
+              Password must be at least 8 characters.
+            </p>
           )}
           {upState.confirm && upState.password !== upState.confirm && (
             <p className="text-xs text-red-600">Passwords do not match.</p>
@@ -334,14 +401,18 @@ export default function LoginClient() {
             <p className="text-sm text-red-600">{upState.msg}</p>
           )}
           {upState.msg === "SIGNUP_SUCCESS" && (
-            <p className="text-sm text-green-700">Sign up successful. Please sign in above.</p>
+            <p className="text-sm text-green-700">
+              Sign up successful. Please sign in above.
+            </p>
           )}
 
           <button
             type="submit"
             disabled={!canSignUp}
             className={`px-3 py-2 text-sm rounded-lg border ${
-              canSignUp ? "hover:bg-gray-50 cursor-pointer" : "opacity-50 cursor-not-allowed"
+              canSignUp
+                ? "hover:bg-gray-50 cursor-pointer"
+                : "opacity-50 cursor-not-allowed"
             }`}
           >
             Create account

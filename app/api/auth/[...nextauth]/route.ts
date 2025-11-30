@@ -1,4 +1,4 @@
-// app/api/auth/[...nextauth]/route.ts (v5)
+// app/api/auth/[...nextauth]/route.ts
 import { handlers } from "@/auth";
 
 export const runtime = "nodejs";

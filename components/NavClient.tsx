@@ -22,7 +22,7 @@ export default function NavClient({ items }: { items: Item[] }) {
           <Link
             key={it.href}
             href={it.href}
-            // 활성: 밑줄(보더)만, 텍스트 밑줄은 인라인 스타일로 확실히 차단
+            // 활성: 밑줄(보더)만, 텍스트 밑줄은 인라인 스타일로 차단
             className={
               active
                 ? "border-b-2 border-[--accent] pb-[1px] no-underline hover:no-underline"

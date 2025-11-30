@@ -1,21 +1,24 @@
 // app/my/page.tsx
-import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
-import PrivacyControlsClient from './PrivacyControlsClient';
-import MyRatingsClient from './MyRatingsClient';
-import SignOutButton from './SignOutButton';
-import PageShowRefresh from '@/components/PageShowRefresh';
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import PrivacyControlsClient from "./PrivacyControlsClient";
+import MyRatingsClient from "./MyRatingsClient";
+import SignOutButton from "./SignOutButton";
+import PageShowRefresh from "@/components/PageShowRefresh";
 
 export default async function MyPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect('/login?next=/my');
+  if (!session?.user?.id) redirect("/login?next=/my");
 
   const userId = session.user.id as string;
-  const email = session.user.email ?? 'Unknown';
+  const email = session.user.email ?? "Unknown";
 
   let p:
-    | { ratingVisibility: 'private' | 'friends' | 'public'; reviewVisibility: 'private' | 'friends' | 'public' }
+    | {
+        ratingVisibility: "private" | "friends" | "public";
+        reviewVisibility: "private" | "friends" | "public";
+      }
     | null = null;
 
   try {
@@ -28,13 +31,20 @@ export default async function MyPage() {
   }
 
   const initialPrivacy = {
-    ratingVisibility: (p?.ratingVisibility ?? 'private') as 'private' | 'friends' | 'public',
-    reviewVisibility: (p?.reviewVisibility ?? 'private') as 'private' | 'friends' | 'public',
+    ratingVisibility: (p?.ratingVisibility ?? "private") as
+      | "private"
+      | "friends"
+      | "public",
+    reviewVisibility: (p?.reviewVisibility ?? "private") as
+      | "private"
+      | "friends"
+      | "public",
   };
 
   return (
     <main className="max-w-4xl mx-auto px-4 pt-1 pb-10">
-      <PageShowRefresh /> {/* ★ BFCache 복원 시 router.refresh() */}
+      {/* BFCache 복원 시 router.refresh() */}
+      <PageShowRefresh />
       <p className="text-sm text-gray-600 mb-2">
         Signed in as <span className="font-medium">{email}</span>
       </p>

@@ -132,9 +132,6 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(saved, { status: 200 });
-
-
-    return NextResponse.json(saved, { status: 200 });
   } catch (err) {
     // 프로덕션 DB에 FavoriteScreening 테이블이 아직 없는 경우 (P2021)
     if (
