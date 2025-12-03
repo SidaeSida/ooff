@@ -1,5 +1,7 @@
+// app/screenings/ScreeningsClient.tsx
 "use client";
 
+import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -56,16 +58,19 @@ type ScreeningRow = {
   section?: string | null;
   date: string;
   time: string;
+  endTime: string | null;
+  endEstimated: boolean;
   venue: string;
   code?: string | null;
   withGV?: boolean | null;
   dialogue?: string | null;
   subtitles?: string | null;
   rating?: string | null;
-  startMin: number;
-  endMin: number;
+  startBand: number; // 06:00 기준 band 분
+  endBand: number; // 06:00 기준 band 분
   bundleFilms?: BundleFilm[];
 };
+
 
 const films = filmsData as Film[];
 const entries = entriesData as Entry[];
@@ -121,7 +126,11 @@ function parseHmToMin(s: string | null): number | null {
   return hh * 60 + mm;
 }
 
-function makeBadges(rating?: string | null, lang?: string | null, withGV?: boolean | null) {
+function makeBadges(
+  rating?: string | null,
+  lang?: string | null,
+  withGV?: boolean | null,
+) {
   const out: Array<{ key: string; type: "rating" | "lang" | "gv"; label: string }> = [];
   const r = (rating ?? "").trim();
   const l = (lang ?? "").trim();
@@ -143,7 +152,11 @@ function badgeClass(t: "rating" | "lang" | "gv", label: string) {
   return base + font + weight + " rounded-full h-6 px-2";
 }
 
-function makeLangLabel(dialogue?: string | null, subtitles?: string | null, editionId?: string) {
+function makeLangLabel(
+  dialogue?: string | null,
+  subtitles?: string | null,
+  editionId?: string,
+) {
   const d = (dialogue ?? "").trim();
   const s = (subtitles ?? "").trim();
 
@@ -179,23 +192,69 @@ function setQuery(
     else sp.set(k, v);
   });
   const qs = sp.toString();
-  router.replace(qs ? `${pathname}?${qs}` : pathname);
+  router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
 }
 
 // CSV 헬퍼(날짜/섹션 공용)
 function parseCSV(csv: string): string[] {
-  return csv
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < csv.length; i++) {
+    const ch = csv[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < csv.length && csv[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += ch;
+      }
+    } else {
+      if (ch === ",") {
+        const trimmed = cur.trim();
+        if (trimmed) out.push(trimmed);
+        cur = "";
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else {
+        cur += ch;
+      }
+    }
+  }
+
+  const trimmed = cur.trim();
+  if (trimmed) out.push(trimmed);
+
+  return out;
 }
 
 function buildCSV(list: string[]): string {
   const uniq = Array.from(new Set(list.filter(Boolean)));
-  return uniq.join(",");
+
+  const encoded = uniq.map((v) => {
+    let s = v.trim();
+    if (!s) return "";
+
+    if (s.includes(`"`)) {
+      s = s.replace(/"/g, `""`);
+    }
+    if (s.includes(",")) {
+      return `"${s}"`;
+    }
+
+    return s;
+  });
+
+  return encoded.filter(Boolean).join(",");
 }
 
-// Time range 바 전용 헬퍼 (06:00 기준)
+// Time range 헬퍼 (06:00 기준)
 const DAY_MINUTES = 24 * 60;
 const BASE_MIN = 6 * 60; // 06:00
 
@@ -205,8 +264,9 @@ function hmFromMinutes(m: number): string {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-// 06:00 = 0, 다음날 06:00 = 1440 으로 변환
+// 06:00 기준 band 분 (0~1439)
 function hmToBandMinutes(hmStr: string | null): number | null {
+  if (!hmStr) return null;
   const abs = parseHmToMin(hmStr);
   if (abs == null) return null;
   let v = abs - BASE_MIN;
@@ -214,13 +274,11 @@ function hmToBandMinutes(hmStr: string | null): number | null {
   return v;
 }
 
-// band(0~1440)를 실제 HH:MM 문자열로 변환
+// band → HH:MM
 function bandMinutesToHm(band: number): string {
-  let v = band;
-  if (v < 0) v = 0;
-  // 1440은 sentinel이라 1439로 클램프
-  if (v >= DAY_MINUTES) v = DAY_MINUTES - 1;
-  const abs = (v + BASE_MIN) % DAY_MINUTES;
+  if (band <= 0) return "06:00";
+  if (band >= DAY_MINUTES) return "06:00";
+  const abs = (band + BASE_MIN) % DAY_MINUTES;
   return hmFromMinutes(abs);
 }
 
@@ -228,103 +286,165 @@ function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
+// 필터용: start/end 시각을 band 구간으로 변환 (심야 23:00~06:00 지원)
+function getBandRangeForFilter(start?: string, end?: string) {
+  if (!start || !end) {
+    return { start: null as number | null, end: null as number | null };
+  }
+
+  const sBand = hmToBandMinutes(start);
+  const eBandRaw = hmToBandMinutes(end);
+
+  if (sBand == null || eBandRaw == null) {
+    return { start: null, end: null };
+  }
+
+  let eBand = eBandRaw;
+  if (eBand <= sBand) {
+    // 23:00~06:00 같은 케이스 → 다음날 06:00
+    eBand += DAY_MINUTES;
+  }
+
+  return { start: sBand, end: eBand };
+}
+
 type TimeRangeFilterProps = {
-  startParam: string;
-  endParam: string;
-  onChange: (start: string | undefined, end: string | undefined) => void;
+  start: string | undefined;
+  end: string | undefined;
+  gapOnly: boolean;
+  onRangeChange: (start: string | undefined, end: string | undefined) => void;
+  onGapToggle: () => void;
 };
 
-function TimeRangeFilter({ startParam, endParam, onChange }: TimeRangeFilterProps) {
+function TimeRangeFilter({
+  start,
+  end,
+  gapOnly,
+  onRangeChange,
+  onGapToggle,
+}: TimeRangeFilterProps) {
   const barRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef<null | "start" | "end">(null);
   const ignoreClickRef = useRef(false);
+  const bandsRef = useRef({ start: 0, end: DAY_MINUTES });
+  const commitTimerRef = useRef<number | null>(null);
 
-  // URL 쿼리 → band 값으로 초기화
-  const [startBand, setStartBand] = useState<number>(() => {
-    const s = hmToBandMinutes(startParam || null);
-    const e = hmToBandMinutes(endParam || null);
-    if (s != null && e != null && e > s) return s;
-    return 0;
-  });
-  const [endBand, setEndBand] = useState<number>(() => {
-    const s = hmToBandMinutes(startParam || null);
-    const e = hmToBandMinutes(endParam || null);
-    if (s != null && e != null && e > s) return e;
-    return DAY_MINUTES;
-  });
 
-  // 쿼리 변경에 대응
-  useEffect(() => {
-    const s = hmToBandMinutes(startParam || null);
-    const e = hmToBandMinutes(endParam || null);
-    if (s != null && e != null && e > s) {
-      setStartBand(s);
-      setEndBand(e);
-    } else {
-      setStartBand(0);
-      setEndBand(DAY_MINUTES);
+  const lockScroll = () => {
+    try {
+      document.documentElement.classList.add("no-scroll");
+    } catch {
+      // noop
     }
-  }, [startParam, endParam]);
+  };
 
-  const isFiltered = useMemo(() => {
-    const s = hmToBandMinutes(startParam || null);
-    const e = hmToBandMinutes(endParam || null);
-    return s != null && e != null && e > s;
-  }, [startParam, endParam]);
+  const unlockScroll = () => {
+    try {
+      document.documentElement.classList.remove("no-scroll");
+    } catch {
+      // noop
+    }
+  };
 
-  const startLabel = bandMinutesToHm(startBand);
-  const endLabel = bandMinutesToHm(endBand);
+  const [startBand, setStartBand] = useState<number>(0);
+  const [endBand, setEndBand] = useState<number>(DAY_MINUTES);
 
-  const updateFromClientX = (clientX: number, target: "start" | "end", step: number) => {
+  const syncBands = (s: number, e: number) => {
+    const sClamped = clamp(s, 0, DAY_MINUTES);
+    let eClamped = clamp(e, 0, DAY_MINUTES);
+    if (eClamped < sClamped + 10) eClamped = sClamped + 10;
+    setStartBand(sClamped);
+    setEndBand(eClamped);
+    bandsRef.current = { start: sClamped, end: eClamped };
+  };
+
+  // 쿼리(start/end) → band로 반영
+  useEffect(() => {
+    const { start: sBand, end: eBand } = getBandRangeForFilter(start, end);
+    if (sBand != null && eBand != null) {
+      syncBands(sBand, eBand);
+    } else {
+      syncBands(0, DAY_MINUTES);
+    }
+  }, [start, end]);
+
+  const isFiltered = !!(start && end);
+
+  // 바 위치 기준으로 즉시 갱신되는 프리뷰 라벨
+  const previewStartHm = bandMinutesToHm(startBand);
+  const previewEndHm = bandMinutesToHm(endBand);
+  const isAllRange =
+    startBand <= 0 + 0.5 && endBand >= DAY_MINUTES - 0.5;
+
+  const displayLabel = isAllRange
+    ? "All Day"
+    : `${previewStartHm} ~ ${previewEndHm}`;
+
+
+  const commitRange = () => {
+    const { start: sBand, end: eBand } = bandsRef.current;
+    const isAll =
+      sBand <= 0 + 0.5 && eBand >= DAY_MINUTES - 0.5; // 거의 전체 범위
+
+    const nextStart = isAll ? undefined : bandMinutesToHm(sBand);
+    const nextEnd = isAll ? undefined : bandMinutesToHm(eBand);
+
+    if (commitTimerRef.current != null) {
+      window.clearTimeout(commitTimerRef.current);
+    }
+
+    commitTimerRef.current = window.setTimeout(() => {
+      onRangeChange(nextStart, nextEnd);
+    }, 0) as unknown as number;
+  };
+
+
+  const updateFromClientX = (
+    clientX: number,
+    target: "start" | "end",
+    step: number,
+  ) => {
     const rect = barRef.current?.getBoundingClientRect();
     if (!rect) return;
     const ratioRaw = (clientX - rect.left) / rect.width;
     const ratio = clamp(ratioRaw, 0, 1);
     let val = ratio * DAY_MINUTES;
 
-    // step 분 단위
     val = Math.round(val / step) * step;
 
     if (target === "start") {
       const maxVal = endBand - 10;
       if (maxVal <= 0) return;
       const next = clamp(val, 0, maxVal);
-      setStartBand(next);
-      if (next === 0 && endBand === DAY_MINUTES) {
-        onChange(undefined, undefined);
-      } else {
-        onChange(bandMinutesToHm(next), bandMinutesToHm(endBand));
-      }
+      syncBands(next, endBand);
     } else {
       const minVal = startBand + 10;
       if (minVal >= DAY_MINUTES) return;
       const next = clamp(val, minVal, DAY_MINUTES);
-      setEndBand(next);
-      if (startBand === 0 && next === DAY_MINUTES) {
-        onChange(undefined, undefined);
-      } else {
-        onChange(bandMinutesToHm(startBand), bandMinutesToHm(next));
-      }
+      syncBands(startBand, next);
     }
   };
 
-  const onHandlePointerDown = (e: React.PointerEvent, target: "start" | "end") => {
+  const onHandlePointerDown = (
+    e: React.PointerEvent<HTMLButtonElement>,
+    target: "start" | "end",
+  ) => {
     e.preventDefault();
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
     draggingRef.current = target;
     ignoreClickRef.current = false;
+    lockScroll();
   };
 
-  const onHandlePointerMove = (e: React.PointerEvent) => {
+  const onHandlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!draggingRef.current) return;
     e.preventDefault();
     ignoreClickRef.current = true;
-    // 드래그: 10분 단위
     updateFromClientX(e.clientX, draggingRef.current, 10);
   };
 
-  const onHandlePointerUp = (e: React.PointerEvent) => {
+  const onHandlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!draggingRef.current) return;
     e.preventDefault();
     const el = e.currentTarget;
@@ -334,9 +454,11 @@ function TimeRangeFilter({ startParam, endParam, onChange }: TimeRangeFilterProp
       // noop
     }
     draggingRef.current = null;
+    unlockScroll();
+    commitRange(); // 드래그 종료 시에만 쿼리 반영
   };
 
-  const onBarClick = (e: React.MouseEvent) => {
+  const onBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (ignoreClickRef.current) {
       ignoreClickRef.current = false;
       return;
@@ -346,19 +468,20 @@ function TimeRangeFilter({ startParam, endParam, onChange }: TimeRangeFilterProp
     const ratioRaw = (e.clientX - rect.left) / rect.width;
     const ratio = clamp(ratioRaw, 0, 1);
     let val = ratio * DAY_MINUTES;
-    // 클릭: 30분 단위
     val = Math.round(val / 30) * 30;
 
     const distToStart = Math.abs(val - startBand);
     const distToEnd = Math.abs(val - endBand);
-    const target: "start" | "end" = distToStart <= distToEnd ? "start" : "end";
+    const target: "start" | "end" =
+      distToStart <= distToEnd ? "start" : "end";
+
     updateFromClientX(e.clientX, target, 30);
+    commitRange(); // 클릭은 즉시 반영
   };
 
   const reset = () => {
-    setStartBand(0);
-    setEndBand(DAY_MINUTES);
-    onChange(undefined, undefined);
+    syncBands(0, DAY_MINUTES);
+    onRangeChange(undefined, undefined);
   };
 
   const startPct = (startBand / DAY_MINUTES) * 100;
@@ -376,29 +499,95 @@ function TimeRangeFilter({ startParam, endParam, onChange }: TimeRangeFilterProp
     { label: "6시", value: DAY_MINUTES },
   ];
 
+  type PresetKey = "all" | "morning" | "afternoon" | "evening" | "late" | "custom";
+
+  const preset: PresetKey = (() => {
+    if (!start && !end) return "all";
+    if (start === "06:00" && end === "12:00") return "morning";
+    if (start === "12:00" && end === "18:00") return "afternoon";
+    if (start === "18:00" && end === "23:00") return "evening";
+    if (start === "23:00" && end === "06:00") return "late";
+    return "custom";
+  })();
+
+  const presetButtonClass = (key: PresetKey) =>
+    "px-3 h-8 rounded-full border text-[12px] cursor-pointer " +
+    (preset === key
+      ? "bg-black text-white border-black"
+      : "bg-white text-gray-800 border-black");
+
   return (
-    <div className="space-y-1">
-      <div className="text-center text-sm font-medium text-gray-800">
-        {isFiltered ? `${startLabel} ~ ${endLabel}` : "Any time"}
+    <div className="space-y-2">
+      {/* 시간 라벨 + Free Slots 한 줄 */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[16px] font-semibold text-gray-900">
+          {displayLabel}
+        </div>
+        <button
+          type="button"
+          onClick={onGapToggle}
+          className={
+            "px-3 h-8 rounded-full border text-[12px] cursor-pointer " +
+            (gapOnly
+              ? "bg-black text-white border-black"
+              : "bg-white text-gray-800 border-black")
+          }
+        >
+          Free Slots
+        </button>
       </div>
 
+      {/* 프리셋 버튼들 */}
+      <div className="flex flex-wrap items-center justify-start gap-2">
+        <button
+          type="button"
+          className={presetButtonClass("all")}
+          onClick={() => onRangeChange(undefined, undefined)}
+        >
+          All Day
+        </button>
+        <button
+          type="button"
+          className={presetButtonClass("morning")}
+          onClick={() => onRangeChange("06:00", "12:00")}
+        >
+          오전
+        </button>
+        <button
+          type="button"
+          className={presetButtonClass("afternoon")}
+          onClick={() => onRangeChange("12:00", "18:00")}
+        >
+          오후
+        </button>
+        <button
+          type="button"
+          className={presetButtonClass("evening")}
+          onClick={() => onRangeChange("18:00", "23:00")}
+        >
+          저녁
+        </button>
+        <button
+          type="button"
+          className={presetButtonClass("late")}
+          onClick={() => onRangeChange("23:00", "06:00")}
+        >
+          심야
+        </button>
+      </div>
+
+      {/* 바 + 눈금 + Reset */}
       <div className="space-y-1">
-        {/* 바 영역 */}
         <div
           ref={barRef}
-          className="relative h-7 cursor-pointer select-none"
+          className="relative h-7 cursor-pointer select-none touch-none"
           onClick={onBarClick}
         >
-          {/* 배경 바 */}
           <div className="absolute inset-y-[11px] left-0 right-0 rounded-full bg-gray-200" />
-
-          {/* 선택 구간 */}
           <div
             className="absolute inset-y-[11px] rounded-full bg-gray-900/70"
             style={{ left: `${startPct}%`, right: `${100 - endPct}%` }}
           />
-
-          {/* 핸들들 */}
           <button
             type="button"
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-gray-900 bg-white cursor-pointer"
@@ -406,6 +595,7 @@ function TimeRangeFilter({ startParam, endParam, onChange }: TimeRangeFilterProp
             onPointerDown={(e) => onHandlePointerDown(e, "start")}
             onPointerMove={onHandlePointerMove}
             onPointerUp={onHandlePointerUp}
+            onPointerCancel={onHandlePointerUp}
           />
           <button
             type="button"
@@ -414,10 +604,10 @@ function TimeRangeFilter({ startParam, endParam, onChange }: TimeRangeFilterProp
             onPointerDown={(e) => onHandlePointerDown(e, "end")}
             onPointerMove={onHandlePointerMove}
             onPointerUp={onHandlePointerUp}
+            onPointerCancel={onHandlePointerUp}
           />
         </div>
 
-        {/* 눈금 라벨: 바 아래 한 줄 */}
         <div className="flex justify-between text-[11px] text-gray-600 px-1">
           {ticks.map((t) => (
             <span key={`${t.label}-${t.value}`} className="whitespace-nowrap">
@@ -457,12 +647,31 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
   const qParam = (search.get("q") ?? "").trim();
   const startParam = search.get("start") ?? "";
   const endParam = search.get("end") ?? "";
+  const gapParam = search.get("gap") ?? "";
 
-    const [qLocal, setQLocal] = useState(qParam);
-    // Time Range 토글 열림 상태: 최초에는 start/end 유무로 결정, 이후에는 사용자가 연·닫은 상태 유지
-    const [timeRangeOpen, setTimeRangeOpen] = useState<boolean>(
-      () => Boolean(startParam || endParam)
-    );
+  const gapOnly = gapParam === "1";
+
+  const timeFilterDebounceRef = useRef<number | null>(null);
+
+  const [qLocal, setQLocal] = useState(qParam);
+
+
+  // Time Range 토글 열림 상태
+  const [timeRangeOpen, setTimeRangeOpen] = useState<boolean>(
+    () => Boolean(startParam || endParam),
+  );
+
+  const [timeStart, setTimeStart] = useState<string | undefined>(
+    startParam || undefined,
+  );
+  const [timeEnd, setTimeEnd] = useState<string | undefined>(
+    endParam || undefined,
+  );
+
+  useEffect(() => {
+    setTimeStart(startParam || undefined);
+    setTimeEnd(endParam || undefined);
+  }, [startParam, endParam]);
 
   const favoriteSetInitial = useMemo(
     () => new Set(initialFavoriteIds),
@@ -483,7 +692,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
       entries.map((e) => [e.id, e]),
     );
 
-    // code 단위로 묶어서 패키지 상영의 영화 목록 구성
+    // code 단위 묶음 (패키지 상영)
     const bundleMap = new Map<string, BundleFilm[]>();
 
     for (const s of screenings) {
@@ -504,7 +713,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     }
 
     const rows: ScreeningRow[] = [];
-    const seen = new Set<string>(); // edition + code + date + time 기준 중복 제거
+    const seen = new Set<string>(); // edition + code + date + time
 
     for (const s of screenings) {
       const entry = entryById[s.entryId];
@@ -520,18 +729,25 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
 
-      const [hh, mm] = time.split(":").map((v) => Number(v) || 0);
-      let startMin = hh * 60 + mm;
-      let endMin: number;
-
       const bundleKey = buildBundleKey(editionId, s.code);
       const bundleList = bundleKey ? bundleMap.get(bundleKey) ?? [] : [];
 
+      const timeHm = time || "00:00";
+      const startBandRaw = hmToBandMinutes(timeHm);
+      const startBand = startBandRaw ?? 0;
+
+      let endBand: number | null = null;
+      let endTimeHm: string | null = null;
+      let endEstimated = false;
+
       if (s.endsAt) {
-        const t2 = hm(s.endsAt);
-        const [hh2, mm2] = t2.split(":").map((v) => Number(v) || 0);
-        endMin = hh2 * 60 + mm2;
-      } else {
+        const endHm = hm(s.endsAt);
+        endTimeHm = endHm || null;
+        endBand = hmToBandMinutes(endHm || null);
+      }
+
+      if (endBand == null) {
+        // endsAt 없으면 런타임 기반 추정 (Timetable과 동일 컨셉)
         let runtime = 120;
 
         if (bundleList.length > 1) {
@@ -546,10 +762,21 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
           runtime =
             typeof film?.runtime === "number" ? film.runtime : 120;
         }
-        endMin = startMin + runtime;
+
+        const startAbs = parseHmToMin(timeHm) ?? 0;
+        let endAbs = startAbs + runtime;
+        endAbs %= DAY_MINUTES;
+        const endHmStr = hmFromMinutes(endAbs);
+        endBand = hmToBandMinutes(endHmStr) ?? startBand;
+        endTimeHm = endHmStr;
+        endEstimated = true;
       }
 
-      if (endMin <= startMin) endMin += 24 * 60;
+      // 영화제 상영은 24시간 이상 길지 않다고 가정 → 최소 길이 보정
+      if (endBand <= startBand) {
+        endBand = startBand + 10;
+      }
+
 
       let filmTitle: string;
       let bundleFilms: BundleFilm[] | undefined;
@@ -580,16 +807,19 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
         section: entry.section ?? null,
         date,
         time,
+        endTime: endTimeHm,
+        endEstimated,
         venue: s.venue ?? "",
         code: s.code ?? null,
         withGV: s.withGV ?? false,
         dialogue: s.dialogue ?? null,
         subtitles: s.subtitles ?? null,
         rating: s.rating ?? null,
-        startMin,
-        endMin,
+        startBand,
+        endBand,
         bundleFilms,
       });
+
     }
 
     return rows.filter((r) => r.editionId !== "unknown");
@@ -645,8 +875,32 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     return arr;
   }, [allRows, currentEdition]);
 
-  const timeStartMin = parseHmToMin(startParam || null);
-  const timeEndMin = parseHmToMin(endParam || null);
+  // gap(빈 시간만) 계산용: 찜한 상영들의 바쁜 구간
+  const favoriteRows = useMemo(
+    () => allRows.filter((r) => favoriteIds.has(r.id)),
+    [allRows, favoriteIds],
+  );
+
+  const busyByDay = useMemo(() => {
+    const map = new Map<string, { startBand: number; endBand: number }[]>();
+    for (const r of favoriteRows) {
+      if (!r.date) continue;
+      const key = `${r.editionId}__${r.date}`;
+      const list = map.get(key) ?? [];
+      list.push({ startBand: r.startBand, endBand: r.endBand });
+      map.set(key, list);
+    }
+    return map;
+  }, [favoriteRows]);
+
+  // 시간 필터용 band 구간
+  const { start: timeStartBandRaw, end: timeEndBandRaw } = getBandRangeForFilter(
+    timeStart,
+    timeEnd,
+  );
+  const hasTimeFilter = !!(timeStart && timeEnd);
+  const timeStartBand = timeStartBandRaw ?? 0;
+  const timeEndBand = timeEndBandRaw ?? DAY_MINUTES;
 
   const filtered = useMemo(() => {
     let rows = allRows;
@@ -682,14 +936,48 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
       });
     }
 
-    if (
-      timeStartMin != null &&
-      timeEndMin != null &&
-      timeEndMin > timeStartMin
-    ) {
+    // 시간 band 필터 (선택된 경우)
+    if (hasTimeFilter && timeStartBandRaw != null && timeEndBandRaw != null) {
       rows = rows.filter(
-        (r) => r.startMin >= timeStartMin && r.endMin <= timeEndMin,
+        (r) => r.startBand >= timeStartBandRaw && r.endBand <= timeEndBandRaw,
       );
+    }
+
+    // 빈 시간만 (Free Slots)
+    if (gapOnly) {
+      const rangeStart = hasTimeFilter && timeStartBandRaw != null
+        ? timeStartBandRaw
+        : 0;
+      const rangeEnd = hasTimeFilter && timeEndBandRaw != null
+        ? timeEndBandRaw
+        : DAY_MINUTES;
+
+      rows = rows.filter((r) => {
+        const busyKey = `${r.editionId}__${r.date}`;
+        const busyList = busyByDay.get(busyKey);
+        if (!busyList || busyList.length === 0) {
+          // 그 날 찜한 상영이 없으면 전부 '빈 시간'으로 간주
+          return true;
+        }
+
+        const s = r.startBand;
+        const e = r.endBand;
+
+        // 고려 범위와의 교집합
+        const sClamped = Math.max(s, rangeStart);
+        const eClamped = Math.min(e, rangeEnd);
+        if (eClamped <= sClamped) return false;
+
+        // 바쁜 구간과 겹치면 제외
+        for (const b of busyList) {
+          const bs = b.startBand;
+          const be = b.endBand;
+          if (eClamped > bs && sClamped < be) {
+            return false;
+          }
+        }
+        return true;
+      });
     }
 
     rows = [...rows].sort((a, b) => {
@@ -716,8 +1004,11 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     dateList,
     sectionList,
     qParam,
-    timeStartMin,
-    timeEndMin,
+    hasTimeFilter,
+    timeStartBandRaw,
+    timeEndBandRaw,
+    gapOnly,
+    busyByDay,
   ]);
 
   const editionLabel =
@@ -813,6 +1104,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                       page: undefined,
                       start: undefined,
                       end: undefined,
+                      gap: undefined,
                       q: undefined,
                     })
                   }
@@ -823,7 +1115,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
           })}
         </div>
 
-        {/* Search (Festival 바로 아래로 이동) */}
+        {/* Search */}
         <div className="flex items-center gap-2">
           <input
             type="search"
@@ -903,7 +1195,6 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
               ALL
             </button>
 
-
             {datesForEdition.map((d) => {
               const active = dateList.includes(d);
               const weekend = weekdayKFromISO(`${d}T00:00:00Z`);
@@ -927,7 +1218,6 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                       date: csv || undefined,
                     });
                   }}
-
                   className={
                     "px-2 py-1 rounded border text-[11px] cursor-pointer border-black " +
                     (active ? "bg-black text-white" : "bg-white")
@@ -999,7 +1289,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
           </details>
         )}
 
-        {/* Time range: Section처럼 토글 */}
+        {/* Time range */}
         <details
           open={timeRangeOpen}
           onToggle={(e) => {
@@ -1012,15 +1302,34 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
           </summary>
           <div className="mt-2">
             <TimeRangeFilter
-              startParam={startParam}
-              endParam={endParam}
-              onChange={(start, end) =>
+              start={timeStart}
+              end={timeEnd}
+              gapOnly={gapOnly}
+              onRangeChange={(start, end) => {
+                // 화면 라벨용 로컬 상태는 즉시 반영
+                setTimeStart(start || undefined);
+                setTimeEnd(end || undefined);
+
+                // 실제 필터 적용(쿼리 변경)은 디바운스
+                if (timeFilterDebounceRef.current != null) {
+                  window.clearTimeout(timeFilterDebounceRef.current);
+                }
+
+                timeFilterDebounceRef.current = window.setTimeout(() => {
+                  setQuery(router, pathname, search, {
+                    start: start || undefined,
+                    end: end || undefined,
+                  });
+                }, 400) as unknown as number; // 필요하면 400ms 조절 가능
+              }}
+              onGapToggle={() => {
+                const next = !gapOnly;
                 setQuery(router, pathname, search, {
-                  start: start || undefined,
-                  end: end || undefined,
-                })
-              }
+                  gap: next ? "1" : undefined,
+                });
+              }}
             />
+
           </div>
         </details>
       </div>
@@ -1051,9 +1360,24 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[12px] text-gray-800">
-                    {mdK(`${row.date}T00:00:00`)} · {row.time} ·{" "}
-                    {row.venue}
+                    {mdK(`${row.date}T00:00:00`)} ·{" "}
+                    {row.endTime ? (
+                      row.endEstimated ? (
+                        <>
+                          <span className="font-semibold">{row.time}</span>{" "}
+                          ~ <span>{row.endTime}</span>
+                        </>
+                      ) : (
+                        <span className="font-semibold">
+                          {row.time} ~ {row.endTime}
+                        </span>
+                      )
+                    ) : (
+                      <span className="font-semibold">{row.time}</span>
+                    )}{" "}
+                    · {row.venue}
                   </div>
+
 
                   {row.section && (
                     <div className="mt-[1px] text-[11px] text-gray-600 truncate">

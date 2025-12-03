@@ -85,21 +85,90 @@ function setQuery(
   const qs = sp.toString();
   router.replace(qs ? `${pathname}?${qs}` : pathname);
 }
+// CSV 유틸 (섹션/날짜 공용) - 콤마 포함 값 안전 처리
+function parseCsv(csv: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < csv.length; i++) {
+    const ch = csv[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < csv.length && csv[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += ch;
+      }
+    } else {
+      if (ch === ",") {
+        const trimmed = cur.trim();
+        if (trimmed) out.push(trimmed);
+        cur = "";
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else {
+        cur += ch;
+      }
+    }
+  }
+
+  const trimmed = cur.trim();
+  if (trimmed) out.push(trimmed);
+
+  return out;
+}
+
+function buildCsv(list: string[]): string {
+  const uniq: string[] = [];
+  for (const v of list) {
+    const s = v.trim();
+    if (s && !uniq.includes(s)) uniq.push(s);
+  }
+
+  const encoded = uniq.map((v) => {
+    let s = v;
+    if (s.includes(`"`)) {
+      s = s.replace(/"/g, `""`);
+    }
+    if (s.includes(",")) {
+      return `"${s}"`;
+    }
+    return s;
+  });
+
+  return encoded.join(",");
+}
+
 function toggleCsv(currentCsv: string | null, value: string): string {
-  const cur = (currentCsv ?? '').split(',').filter(Boolean);
+  const cur = parseCsv(currentCsv ?? "");
   const set = new Set(cur);
-  if (set.has(value)) set.delete(value);
-  else set.add(value);
-  return Array.from(set).join(',');
+
+  if (set.has(value)) {
+    set.delete(value);
+  } else {
+    set.add(value);
+  }
+
+  return buildCsv(Array.from(set));
 }
+
 function csvOfAll(arr: string[]): string | undefined {
-  return arr.length ? arr.join(',') : undefined;
+  if (!arr.length) return undefined;
+  return buildCsv(arr);
 }
+
 function isAllSelected(currentCsv: string | null, options: string[]): boolean {
   if (!options.length) return false;
-  const cur = new Set((currentCsv ?? '').split(',').filter(Boolean));
+  const cur = new Set(parseCsv(currentCsv ?? ""));
   return options.every((o) => cur.has(o));
 }
+
 function ymd(iso?: string | null) {
   return iso ? iso.slice(0, 10) : '';
 }
@@ -146,11 +215,11 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
   const [qLocal, setQLocal] = useState(q);
 
   const sectionSet = useMemo(
-    () => new Set((sectionCsv ?? '').split(',').filter(Boolean)),
+    () => new Set(parseCsv(sectionCsv ?? "")),
     [sectionCsv]
   );
   const dateSet = useMemo(
-    () => new Set((dateCsv ?? '').split(',').filter(Boolean)),
+    () => new Set(parseCsv(dateCsv ?? "")),
     [dateCsv]
   );
 
