@@ -58,7 +58,7 @@ const CONF_PC = {
 };
 
 const CONF_MOBILE = {
-  steps: [120, 120, 80, 60, 48], // 모바일 튜닝값 유지
+  steps: [120, 120, 80, 60, 48],
   widths: [] as string[],
 };
 
@@ -70,18 +70,15 @@ CONF_MOBILE.widths = makeDefaultWidths(CONF_MOBILE.steps);
 // ---------------------------------------------------
 const DELETE_ZONE_WIDTH = 32;
 
-const SINGLE_CARD_DRAG_LIMIT_LEFT = 10;   // 왼쪽으로 최대 80px
-const SINGLE_CARD_DRAG_LIMIT_RIGHT = 40;  // 오른쪽으로 최대 80px
-// ---------------------------------------------------
-// 유틸
-// ---------------------------------------------------
+const SINGLE_CARD_DRAG_LIMIT_LEFT = 10;
+const SINGLE_CARD_DRAG_LIMIT_RIGHT = 40;
+
 // ---------------------------------------------------
 // 유틸
 // ---------------------------------------------------
 function groupByOverlap(list: TimetableRow[]): TimetableRow[][] {
   if (!list.length) return [];
 
-  // 시작 시간 기준 정렬
   const sorted = [...list].sort((a, b) => a.startMin - b.startMin);
 
   const groups: TimetableRow[][] = [];
@@ -90,30 +87,20 @@ function groupByOverlap(list: TimetableRow[]): TimetableRow[][] {
 
   for (const row of sorted) {
     const rowStart = row.startMin;
-
-    // 자정 넘는 상영 보정:
-    // endMin이 startMin보다 작거나 같으면 다음날로 넘어간 것으로 보고 +24시간
     const rawEnd = row.endMin;
-    const rowEnd =
-      rawEnd <= rowStart ? rawEnd + 24 * 60 : rawEnd;
+    const rowEnd = rawEnd <= rowStart ? rawEnd + 24 * 60 : rawEnd;
 
     if (!cur.length) {
-      // 첫 카드
       cur = [row];
       curEnd = rowEnd;
       groups.push(cur);
       continue;
     }
 
-    // 겹침 여부 판단 (보정된 rowEnd 사용)
     if (rowStart < curEnd) {
-      // 기존 그룹과 시간 겹침 → 같은 그룹에 추가
       cur.push(row);
-      if (rowEnd > curEnd) {
-        curEnd = rowEnd;
-      }
+      if (rowEnd > curEnd) curEnd = rowEnd;
     } else {
-      // 시간 안 겹침 → 새 그룹 시작
       cur = [row];
       curEnd = rowEnd;
       groups.push(cur);
@@ -123,7 +110,6 @@ function groupByOverlap(list: TimetableRow[]): TimetableRow[][] {
   return groups;
 }
 
-
 function idxFromSize(size: number) {
   return size >= 5 ? 4 : size - 1;
 }
@@ -131,15 +117,18 @@ function idxFromSize(size: number) {
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
+
 function stepOffset(delta: number, step: number) {
   const r = delta / step;
-
-  // 오른쪽 이동은 기존처럼 0.5 기준
   if (r >= 0) return Math.round(r);
-
-  // 왼쪽 이동은 "한 칸 더 나갔다가 되돌아오는" 걸 막기 위해
-  // 항상 안쪽으로만 스냅되게 처리 (ceil 사용)
   return Math.ceil(r);
+}
+
+function absMinutesToHm(abs: number): string {
+  const total = ((abs % (24 * 60)) + 24 * 60) % (24 * 60);
+  const hh = Math.floor(total / 60);
+  const mm = total % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
 // ---------------------------------------------------
@@ -189,6 +178,31 @@ type DragState = {
   startClientX: number;
   visualClientX: number;
   pointerClientX: number;
+};
+
+type ViewMode = "my" | "full" | "grid";
+
+type CompressSegment = {
+  start: number;
+  end: number;
+  busy: boolean;
+  top: number;
+  bottom: number;
+  height: number;
+};
+
+type FreeSlot = {
+  startAbs: number;
+  endAbs: number;
+  top: number;
+  height: number;
+};
+
+type CompressionConfig = {
+  toY: (absMin: number) => number;
+  toHeight: (startAbs: number, endAbs: number) => number;
+  height: number;
+  freeSlots: FreeSlot[];
 };
 
 // ---------------------------------------------------
@@ -250,13 +264,17 @@ export default function TimetableClient({
 
   const CONF = isMobile ? CONF_MOBILE : CONF_PC;
   const pxPerMin = isMobile ? PX_PER_MIN_MOBILE : PX_PER_MIN_PC;
-  const timelineHeight = TOTAL_MIN * pxPerMin;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // 현재 에디션 id (screenings 링크용)
+  const editionId = rows[0]?.editionId ?? "";
 
   // ---------------------------------------------------
   // 상태
   // ---------------------------------------------------
+  const [viewMode, setViewMode] = useState<ViewMode>("my");
+
   const [activeIds, setActiveIds] = useState<Set<string>>(
     () => new Set(rows.map((r) => r.id)),
   );
@@ -308,7 +326,6 @@ export default function TimetableClient({
   });
 
   const [dragState, setDragState] = useState<DragState | null>(null);
-
   const [deleteZoneActive, setDeleteZoneActive] = useState(false);
 
   // rows 변경 시 reset
@@ -358,6 +375,162 @@ export default function TimetableClient({
   };
 
   // ---------------------------------------------------
+  // 압축 타임라인 (My Day 뷰)
+  // ---------------------------------------------------
+  const compression: CompressionConfig = useMemo(() => {
+    // Full Day / Grid 이거나 상영이 없으면 선형
+    const makeLinear = (): CompressionConfig => {
+      const toY = (absMin: number) =>
+        (clamp(absMin, DAY_START_MIN, DAY_END_MIN) - DAY_START_MIN) *
+        pxPerMin;
+      const toHeight = (startAbs: number, endAbs: number) => {
+        const s = clamp(startAbs, DAY_START_MIN, DAY_END_MIN);
+        const e = clamp(endAbs, DAY_START_MIN, DAY_END_MIN);
+        const duration = Math.max(e - s, 40);
+        return duration * pxPerMin;
+      };
+      return {
+        toY,
+        toHeight,
+        height: TOTAL_MIN * pxPerMin,
+        freeSlots: [],
+      };
+    };
+
+    if (viewMode !== "my" || visibleRows.length === 0) {
+      return makeLinear();
+    }
+
+    // busy interval 수집
+    const busy: { start: number; end: number }[] = [];
+
+    for (const r of visibleRows) {
+      let start = r.startMin;
+      let end = r.endMin;
+      if (end <= start) end += 24 * 60;
+
+      start = clamp(start, DAY_START_MIN, DAY_END_MIN);
+      end = clamp(end, DAY_START_MIN, DAY_END_MIN);
+      if (end <= start) continue;
+      busy.push({ start, end });
+    }
+
+    if (!busy.length) return makeLinear();
+
+    busy.sort((a, b) => a.start - b.start);
+
+    const merged: { start: number; end: number }[] = [];
+    let cur = busy[0];
+    for (let i = 1; i < busy.length; i++) {
+      const next = busy[i];
+      if (next.start <= cur.end) {
+        cur.end = Math.max(cur.end, next.end);
+      } else {
+        merged.push(cur);
+        cur = next;
+      }
+    }
+    merged.push(cur);
+
+    const segments: CompressSegment[] = [];
+    let cursor = DAY_START_MIN;
+
+    const BUSY_RATE = 1.0;
+    const FREE_RATE = 0.25;
+
+    let acc = 0;
+
+    for (const iv of merged) {
+      if (iv.start > cursor) {
+        const start = cursor;
+        const end = iv.start;
+        const dur = end - start || 1;
+        let height = dur * pxPerMin * FREE_RATE;
+        if (height < 14) height = 14;
+        segments.push({
+          start,
+          end,
+          busy: false,
+          top: acc,
+          bottom: acc + height,
+          height,
+        });
+        acc += height;
+      }
+
+      const start = iv.start;
+      const end = iv.end;
+      const dur = end - start || 1;
+      let height = dur * pxPerMin * BUSY_RATE;
+      if (height < 40) height = 40;
+      segments.push({
+        start,
+        end,
+        busy: true,
+        top: acc,
+        bottom: acc + height,
+        height,
+      });
+      acc += height;
+      cursor = iv.end;
+    }
+
+    if (cursor < DAY_END_MIN) {
+      const start = cursor;
+      const end = DAY_END_MIN;
+      const dur = end - start || 1;
+      let height = dur * pxPerMin * FREE_RATE;
+      if (height < 14) height = 14;
+      segments.push({
+        start,
+        end,
+        busy: false,
+        top: acc,
+        bottom: acc + height,
+        height,
+      });
+      acc += height;
+    }
+
+    const toY = (absMin: number) => {
+      const t = clamp(absMin, DAY_START_MIN, DAY_END_MIN);
+      for (const seg of segments) {
+        if (t <= seg.start) return seg.top;
+        if (t >= seg.end) continue;
+        const ratio =
+          (t - seg.start) / (seg.end - seg.start || 1);
+        return seg.top + ratio * seg.height;
+      }
+      return segments.length ? segments[segments.length - 1].bottom : 0;
+    };
+
+    const toHeight = (startAbs: number, endAbs: number) => {
+      const s = clamp(startAbs, DAY_START_MIN, DAY_END_MIN);
+      const e = clamp(endAbs, DAY_START_MIN, DAY_END_MIN);
+      const h = Math.max(toY(e) - toY(s), 40);
+      return h;
+    };
+
+    const freeSlots: FreeSlot[] = segments
+      .filter((seg) => !seg.busy && seg.end - seg.start >= 20)
+      .map((seg) => ({
+        startAbs: seg.start,
+        endAbs: seg.end,
+        top: seg.top,
+        height: seg.height,
+      }));
+
+    return {
+      toY,
+      toHeight,
+      height: acc,
+      freeSlots,
+    };
+  }, [viewMode, visibleRows, pxPerMin]);
+
+  const timelineHeight = compression.height;
+
+  // ---------------------------------------------------
   // 카드 배치 (column 분리 핵심)
   // ---------------------------------------------------
   const placedRows: PlacedRow[] = useMemo(() => {
@@ -371,32 +544,23 @@ export default function TimetableClient({
         order: getOrder(row.id),
       }));
 
-      // 기본 정렬: order → 시간
-            // 기본 정렬:
-      // 1) order가 있으면 order 우선
-      // 2) 둘 다 order 없으면 code → 시작 시간 순
+      // 정렬: order → code → startMin
       meta.sort((a, b) => {
         const oa = a.order;
         const ob = b.order;
 
-        // 둘 다 order가 있는 경우: order 우선
         if (oa != null && ob != null && oa !== ob) return oa - ob;
-
-        // a만 order가 있으면 a를 앞으로
         if (oa != null && ob == null) return -1;
-
-        // b만 order가 있으면 b를 앞으로
         if (oa == null && ob != null) return 1;
 
-        // 여기까지 왔다는 것은 둘 다 order가 없거나(둘 다 null),
-        // 둘 다 있고 값이 같은 경우 → code + 시작 시간으로 fallback
         const ca = parseInt(a.row.code ?? "0", 10);
         const cb = parseInt(b.row.code ?? "0", 10);
-        if (ca !== cb) return ca - cb;
+        if (!Number.isNaN(ca) && !Number.isNaN(cb) && ca !== cb) {
+          return ca - cb;
+        }
 
         return a.row.startMin - b.row.startMin;
       });
-
 
       const size = meta.length;
       const idx = idxFromSize(size);
@@ -433,7 +597,6 @@ export default function TimetableClient({
       }
 
       meta.forEach(({ row, priority }, baseIndex) => {
-        // 자정 보정
         let start = row.startMin;
         let end = row.endMin;
         if (end <= start) end += 1440;
@@ -442,10 +605,15 @@ export default function TimetableClient({
         const endClamped = Math.min(end, DAY_END_MIN);
         const duration = Math.max(endClamped - startClamped, 40);
 
-        const top = (startClamped - DAY_START_MIN) * pxPerMin;
-        const height = duration * pxPerMin;
+        const top =
+          viewMode === "my"
+            ? compression.toY(startClamped)
+            : (startClamped - DAY_START_MIN) * pxPerMin;
+        const height =
+          viewMode === "my"
+            ? compression.toHeight(startClamped, endClamped)
+            : duration * pxPerMin;
 
-        // visualIndex 계산
         let visualIndex = baseIndex;
 
         if (dragInfo && dragInfo.originIndex !== dragInfo.newIndex) {
@@ -464,12 +632,10 @@ export default function TimetableClient({
           }
         }
 
-        // column 위치
         const left = isSingle
           ? baseLeftPx
           : baseLeftPx + visualIndex * step;
 
-        // zIndex
         let zBase = 100 + (size - baseIndex);
         if (priority === 1) zBase += 100;
         else if (priority === 2) zBase += 50;
@@ -499,6 +665,8 @@ export default function TimetableClient({
     priorityMap,
     orderMap,
     dragState,
+    viewMode,
+    compression,
   ]);
 
   // ---------------------------------------------------
@@ -515,9 +683,9 @@ export default function TimetableClient({
   }
 
   // ---------------------------------------------------
-  // 날짜 라벨
+  // 날짜 / 요약 라벨
   // ---------------------------------------------------
-  const dateLabel = useMemo(() => {
+  const dateSummaryLabel = useMemo(() => {
     const d = new Date(dateIso);
     if (Number.isNaN(d.getTime())) {
       return `${editionLabel} · ${dateIso} · ${visibleRows.length}개 상영`;
@@ -618,7 +786,6 @@ export default function TimetableClient({
 
       if (!resp.ok) throw new Error();
     } catch {
-      // rollback
       const m = new Map<string, PriorityOrNull>();
       for (const r of rows) {
         const base =
@@ -668,7 +835,6 @@ export default function TimetableClient({
 
       if (!resp.ok) throw new Error();
     } catch {
-      // rollback
       setActiveIds((prev) => {
         const next = new Set(prev);
         if (wasActive) next.add(screeningId);
@@ -771,7 +937,6 @@ export default function TimetableClient({
         const row = placedRows.find((r) => r.id === st.id);
         if (!row) return;
 
-        // 기준 카드의 시간(자정 보정 포함)
         const rowStart = row.startMin;
         let rowEnd = row.endMin;
         if (rowEnd <= rowStart) rowEnd += 24 * 60;
@@ -790,7 +955,6 @@ export default function TimetableClient({
             return overlap;
           })
           .sort((a, b) => a.left - b.left);
-
 
         const originIndex = group.findIndex((g) => g.id === row.id);
         const groupIds = group.map((g) => g.id);
@@ -827,7 +991,6 @@ export default function TimetableClient({
         if (groupSize <= 1) {
           const rawDelta = clientX - prev.startClientX;
 
-          // 시작 지점 기준으로 좌/우 한계를 픽셀 단위로 클램프
           const clampedDelta = clamp(
             rawDelta,
             -SINGLE_CARD_DRAG_LIMIT_LEFT,
@@ -838,11 +1001,10 @@ export default function TimetableClient({
 
           return {
             ...prev,
-            visualClientX: visualX,   // 카드는 한계까지만 이동
-            pointerClientX: clientX,  // 포인터 실제 위치는 그대로(DEL 판정용)
+            visualClientX: visualX,
+            pointerClientX: clientX,
           };
         }
-
 
         const idx = idxFromSize(groupSize);
         const step = CONF.steps[idx];
@@ -888,7 +1050,6 @@ export default function TimetableClient({
 
     const groupSize = groupIds.length;
 
-    // 삭제
     if (typeof window !== "undefined") {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
@@ -902,7 +1063,6 @@ export default function TimetableClient({
       }
     }
 
-    // 정렬 없음
     if (groupSize <= 1) {
       setDragState(null);
       setDeleteZoneActive(false);
@@ -996,13 +1156,91 @@ export default function TimetableClient({
   }, [dragState]);
 
   // ---------------------------------------------------
+  // Free slot 클릭 → Screenings 새 탭
+  // ---------------------------------------------------
+  function openFreeSlotInScreenings(startAbs: number, endAbs: number) {
+    if (!editionId) return;
+    const startHm = absMinutesToHm(startAbs);
+    const endHm = absMinutesToHm(endAbs);
+
+    const params = new URLSearchParams();
+    params.set("edition", editionId);
+    params.set("date", dateIso);
+    params.set("start", startHm);
+    params.set("end", endHm);
+    params.set("gap", "1");
+
+    const url = `/screenings?${params.toString()}`;
+    if (typeof window !== "undefined") {
+      window.open(url, "_blank", "noopener");
+    }
+  }
+
+  // ---------------------------------------------------
+  // Grid view 데이터 (시간대별)
+  // ---------------------------------------------------
+  const gridBlocks = useMemo(() => {
+    if (visibleRows.length === 0) return [];
+    const blocks: { hour: number; items: TimetableRow[] }[] = [];
+    for (let h = 8; h < 27; h++) {
+      const start = h * 60;
+      const end = (h + 1) * 60;
+      const items = visibleRows
+        .filter((r) => r.startMin >= start && r.startMin < end)
+        .sort((a, b) => a.startMin - b.startMin);
+      if (items.length > 0) {
+        blocks.push({ hour: h, items });
+      }
+    }
+    return blocks;
+  }, [visibleRows]);
+
+  // ---------------------------------------------------
   // 렌더링
   // ---------------------------------------------------
   const isDraggingAny = !!dragState;
 
+  const viewLabel = (mode: ViewMode) =>
+    mode === "my"
+      ? "My Day"
+      : mode === "full"
+      ? "Full Day"
+      : "Grid";
+
+  const viewBtnClass = (mode: ViewMode) =>
+    "px-2.5 py-1 rounded-full text-[11px] border cursor-pointer " +
+    (viewMode === mode
+      ? "bg-black text-white border-black"
+      : "bg-white text-gray-700 border-gray-300");
+
   return (
     <section className="space-y-3">
-      <div className="text-sm text-gray-700">{dateLabel}</div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm text-gray-700">{dateSummaryLabel}</div>
+        <div className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-1 py-0.5 border border-gray-200">
+          <button
+            type="button"
+            className={viewBtnClass("my")}
+            onClick={() => setViewMode("my")}
+          >
+            {viewLabel("my")}
+          </button>
+          <button
+            type="button"
+            className={viewBtnClass("full")}
+            onClick={() => setViewMode("full")}
+          >
+            {viewLabel("full")}
+          </button>
+          <button
+            type="button"
+            className={viewBtnClass("grid")}
+            onClick={() => setViewMode("grid")}
+          >
+            {viewLabel("grid")}
+          </button>
+        </div>
+      </div>
 
       {visibleRows.length === 0 && (
         <div className="text-sm text-gray-500 border rounded-lg px-3 py-2">
@@ -1010,7 +1248,8 @@ export default function TimetableClient({
         </div>
       )}
 
-      {visibleRows.length > 0 && (
+      {/* 메인 타임라인 (My Day / Full Day) */}
+      {visibleRows.length > 0 && viewMode !== "grid" && (
         <div className="mt-1 bg-white px-1.5 py-2">
           <div
             ref={containerRef}
@@ -1025,8 +1264,14 @@ export default function TimetableClient({
           >
             {/* 시간 그리드 */}
             {HOUR_MARKS.map((h) => {
-              const minutesFromStart = h * 60 - DAY_START_MIN;
-              const top = minutesFromStart * pxPerMin;
+              const abs = h * 60;
+              if (abs < DAY_START_MIN || abs > DAY_END_MIN) return null;
+
+              const top =
+                viewMode === "my"
+                  ? compression.toY(abs)
+                  : (abs - DAY_START_MIN) * pxPerMin;
+
               const 강조 = h === 12 || h === 18 || h === 24;
 
               let labelHour = h;
@@ -1049,6 +1294,34 @@ export default function TimetableClient({
                 </div>
               );
             })}
+
+            {/* Free Slot 리본 (My Day) */}
+            {viewMode === "my" &&
+              compression.freeSlots.map((slot, idx) => (
+                <div
+                  key={`${slot.startAbs}-${idx}`}
+                  className="absolute inset-x-[40px] rounded-2xl border border-dashed border-gray-300 bg-gray-50/70 cursor-pointer"
+                  style={{
+                    top: slot.top + 4,
+                    height: Math.max(slot.height - 8, 12),
+                    zIndex: 10,
+                  }}
+                  onClick={() =>
+                    openFreeSlotInScreenings(
+                      slot.startAbs,
+                      slot.endAbs,
+                    )
+                  }
+                >
+                  <div className="px-2 py-1 flex items-center justify-between text-[10px] text-gray-500">
+                    <span>Free slot</span>
+                    <span>
+                      {absMinutesToHm(slot.startAbs)} ~{" "}
+                      {absMinutesToHm(slot.endAbs)}
+                    </span>
+                  </div>
+                </div>
+              ))}
 
             {/* 상영 카드 */}
             {placedRows.map((s) => {
@@ -1221,6 +1494,120 @@ export default function TimetableClient({
         </div>
       )}
 
+      {/* Grid View (시간대별 요약) */}
+      {visibleRows.length > 0 && viewMode === "grid" && (
+        <div className="mt-2 bg-white border rounded-lg px-2 py-2 space-y-2">
+          {gridBlocks.map((block) => (
+            <div
+              key={block.hour}
+              className="flex items-start gap-2 border-b border-dashed border-gray-200 pb-1 last:border-b-0"
+            >
+              <div className="w-[44px] text-[10px] text-right pt-1 text-gray-500">
+                {String(block.hour).padStart(2, "0")}:00
+              </div>
+              <div className="flex-1 flex flex-wrap gap-2">
+                {block.items.map((s) => {
+                  const priority = getPriority(s.id);
+                  const palette = getPriorityStyles(priority);
+                  const ratingLabel = s.rating ?? "";
+                  const hasRating = !!ratingLabel;
+                  const hasGV = !!s.withGV;
+                  const hasBundle =
+                    Array.isArray(s.bundleFilms) &&
+                    s.bundleFilms.length > 1;
+
+                  return (
+                    <article
+                      key={s.id}
+                      className="rounded-2xl px-2 py-1 text-[10px] min-w-[140px] max-w-[220px] shadow-sm"
+                      style={{
+                        borderWidth: 1,
+                        borderStyle: "solid",
+                        borderColor: palette.cardBorder,
+                        backgroundColor: palette.cardBg,
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[11px] font-semibold text-gray-900">
+                          {s.time}
+                        </span>
+                        <button
+                          type="button"
+                          onPointerDown={onHeartPointerDown(s.id)}
+                          onPointerUp={onHeartPointerUp(s.id)}
+                          onPointerLeave={onHeartPointerLeave()}
+                          className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full border bg-white cursor-pointer text-[11px]"
+                          style={{
+                            borderColor: palette.heartBorder,
+                            color: palette.heartColor,
+                          }}
+                        >
+                          ♥
+                        </button>
+                      </div>
+                      <div className="mt-[1px] text-[10px] text-gray-700 truncate">
+                        {s.venue}
+                      </div>
+                      {s.section && (
+                        <div className="mt-[1px] text-[10px] text-gray-500 truncate">
+                          {s.section}
+                        </div>
+                      )}
+                      <div className="mt-[1px] text-[11px] font-semibold leading-snug line-clamp-2 break-words">
+                        {hasBundle
+                          ? s.bundleFilms!.map((bf, idx) => (
+                              <span key={bf.filmId}>
+                                {idx > 0 && (
+                                  <span className="mx-[1px] text-[10px] text-gray-700">
+                                    +{" "}
+                                  </span>
+                                )}
+                                <Link
+                                  href={`/films/${encodeURIComponent(
+                                    bf.filmId,
+                                  )}`}
+                                  className="hover:underline underline-offset-2"
+                                >
+                                  {bf.title}
+                                </Link>
+                              </span>
+                            ))
+                          : (
+                            <Link
+                              href={`/films/${encodeURIComponent(
+                                s.filmId,
+                              )}`}
+                              className="hover:underline underline-offset-2"
+                            >
+                              {s.filmTitle}
+                            </Link>
+                          )}
+                      </div>
+                      {(hasRating || hasGV || s.code) && (
+                        <div className="mt-[1px] flex items-center justify-between text-[9px] text-gray-600">
+                          <div className="truncate">
+                            {hasRating && <span>{ratingLabel}</span>}
+                            {hasRating && hasGV && (
+                              <span className="mx-[2px]">·</span>
+                            )}
+                            {hasGV && <span>GV</span>}
+                          </div>
+                          {s.code && (
+                            <span className="text-gray-400 truncate ml-1">
+                              code: {s.code}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 우선순위 롱프레스 메뉴 */}
       {priorityMenu && (
         <div
@@ -1237,7 +1624,6 @@ export default function TimetableClient({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col divide-y divide-gray-200">
-              {/* 모드 1 */}
               <button
                 type="button"
                 className="w-full py-1 text-center hover:bg-gray-50"
@@ -1252,8 +1638,6 @@ export default function TimetableClient({
                   1
                 </span>
               </button>
-
-              {/* 모드 2 */}
               <button
                 type="button"
                 className="w-full py-1 text-center hover:bg-gray-50"
@@ -1268,8 +1652,6 @@ export default function TimetableClient({
                   2
                 </span>
               </button>
-
-              {/* 기본색 */}
               <button
                 type="button"
                 className="w-full py-1 text-center hover:bg-gray-50"
@@ -1279,8 +1661,6 @@ export default function TimetableClient({
               >
                 <span style={{ color: "var(--bar-fill-unrated)" }}>0</span>
               </button>
-
-              {/* Remove */}
               <button
                 type="button"
                 className="w-full py-1 text-center hover:bg-gray-100"
