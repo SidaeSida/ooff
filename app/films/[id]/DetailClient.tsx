@@ -2,6 +2,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import creditOrder from '@/data/credit_order.json';
 
 type Film = {
@@ -44,18 +45,49 @@ type EntryToFilm = Record<string, { filmId: string; title_ko: string; title_en: 
 
 type CreditRow = { filmId: string; role: string; value: string; order?: number | null };
 
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
 function ymd(iso?: string | null) {
   return iso ? iso.slice(0, 10) : '';
 }
-function mdK(iso?: string | null) {
+
+function weekdayKFromISO(iso?: string | null) {
   if (!iso) return '';
+  const y = Number(iso.slice(0, 4));
   const m = Number(iso.slice(5, 7));
   const d = Number(iso.slice(8, 10));
-  return `${m}월 ${d}일`;
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return WEEKDAYS[dow] ?? '';
 }
+
+function mdK(iso?: string | null) {
+  if (!iso) return '';
+  const month = Number(iso.slice(5, 7));
+  const day = Number(iso.slice(8, 10));
+  const w = weekdayKFromISO(iso);
+  return `${month}월 ${day}일(${w})`;
+}
+
 function hm(iso?: string | null) {
   return iso ? iso.slice(11, 16) : '';
 }
+
+function parseHmToMin(s: string | null): number | null {
+  if (!s) return null;
+  const parts = s.split(':');
+  if (parts.length !== 2) return null;
+  const hh = Number(parts[0]);
+  const mm = Number(parts[1]);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+  return hh * 60 + mm;
+}
+
+function hmFromMinutes(m: number): string {
+  const hh = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
 function makeBadges(rating?: string, lang?: string, withGV?: boolean) {
   const out: Array<{ key: string; type: 'rating' | 'lang' | 'gv'; label: string }> = [];
   if (rating) out.push({ key: `r:${rating}`, type: 'rating', label: rating });
@@ -130,8 +162,15 @@ export default function DetailClient({
     return m;
   }, [entries]);
 
+  const entryById = useMemo(() => {
+    const m = new Map<string, Entry>();
+    for (const e of entries) m.set(e.id, e);
+    return m;
+  }, [entries]);
+
   // 언어/자막 라벨 정규화
   function makeLangLabel(dialogue?: string | null, subtitles?: string | null, editionId?: string) {
+
     const d = (dialogue ?? '').trim();
     const s = (subtitles ?? '').trim();
 
@@ -264,60 +303,156 @@ export default function DetailClient({
         <div className="space-y-2">
           {groups.map(({ code, items }) => {
             const a = items[0];
-            const dateLabel = mdK(a.startsAt);
-            const timeLabel = a.endsAt ? `${hm(a.startsAt)}–${hm(a.endsAt)}` : `${hm(a.startsAt)}`;
+
+            // 이 그룹 안의 상영들 중, section 이 있는 엔트리를 우선적으로 찾음
+            const section = (() => {
+              for (const s of items) {
+                const e = entryById.get(s.entryId);
+                const sec = (e?.section ?? '').trim();
+                if (sec) return sec;
+              }
+              return null;
+            })();
+
+            const startHm = hm(a.startsAt);
+            let endHm: string | null = null;
+            let endEstimated = false;
+
+
+            if (a.endsAt) {
+              endHm = hm(a.endsAt);
+            } else if (startHm) {
+              const runtime =
+                typeof film.runtime === 'number' && Number.isFinite(film.runtime)
+                  ? film.runtime
+                  : 120;
+              const startAbs = parseHmToMin(startHm) ?? 0;
+              let endAbs = startAbs + runtime;
+              endAbs %= 24 * 60;
+              endHm = hmFromMinutes(endAbs);
+              endEstimated = true;
+            }
+
             const venue = a.venue ?? '';
 
             const rating = (a.rating ?? '').trim();
             const editionId = editionByEntryId.get(a.entryId);
             const lang = makeLangLabel(a.dialogue, a.subtitles, editionId);
+            const badges = makeBadges(rating, lang, a.withGV);
 
-            // 동시상영 묶음 타이틀(원본 순서 유지, 현재 작품만 굵게)
             const entryIds = Array.from(new Set(items.map((s) => s.entryId)));
-            const pieces = entryIds
+            let bundleFilms = entryIds
               .map((eid) => entryToFilm[eid])
               .filter(Boolean)
               .map((x) => {
-                const t = x.title_ko || x.title_en || x.filmId;
-                if (!t) return '';
-                return x.filmId.toLowerCase() === film.id.toLowerCase() ? `**${t}**` : t;
+                const title = x.title_ko || x.title_en || x.filmId;
+                const isCurrent = x.filmId.toLowerCase() === film.id.toLowerCase();
+                return { filmId: x.filmId, title, isCurrent };
               })
-              .filter(Boolean);
+              .filter((x) => x.title);
+
+            if (bundleFilms.length === 0) {
+              const title =
+                film.title_ko || film.title_en || film.title || film.id;
+              bundleFilms = [{ filmId: film.id, title, isCurrent: true }];
+            } else if (bundleFilms.length > 1) {
+              const primaryId = film.id.toLowerCase();
+              bundleFilms = [...bundleFilms].sort((a, b) => {
+                if (a.filmId.toLowerCase() === primaryId) return -1;
+                if (b.filmId.toLowerCase() === primaryId) return 1;
+                return a.title.localeCompare(b.title, 'ko');
+              });
+            }
+
+            const hasBundle = bundleFilms.length > 1;
+
 
             const isFavorite = favoriteIds.has(a.id);
             const isPending = pendingIds.has(a.id);
 
             return (
-              <article key={code} className="border rounded-xl p-3">
+              <article key={code} className="border rounded-xl p-3 bg-white">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    {pieces.length > 0 && (
-                      <div className="text-[0.9rem] font-medium mb-0.5">
-                        {pieces
-                          .join(' + ')
-                          .split('**')
-                          .map((chunk, i) =>
-                            i % 2 === 1 ? (
-                              <strong key={i}>{chunk}</strong>
-                            ) : (
-                              <span key={i}>{chunk}</span>
-                            ),
-                          )}
+                    <div className="text-[12px] text-gray-800">
+                      {mdK(a.startsAt)} ·{' '}
+                      {endHm ? (
+                        endEstimated ? (
+                          <>
+                            <span className="font-semibold">{startHm}</span> ~{' '}
+                            <span className="text-gray-500">{endHm}</span>
+                          </>
+                        ) : (
+                          <span className="font-semibold">
+                            {startHm} ~ {endHm}
+                          </span>
+                        )
+                      ) : (
+                        <span className="font-semibold">{startHm}</span>
+                      )}
+                    </div>
+
+                    {venue && (
+                      <div className="mt-[1px] text-[12px] text-gray-800">
+                        {venue}
                       </div>
                     )}
-                    <div className="text-[12px] text-gray-700">
-                      {dateLabel} · {timeLabel} · {venue}
+
+                    {section && (
+                      <div className="mt-[1px] text-[11px] text-gray-600 truncate">
+                        {section}
+                      </div>
+                    )}
+                    <div className="mt-1 text-[13px] font-semibold leading-snug break-words">
+                      {hasBundle
+                        ? bundleFilms.map((bf, idx) => (
+                            <span key={bf.filmId}>
+                              {idx > 0 && (
+                                <span className="mx-[1px] text-[11px] text-gray-700">
+                                  +{' '}
+                                </span>
+                              )}
+                              <Link
+                                href={`/films/${encodeURIComponent(bf.filmId)}`}
+                                className="hover:underline underline-offset-2"
+                              >
+                                {bf.isCurrent ? (
+                                  <span className="font-semibold">{bf.title}</span>
+                                ) : (
+                                  <span className="font-normal">{bf.title}</span>
+                                )}
+                              </Link>
+                            </span>
+                          ))
+                        : bundleFilms.map((bf) => (
+                            <Link
+                              key={bf.filmId}
+                              href={`/films/${encodeURIComponent(bf.filmId)}`}
+                              className="hover:underline underline-offset-2"
+                            >
+                              {bf.title}
+                            </Link>
+                          ))}
                     </div>
-                    {/* 등급/언어/GV — 동그란 배지 */}
-                    <div className="mt-1 flex items-center gap-1.5 text-gray-700">
-                      {makeBadges(rating, lang, a.withGV).map((b) => (
-                        <span key={b.key} className={badgeClass(b.type, b.label)}>
-                          {b.label}
-                        </span>
-                      ))}
-                    </div>
+
+
+                    {badges.length > 0 && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-gray-700">
+                        {badges.map((b) => (
+                          <span key={b.key} className={badgeClass(b.type, b.label)}>
+                            {b.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {code && !code.startsWith('__') && (
+                      <div className="mt-[2px] text-[11px] text-gray-500">
+                        code: {code}
+                      </div>
+                    )}
                   </div>
-                  {/* 즐겨찾기(타임테이블 후보) */}
+
                   <button
                     type="button"
                     onClick={() => toggleFavorite(a.id)}
@@ -339,13 +474,12 @@ export default function DetailClient({
                     {isFavorite ? '♥' : '♡'}
                   </button>
                 </div>
-                {code && !code.startsWith('__') && (
-                  <div className="text-[11px] text-gray-500 mt-1">code: {code}</div>
-                )}
               </article>
             );
           })}
         </div>
+
+
       </section>
     )}
 
