@@ -2,8 +2,11 @@
   "name": "ooff",
   "version": "0.1.0",
   "private": true,
-"engines": { "node": ">=22 <25", "npm": ">=11 <12" },
-"scripts": {
+  "engines": {
+    "node": ">=22 <25",
+    "npm": ">=11 <12"
+  },
+  "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
@@ -11,7 +14,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^1.6.0",
+    "@auth/prisma-adapter": "2.11.1",
     "@prisma/client": "^6.18.0",
     "argon2": "^0.44.0",
     "next": "16.0.10",
