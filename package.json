@@ -2,7 +2,8 @@
   "name": "ooff",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+"engines": { "node": ">=22 <25", "npm": ">=11 <12" },
+"scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
