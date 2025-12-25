@@ -1,4 +1,4 @@
-// films/FilmsClient.tsx
+// app/films/FilmsClient.tsx
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -8,6 +8,12 @@ import filmsData from '@/data/films.json';
 import entriesData from '@/data/entries.json';
 import screeningsData from '@/data/screenings.json';
 import FilmListCard from '@/components/FilmListCard';
+
+// [Refactor] 공용 유틸 import
+import { 
+  setQuery, parseCsv, toggleCsv, csvOfAll, isAllSelected, 
+  ymd, isWeekendISO, mdK, normId 
+} from '@/lib/utils';
 
 type Film = {
   id: string;
@@ -71,138 +77,6 @@ const radioOptions = [
 // 페이지네이션
 const PAGE_SIZE = 20;
 
-function setQuery(
-  router: ReturnType<typeof useRouter>,
-  pathname: string,
-  prev: URLSearchParams,
-  patch: Record<string, string | undefined>
-) {
-  const sp = new URLSearchParams(prev.toString());
-  Object.entries(patch).forEach(([k, v]) => {
-    if (v === undefined || v === '') sp.delete(k);
-    else sp.set(k, v);
-  });
-  const qs = sp.toString();
-  router.replace(qs ? `${pathname}?${qs}` : pathname);
-}
-// CSV 유틸 (섹션/날짜 공용) - 콤마 포함 값 안전 처리
-function parseCsv(csv: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < csv.length; i++) {
-    const ch = csv[i];
-
-    if (inQuotes) {
-      if (ch === '"') {
-        if (i + 1 < csv.length && csv[i + 1] === '"') {
-          cur += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        cur += ch;
-      }
-    } else {
-      if (ch === ",") {
-        const trimmed = cur.trim();
-        if (trimmed) out.push(trimmed);
-        cur = "";
-      } else if (ch === '"') {
-        inQuotes = true;
-      } else {
-        cur += ch;
-      }
-    }
-  }
-
-  const trimmed = cur.trim();
-  if (trimmed) out.push(trimmed);
-
-  return out;
-}
-
-function buildCsv(list: string[]): string {
-  const uniq: string[] = [];
-  for (const v of list) {
-    const s = v.trim();
-    if (s && !uniq.includes(s)) uniq.push(s);
-  }
-
-  const encoded = uniq.map((v) => {
-    let s = v;
-    if (s.includes(`"`)) {
-      s = s.replace(/"/g, `""`);
-    }
-    if (s.includes(",")) {
-      return `"${s}"`;
-    }
-    return s;
-  });
-
-  return encoded.join(",");
-}
-
-function toggleCsv(currentCsv: string | null, value: string): string {
-  const cur = parseCsv(currentCsv ?? "");
-  const set = new Set(cur);
-
-  if (set.has(value)) {
-    set.delete(value);
-  } else {
-    set.add(value);
-  }
-
-  return buildCsv(Array.from(set));
-}
-
-function csvOfAll(arr: string[]): string | undefined {
-  if (!arr.length) return undefined;
-  return buildCsv(arr);
-}
-
-function isAllSelected(currentCsv: string | null, options: string[]): boolean {
-  if (!options.length) return false;
-  const cur = new Set(parseCsv(currentCsv ?? ""));
-  return options.every((o) => cur.has(o));
-}
-
-function ymd(iso?: string | null) {
-  return iso ? iso.slice(0, 10) : '';
-}
-
-// 요일/주말 유틸 + 표기: "M월D일(요일)"
-function weekdayKFromISO(iso?: string | null) {
-  if (!iso) return '';
-  const y = Number(iso.slice(0, 4));
-  const m = Number(iso.slice(5, 7));
-  const d = Number(iso.slice(8, 10));
-  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  return ['일', '월', '화', '수', '목', '금', '토'][dow];
-}
-function isWeekendISO(iso?: string | null) {
-  if (!iso) return false;
-  const y = Number(iso.slice(0, 4));
-  const m = Number(iso.slice(5, 7));
-  const d = Number(iso.slice(8, 10));
-  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  return dow === 0 || dow === 6; // 일/토
-}
-function mdK(iso?: string | null) {
-  if (!iso) return '';
-  const m = Number(iso.slice(5, 7));
-  const d = Number(iso.slice(8, 10));
-  const w = weekdayKFromISO(iso);
-  return `${m}월${d}일(${w})`;
-}
-
-function normId(s: string) {
-  try { return decodeURIComponent(String(s)).trim().toLowerCase(); }
-  catch { return String(s).trim().toLowerCase(); }
-}
-
 export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -251,13 +125,23 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     [edition]
   );
 
-  // 섹션 후보(제공 순서)
+  // [수정] 섹션 문자열에 '/'가 섞여 있어도 쪼개서 각각의 필터 버튼을 생성함
   const availableSections = useMemo(() => {
     if (edition === 'all') return [];
+    
     const set = new Set<string>();
-    for (const e of editionEntries) if (e.section) set.add(e.section);
+    for (const e of editionEntries) {
+      if (e.section) {
+        const parts = e.section.split('/').map(s => s.trim());
+        parts.forEach(p => {
+          if (p) set.add(p);
+        });
+      }
+    }
+    
     const arr = Array.from(set);
     const order = edition === 'edition_jiff_2025' ? ORDER_JIFF : ORDER_BIFF;
+    
     const idx = (s: string) => {
       const i = order.indexOf(s);
       return i >= 0 ? i : 9999;
@@ -265,7 +149,8 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     return arr.sort((a, b) => idx(a) - idx(b));
   }, [edition, editionEntries]);
 
-  // 날짜 후보(표시: "M월D일(요일)", 내부: ISO)
+  
+  // 날짜 후보
   const availableDates = useMemo(() => {
     if (edition === 'all') return [];
     const set = new Set<string>();
@@ -278,7 +163,15 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
   const filteredFilmIds = useMemo(() => {
     let es = edition === 'all' ? entries : entries.filter((e) => e.editionId === edition);
 
-    if (edition !== 'all' && sectionSet.size) es = es.filter((e) => e.section && sectionSet.has(e.section));
+    // [수정] 섹션이 " / "로 합쳐져 있어도, 쪼개서 필터링 (하나라도 맞으면 통과)
+    if (edition !== 'all' && sectionSet.size) {
+      es = es.filter((e) => {
+        if (!e.section) return false;
+        const parts = e.section.split('/').map((s) => s.trim());
+        return parts.some((part) => sectionSet.has(part));
+      });
+    }
+
     if (edition !== 'all' && dateSet.size) {
       const ok = new Set<string>();
       for (const e of es) {
@@ -310,7 +203,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     });
   }, [edition, sectionSet, dateSet, q, filmById, screeningsByEntry]);
 
-  // 리스트 렌더 데이터(대표 등급 계산 + 기본 정렬 규칙)
+  // 리스트 렌더 데이터
   const rows = useMemo(() => {
     const list = filteredFilmIds
       .map((fid) => {
@@ -339,7 +232,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
       })
       .filter(Boolean) as { f: Film; entry?: Entry; ratingHint?: string | null }[];
 
-    // 페스티벌만 선택(섹션/날짜/검색 없음): 섹션 제공 순서 → 제목
+    // 정렬
     const isFestivalOnly =
       edition !== 'all' &&
       !sectionCsv && !dateCsv &&
@@ -369,7 +262,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     edition, sectionCsv, dateCsv, q
   ]);
 
-  // 페이지네이션 계산
+  // 페이지네이션
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const requestedPage = Number(search.get('page') ?? '1');
   const currentPage = Number.isFinite(requestedPage)
@@ -385,7 +278,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     [ratedFilmIds]
   );
 
-  // 검색 핸들러 (페이지 1로 리셋)
+  // 검색 핸들러
   const doSearch = (valueFromUi: string) => {
     const v = valueFromUi.trim();
     setQuery(router, pathname, search, { q: v || undefined, page: undefined });
@@ -395,7 +288,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     setQuery(router, pathname, search, { q: undefined, page: undefined });
   };
 
-  // 주말 텍스트 색상만 적용 (#8e5e3a)
   const WEEKEND_TEXT_COLOR = '#D30000';
 
   return (
@@ -460,7 +352,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           )}
         </div>
 
-        {/* Section: 제목은 크게(text-sm), 내부 옵션은 작게(이전값) */}
+        {/* Section */}
         {edition !== 'all' && (
           <details>
             <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Section</summary>
@@ -507,7 +399,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           </details>
         )}
 
-        {/* Date: 제목은 크게(text-sm), 내부 옵션은 작게(이전값) + 주말 텍스트 색만 변경 */}
+        {/* Date */}
         {edition !== 'all' && (
           <details>
             <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Date</summary>
@@ -529,11 +421,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                   {availableDates.map((d) => {
                     const checked = dateSet.has(d);
                     const weekend = isWeekendISO(d);
-
-                    // 선택되지 않은 주말: 글자색만 변경(배경/테두리 불변)
                     const style = !checked && weekend ? { color: WEEKEND_TEXT_COLOR } : undefined;
-
-                    // 테두리는 항상 검정, 선택 시만 배경/글자 반전
                     const base = 'px-2 py-1 rounded border text-[11px] cursor-pointer border-black';
                     const sel = checked ? 'bg-black text-white' : 'bg-white';
 
@@ -583,7 +471,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
         Results {rows.length} · Page {currentPage} / {totalPages}
       </div>
 
-      {/* List (페이지 슬라이스) */}
+      {/* List */}
       <ul className="space-y-3">
         {pageRows.map(({ f, entry, ratingHint }) => (
           <FilmListCard
@@ -596,7 +484,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
         ))}
       </ul>
 
-      {/* Pagination: 1 2 3 ... 끝번호 */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <nav className="mt-6 flex flex-wrap items-center gap-1.5" aria-label="Pagination">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (

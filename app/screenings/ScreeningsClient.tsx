@@ -10,6 +10,12 @@ import filmsData from "@/data/films.json";
 import entriesData from "@/data/entries.json";
 import screeningsData from "@/data/screenings.json";
 
+// [Refactor] 공용 유틸 import
+import { 
+  setQuery, parseCsv, buildCsv, 
+  ymd, hm, weekdayKFromISO, mdK, clamp 
+} from "@/lib/utils";
+
 type Film = {
   id: string;
   title: string;
@@ -84,33 +90,6 @@ const EDITION_LABEL: Record<string, string> = {
 
 const PAGE_SIZE = 20;
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-
-function ymd(iso?: string | null) {
-  return iso ? iso.slice(0, 10) : "";
-}
-
-function hm(iso?: string | null) {
-  return iso ? iso.slice(11, 16) : "";
-}
-
-function weekdayKFromISO(iso?: string | null) {
-  if (!iso) return "";
-  const y = Number(iso.slice(0, 4));
-  const m = Number(iso.slice(5, 7));
-  const d = Number(iso.slice(8, 10));
-  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  return WEEKDAYS[dow] ?? "";
-}
-
-function mdK(iso?: string | null) {
-  if (!iso) return "";
-  const month = Number(iso.slice(5, 7));
-  const day = Number(iso.slice(8, 10));
-  const w = weekdayKFromISO(iso);
-  return `${month}월 ${day}일(${w})`;
-}
-
 function buildBundleKey(editionId: string | undefined, code?: string | null) {
   const c = (code ?? "").trim();
   if (!editionId || !c) return null;
@@ -181,80 +160,6 @@ function makeLangLabel(
   return d || s || "";
 }
 
-function setQuery(
-  router: ReturnType<typeof useRouter>,
-  pathname: string,
-  prev: URLSearchParams,
-  patch: Record<string, string | undefined>,
-) {
-  const sp = new URLSearchParams(prev.toString());
-  Object.entries(patch).forEach(([k, v]) => {
-    if (v === undefined || v === "") sp.delete(k);
-    else sp.set(k, v);
-  });
-  const qs = sp.toString();
-  router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-}
-
-// CSV 헬퍼(날짜/섹션 공용)
-function parseCSV(csv: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < csv.length; i++) {
-    const ch = csv[i];
-
-    if (inQuotes) {
-      if (ch === '"') {
-        if (i + 1 < csv.length && csv[i + 1] === '"') {
-          cur += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        cur += ch;
-      }
-    } else {
-      if (ch === ",") {
-        const trimmed = cur.trim();
-        if (trimmed) out.push(trimmed);
-        cur = "";
-      } else if (ch === '"') {
-        inQuotes = true;
-      } else {
-        cur += ch;
-      }
-    }
-  }
-
-  const trimmed = cur.trim();
-  if (trimmed) out.push(trimmed);
-
-  return out;
-}
-
-function buildCSV(list: string[]): string {
-  const uniq = Array.from(new Set(list.filter(Boolean)));
-
-  const encoded = uniq.map((v) => {
-    let s = v.trim();
-    if (!s) return "";
-
-    if (s.includes(`"`)) {
-      s = s.replace(/"/g, `""`);
-    }
-    if (s.includes(",")) {
-      return `"${s}"`;
-    }
-
-    return s;
-  });
-
-  return encoded.filter(Boolean).join(",");
-}
-
 // Time range 헬퍼 (06:00 기준)
 const DAY_MINUTES = 24 * 60;
 const BASE_MIN = 6 * 60; // 06:00
@@ -281,10 +186,6 @@ function bandMinutesToHm(band: number): string {
   if (band >= DAY_MINUTES) return "06:00";
   const abs = (band + BASE_MIN) % DAY_MINUTES;
   return hmFromMinutes(abs);
-}
-
-function clamp(n: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, n));
 }
 
 // 필터용: start/end 시각을 band 구간으로 변환 (심야 23:00~06:00 지원)
@@ -881,8 +782,9 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     return arr;
   }, [allRows, currentEdition]);
 
-  const dateList = useMemo(() => parseCSV(dateParam), [dateParam]);
-  const sectionList = useMemo(() => parseCSV(sectionParam), [sectionParam]);
+  // [Refactor] Use utils parseCsv (renamed from parseCSV)
+  const dateList = useMemo(() => parseCsv(dateParam), [dateParam]);
+  const sectionList = useMemo(() => parseCsv(sectionParam), [sectionParam]);
 
   const sectionsForEdition = useMemo(() => {
     const set = new Set<string>();
@@ -918,9 +820,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
     timeEnd,
   );
   const hasTimeFilter = !!(timeStart && timeEnd);
-  const timeStartBand = timeStartBandRaw ?? 0;
-  const timeEndBand = timeEndBandRaw ?? DAY_MINUTES;
-
+  
   const filtered = useMemo(() => {
     let rows = allRows;
 
@@ -1221,8 +1121,9 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
 
             {datesForEdition.map((d) => {
               const active = dateList.includes(d);
-              const weekendK = weekdayKFromISO(`${d}T00:00:00`);
-              const isWeekend = weekendK === "토" || weekendK === "일";
+              // [Refactor] Use utils weekdayKFromISO & isWeekendISO logic via local var or util
+              const wK = weekdayKFromISO(`${d}T00:00:00`);
+              const isWeekend = wK === "토" || wK === "일";
               const style =
                 !active && isWeekend ? { color: WEEKEND_TEXT_COLOR } : undefined;
 
@@ -1237,7 +1138,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                     } else {
                       next = [...dateList, d];
                     }
-                    const csv = buildCSV(next);
+                    const csv = buildCsv(next); // [Refactor] buildCsv (camelCase)
                     setQuery(router, pathname, search, {
                       date: csv || undefined,
                       page: undefined,
@@ -1294,7 +1195,7 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                       } else {
                         next = [...sectionList, sec];
                       }
-                      const csv = buildCSV(next);
+                      const csv = buildCsv(next); // [Refactor] buildCsv
                       setQuery(router, pathname, search, {
                         section: csv || undefined,
                         page: undefined,
@@ -1466,8 +1367,9 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
                   onClick={() => toggleFavorite(row.id)}
                   disabled={isPending}
                   aria-pressed={isFavorite}
+                  // [UX] touch-target 추가
                   className={
-                    "shrink-0 rounded-full border px-2 py-1 text-[12px]" +
+                    "touch-target shrink-0 rounded-full border px-2 py-1 text-[12px]" +
                     (isFavorite
                       ? " bg-black text-white border-black"
                       : " bg-white text-gray-700") +

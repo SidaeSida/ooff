@@ -1,7 +1,7 @@
 [
   {
     "id": "ent_edition_jiff_2025_film_kontinental_25_2025",
-    "filmId": "film_kontinental_25_2025",
+    "filmId": "jiff2025_film_kontinental_25_2025",
     "editionId": "edition_jiff_2025",
     "section": "개막작",
     "format": "DCP",
@@ -11,7 +11,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_in_the_land_of_machines_2025",
-    "filmId": "film_in_the_land_of_machines_2025",
+    "filmId": "jiff2025_film_in_the_land_of_machines_2025",
     "editionId": "edition_jiff_2025",
     "section": "폐막작",
     "format": "DCP",
@@ -21,7 +21,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_always_2025",
-    "filmId": "film_always_2025",
+    "filmId": "jiff2025_film_always_2025",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -31,7 +31,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_cherub_2024",
-    "filmId": "film_cherub_2024",
+    "filmId": "jiff2025_film_cherub_2024",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -41,7 +41,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_cyclemahesh_2024",
-    "filmId": "film_cyclemahesh_2024",
+    "filmId": "jiff2025_film_cyclemahesh_2024",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -51,7 +51,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mad_bills_to_pay_or_destiny_dile_que_no_soy_malo_2024",
-    "filmId": "film_mad_bills_to_pay_or_destiny_dile_que_no_soy_malo_2024",
+    "filmId": "jiff2025_film_mad_bills_to_pay_or_destiny_dile_que_no_soy_malo_2024",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -61,7 +61,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_ollie_2024",
-    "filmId": "film_ollie_2024",
+    "filmId": "jiff2025_film_ollie_2024",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -71,7 +71,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_resistance_reels_2024",
-    "filmId": "film_resistance_reels_2024",
+    "filmId": "jiff2025_film_resistance_reels_2024",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -81,7 +81,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sugarland_2025",
-    "filmId": "film_sugarland_2025",
+    "filmId": "jiff2025_film_sugarland_2025",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -91,7 +91,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_swan_song_of_fedor_ozerov_2025",
-    "filmId": "film_the_swan_song_of_fedor_ozerov_2025",
+    "filmId": "jiff2025_film_the_swan_song_of_fedor_ozerov_2025",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -101,7 +101,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_then_the_fog_2024",
-    "filmId": "film_then_the_fog_2024",
+    "filmId": "jiff2025_film_then_the_fog_2024",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -111,7 +111,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_ulysses_2024",
-    "filmId": "film_ulysses_2024",
+    "filmId": "jiff2025_film_ulysses_2024",
     "editionId": "edition_jiff_2025",
     "section": "국제경쟁",
     "format": "DCP",
@@ -121,7 +121,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_3670_2025",
-    "filmId": "film_3670_2025",
+    "filmId": "jiff2025_film_3670_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -131,7 +131,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_drifting_2025",
-    "filmId": "film_drifting_2025",
+    "filmId": "jiff2025_film_drifting_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -141,7 +141,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_winter_light_2024",
-    "filmId": "film_winter_light_2024",
+    "filmId": "jiff2025_film_winter_light_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -151,7 +151,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_all_is_well_i_love_you_2025",
-    "filmId": "film_all_is_well_i_love_you_2025",
+    "filmId": "jiff2025_film_all_is_well_i_love_you_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -161,7 +161,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_colorless_odorless_2024",
-    "filmId": "film_colorless_odorless_2024",
+    "filmId": "jiff2025_film_colorless_odorless_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -171,7 +171,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_save_2025",
-    "filmId": "film_save_2025",
+    "filmId": "jiff2025_film_save_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -181,7 +181,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sumbisori_2025",
-    "filmId": "film_sumbisori_2025",
+    "filmId": "jiff2025_film_sumbisori_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -191,7 +191,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_where_is_my_father_2024",
-    "filmId": "film_where_is_my_father_2024",
+    "filmId": "jiff2025_film_where_is_my_father_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -201,7 +201,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_summer_s_camera_2024",
-    "filmId": "film_summer_s_camera_2024",
+    "filmId": "jiff2025_film_summer_s_camera_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -211,7 +211,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sua_s_home_2025",
-    "filmId": "film_sua_s_home_2025",
+    "filmId": "jiff2025_film_sua_s_home_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국경쟁",
     "format": "DCP",
@@ -221,7 +221,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_in_our_day_2025",
-    "filmId": "film_in_our_day_2025",
+    "filmId": "jiff2025_film_in_our_day_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -231,7 +231,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_quiet_fires_2025",
-    "filmId": "film_quiet_fires_2025",
+    "filmId": "jiff2025_film_quiet_fires_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -241,7 +241,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_still_sunset_2025",
-    "filmId": "film_still_sunset_2025",
+    "filmId": "jiff2025_film_still_sunset_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -251,7 +251,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_world_premiere_2025",
-    "filmId": "film_world_premiere_2025",
+    "filmId": "jiff2025_film_world_premiere_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -261,7 +261,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_milu_2025",
-    "filmId": "film_milu_2025",
+    "filmId": "jiff2025_film_milu_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -271,7 +271,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_my_neighbor_baby_2025",
-    "filmId": "film_my_neighbor_baby_2025",
+    "filmId": "jiff2025_film_my_neighbor_baby_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -281,7 +281,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_dear_s_2024",
-    "filmId": "film_dear_s_2024",
+    "filmId": "jiff2025_film_dear_s_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -291,7 +291,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_third_direction_2025",
-    "filmId": "film_the_third_direction_2025",
+    "filmId": "jiff2025_film_the_third_direction_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -301,7 +301,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_breathing_and_whispering_2025",
-    "filmId": "film_breathing_and_whispering_2025",
+    "filmId": "jiff2025_film_breathing_and_whispering_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -311,7 +311,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_planet_spoilia_2025",
-    "filmId": "film_planet_spoilia_2025",
+    "filmId": "jiff2025_film_planet_spoilia_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -321,7 +321,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_reviving_the_engine_2025",
-    "filmId": "film_reviving_the_engine_2025",
+    "filmId": "jiff2025_film_reviving_the_engine_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -331,7 +331,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_toe_to_toe_2025",
-    "filmId": "film_toe_to_toe_2025",
+    "filmId": "jiff2025_film_toe_to_toe_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -341,7 +341,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mistletoe_2025",
-    "filmId": "film_mistletoe_2025",
+    "filmId": "jiff2025_film_mistletoe_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -351,7 +351,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_empty_pot_2025",
-    "filmId": "film_the_empty_pot_2025",
+    "filmId": "jiff2025_film_the_empty_pot_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -361,7 +361,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_all_the_ways_we_disappear_2024",
-    "filmId": "film_all_the_ways_we_disappear_2024",
+    "filmId": "jiff2025_film_all_the_ways_we_disappear_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -371,7 +371,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_two_hours_2024",
-    "filmId": "film_two_hours_2024",
+    "filmId": "jiff2025_film_two_hours_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -381,7 +381,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_those_who_leave_buy_flowers_2025",
-    "filmId": "film_those_who_leave_buy_flowers_2025",
+    "filmId": "jiff2025_film_those_who_leave_buy_flowers_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -391,7 +391,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mystery_of_humanity_continuing_and_lovers_2025",
-    "filmId": "film_mystery_of_humanity_continuing_and_lovers_2025",
+    "filmId": "jiff2025_film_mystery_of_humanity_continuing_and_lovers_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -401,7 +401,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_delay_via_damage_2024",
-    "filmId": "film_delay_via_damage_2024",
+    "filmId": "jiff2025_film_delay_via_damage_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -411,7 +411,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_more_than_you_can_imagine_2024",
-    "filmId": "film_more_than_you_can_imagine_2024",
+    "filmId": "jiff2025_film_more_than_you_can_imagine_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -421,7 +421,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_vanished_season_2025",
-    "filmId": "film_vanished_season_2025",
+    "filmId": "jiff2025_film_vanished_season_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -431,7 +431,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_possessed_2024",
-    "filmId": "film_the_possessed_2024",
+    "filmId": "jiff2025_film_the_possessed_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -441,7 +441,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_being_and_nothingness_2024",
-    "filmId": "film_being_and_nothingness_2024",
+    "filmId": "jiff2025_film_being_and_nothingness_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -451,7 +451,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_pear_tree_in_the_star_village_2024",
-    "filmId": "film_a_pear_tree_in_the_star_village_2024",
+    "filmId": "jiff2025_film_a_pear_tree_in_the_star_village_2024",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -461,7 +461,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_slowly_2025",
-    "filmId": "film_slowly_2025",
+    "filmId": "jiff2025_film_slowly_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -471,7 +471,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_girl_who_is_afraid_of_turning_to_stone_2025",
-    "filmId": "film_a_girl_who_is_afraid_of_turning_to_stone_2025",
+    "filmId": "jiff2025_film_a_girl_who_is_afraid_of_turning_to_stone_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -481,7 +481,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_inline_2025",
-    "filmId": "film_inline_2025",
+    "filmId": "jiff2025_film_inline_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -491,7 +491,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_when_the_trees_sway_the_heart_stirs_2025",
-    "filmId": "film_when_the_trees_sway_the_heart_stirs_2025",
+    "filmId": "jiff2025_film_when_the_trees_sway_the_heart_stirs_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -501,7 +501,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_top_right_corner_2025",
-    "filmId": "film_top_right_corner_2025",
+    "filmId": "jiff2025_film_top_right_corner_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -511,7 +511,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_community_2025",
-    "filmId": "film_community_2025",
+    "filmId": "jiff2025_film_community_2025",
     "editionId": "edition_jiff_2025",
     "section": "한국단편경쟁",
     "format": "DCP",
@@ -521,7 +521,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_horoomon_2025",
-    "filmId": "film_horoomon_2025",
+    "filmId": "jiff2025_film_horoomon_2025",
     "editionId": "edition_jiff_2025",
     "section": "전주시네마프로젝트",
     "format": "DCP",
@@ -531,7 +531,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_every_document_of_civilization_2024",
-    "filmId": "film_every_document_of_civilization_2024",
+    "filmId": "jiff2025_film_every_document_of_civilization_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -541,7 +541,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_from_ground_zero_2024",
-    "filmId": "film_from_ground_zero_2024",
+    "filmId": "jiff2025_film_from_ground_zero_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -551,7 +551,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_googoosh_made_of_fire_2024",
-    "filmId": "film_googoosh_made_of_fire_2024",
+    "filmId": "jiff2025_film_googoosh_made_of_fire_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -561,7 +561,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_new_dawn_2024",
-    "filmId": "film_a_new_dawn_2024",
+    "filmId": "jiff2025_film_a_new_dawn_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -571,7 +571,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_obscure_night_ain_t_i_a_child_2024",
-    "filmId": "film_obscure_night_ain_t_i_a_child_2024",
+    "filmId": "jiff2025_film_obscure_night_ain_t_i_a_child_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -581,7 +581,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_seven_days_2024",
-    "filmId": "film_seven_days_2024",
+    "filmId": "jiff2025_film_seven_days_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -591,7 +591,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_there_was_there_was_not_2024",
-    "filmId": "film_there_was_there_was_not_2024",
+    "filmId": "jiff2025_film_there_was_there_was_not_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -601,7 +601,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_to_a_land_unknown_2024",
-    "filmId": "film_to_a_land_unknown_2024",
+    "filmId": "jiff2025_film_to_a_land_unknown_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -611,7 +611,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_writing_hawa_2024",
-    "filmId": "film_writing_hawa_2024",
+    "filmId": "jiff2025_film_writing_hawa_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -621,7 +621,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_yalla_parkour_2024",
-    "filmId": "film_yalla_parkour_2024",
+    "filmId": "jiff2025_film_yalla_parkour_2024",
     "editionId": "edition_jiff_2025",
     "section": "프론트라인",
     "format": "DCP",
@@ -631,7 +631,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_and_so_it_begins_2024",
-    "filmId": "film_and_so_it_begins_2024",
+    "filmId": "jiff2025_film_and_so_it_begins_2024",
     "editionId": "edition_jiff_2025",
     "section": "다시, 민주주의로",
     "format": "DCP",
@@ -641,7 +641,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_at_this_moment_in_the_nation_s_sky_2024",
-    "filmId": "film_at_this_moment_in_the_nation_s_sky_2024",
+    "filmId": "jiff2025_film_at_this_moment_in_the_nation_s_sky_2024",
     "editionId": "edition_jiff_2025",
     "section": "다시, 민주주의로",
     "format": "DCP",
@@ -651,7 +651,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_last_republican_2024",
-    "filmId": "film_the_last_republican_2024",
+    "filmId": "jiff2025_film_the_last_republican_2024",
     "editionId": "edition_jiff_2025",
     "section": "다시, 민주주의로",
     "format": "DCP",
@@ -661,7 +661,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_ms_president_2024",
-    "filmId": "film_ms_president_2024",
+    "filmId": "jiff2025_film_ms_president_2024",
     "editionId": "edition_jiff_2025",
     "section": "다시, 민주주의로",
     "format": "DCP",
@@ -671,7 +671,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_norwegian_democrazy_2024",
-    "filmId": "film_norwegian_democrazy_2024",
+    "filmId": "jiff2025_film_norwegian_democrazy_2024",
     "editionId": "edition_jiff_2025",
     "section": "다시, 민주주의로",
     "format": "DCP",
@@ -681,7 +681,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sudan_remember_us_2024",
-    "filmId": "film_sudan_remember_us_2024",
+    "filmId": "jiff2025_film_sudan_remember_us_2024",
     "editionId": "edition_jiff_2025",
     "section": "다시, 민주주의로",
     "format": "DCP",
@@ -691,7 +691,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_ariel_2025",
-    "filmId": "film_ariel_2025",
+    "filmId": "jiff2025_film_ariel_2025",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -701,7 +701,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_balconettes_2024",
-    "filmId": "film_the_balconettes_2024",
+    "filmId": "jiff2025_film_the_balconettes_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -711,7 +711,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_beating_hearts_2024",
-    "filmId": "film_beating_hearts_2024",
+    "filmId": "jiff2025_film_beating_hearts_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -721,7 +721,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_bird_2024",
-    "filmId": "film_bird_2024",
+    "filmId": "jiff2025_film_bird_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -731,7 +731,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_black_ox_2024",
-    "filmId": "film_black_ox_2024",
+    "filmId": "jiff2025_film_black_ox_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -741,7 +741,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_familiar_touch_2024",
-    "filmId": "film_familiar_touch_2024",
+    "filmId": "jiff2025_film_familiar_touch_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -751,7 +751,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_francois_truffaut_my_life_a_screenplay_2024",
-    "filmId": "film_francois_truffaut_my_life_a_screenplay_2024",
+    "filmId": "jiff2025_film_francois_truffaut_my_life_a_screenplay_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -761,7 +761,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_gulizar_2024",
-    "filmId": "film_gulizar_2024",
+    "filmId": "jiff2025_film_gulizar_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -771,7 +771,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_i_m_still_here_2024",
-    "filmId": "film_i_m_still_here_2024",
+    "filmId": "jiff2025_film_i_m_still_here_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -781,7 +781,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_jacques_demy_the_pink_and_the_black_2024",
-    "filmId": "film_jacques_demy_the_pink_and_the_black_2024",
+    "filmId": "jiff2025_film_jacques_demy_the_pink_and_the_black_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -791,7 +791,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_measures_for_a_funeral_2024",
-    "filmId": "film_measures_for_a_funeral_2024",
+    "filmId": "jiff2025_film_measures_for_a_funeral_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -801,7 +801,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_message_2025",
-    "filmId": "film_the_message_2025",
+    "filmId": "jiff2025_film_the_message_2025",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -811,7 +811,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mistress_dispeller_2024",
-    "filmId": "film_mistress_dispeller_2024",
+    "filmId": "jiff2025_film_mistress_dispeller_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -821,7 +821,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mongrels_2024",
-    "filmId": "film_mongrels_2024",
+    "filmId": "jiff2025_film_mongrels_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -831,7 +831,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_on_falling_2024",
-    "filmId": "film_on_falling_2024",
+    "filmId": "jiff2025_film_on_falling_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -841,7 +841,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_park_2024",
-    "filmId": "film_park_2024",
+    "filmId": "jiff2025_film_park_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -851,7 +851,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_pavements_2024",
-    "filmId": "film_pavements_2024",
+    "filmId": "jiff2025_film_pavements_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -861,7 +861,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_ramon_and_ramon_2023",
-    "filmId": "film_ramon_and_ramon_2023",
+    "filmId": "jiff2025_film_ramon_and_ramon_2023",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -871,7 +871,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_something_old_something_new_something_borrowed_2024",
-    "filmId": "film_something_old_something_new_something_borrowed_2024",
+    "filmId": "jiff2025_film_something_old_something_new_something_borrowed_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -881,7 +881,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_southern_brides_2024",
-    "filmId": "film_southern_brides_2024",
+    "filmId": "jiff2025_film_southern_brides_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -891,7 +891,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_stranger_eyes_2024",
-    "filmId": "film_stranger_eyes_2024",
+    "filmId": "jiff2025_film_stranger_eyes_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -901,7 +901,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_teki_cometh_2024",
-    "filmId": "film_teki_cometh_2024",
+    "filmId": "jiff2025_film_teki_cometh_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -911,7 +911,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_an_unfinished_film_2024",
-    "filmId": "film_an_unfinished_film_2024",
+    "filmId": "jiff2025_film_an_unfinished_film_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -921,7 +921,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_winter_in_sokcho_2024",
-    "filmId": "film_winter_in_sokcho_2024",
+    "filmId": "jiff2025_film_winter_in_sokcho_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -931,7 +931,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_wolves_always_come_at_night_2024",
-    "filmId": "film_the_wolves_always_come_at_night_2024",
+    "filmId": "jiff2025_film_the_wolves_always_come_at_night_2024",
     "editionId": "edition_jiff_2025",
     "section": "월드시네마",
     "format": "DCP",
@@ -941,7 +941,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_d_is_for_distance_2025",
-    "filmId": "film_d_is_for_distance_2025",
+    "filmId": "jiff2025_film_d_is_for_distance_2025",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -951,7 +951,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_escape_2025",
-    "filmId": "film_escape_2025",
+    "filmId": "jiff2025_film_escape_2025",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -961,7 +961,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_hard_truths_2024",
-    "filmId": "film_hard_truths_2024",
+    "filmId": "jiff2025_film_hard_truths_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -971,7 +971,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_little_boy_2025",
-    "filmId": "film_little_boy_2025",
+    "filmId": "jiff2025_film_little_boy_2025",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -981,7 +981,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_rumours_2024",
-    "filmId": "film_rumours_2024",
+    "filmId": "jiff2025_film_rumours_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -991,7 +991,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sanatorium_under_the_sign_of_the_hourglass_2024",
-    "filmId": "film_sanatorium_under_the_sign_of_the_hourglass_2024",
+    "filmId": "jiff2025_film_sanatorium_under_the_sign_of_the_hourglass_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1001,7 +1001,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_twst_things_we_said_today_2024",
-    "filmId": "film_twst_things_we_said_today_2024",
+    "filmId": "jiff2025_film_twst_things_we_said_today_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1011,7 +1011,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_when_fall_is_coming_2024",
-    "filmId": "film_when_fall_is_coming_2024",
+    "filmId": "jiff2025_film_when_fall_is_coming_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1021,7 +1021,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_being_john_smith_2024",
-    "filmId": "film_being_john_smith_2024",
+    "filmId": "jiff2025_film_being_john_smith_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1031,7 +1031,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_black_tower_1987",
-    "filmId": "film_the_black_tower_1987",
+    "filmId": "jiff2025_film_the_black_tower_1987",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1041,7 +1041,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_girl_chewing_gum_1976",
-    "filmId": "film_the_girl_chewing_gum_1976",
+    "filmId": "jiff2025_film_the_girl_chewing_gum_1976",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1051,7 +1051,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_scenarios_2024",
-    "filmId": "film_scenarios_2024",
+    "filmId": "jiff2025_film_scenarios_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1061,7 +1061,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_expose_du_film_annonce_du_film_scenario_2024",
-    "filmId": "film_expose_du_film_annonce_du_film_scenario_2024",
+    "filmId": "jiff2025_film_expose_du_film_annonce_du_film_scenario_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1071,7 +1071,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_days_before_the_death_of_nicky_2024",
-    "filmId": "film_days_before_the_death_of_nicky_2024",
+    "filmId": "jiff2025_film_days_before_the_death_of_nicky_2024",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1081,7 +1081,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_paul_2025",
-    "filmId": "film_paul_2025",
+    "filmId": "jiff2025_film_paul_2025",
     "editionId": "edition_jiff_2025",
     "section": "마스터즈",
     "format": "DCP",
@@ -1091,7 +1091,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_gule_gule_2024",
-    "filmId": "film_gule_gule_2024",
+    "filmId": "jiff2025_film_gule_gule_2024",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1101,7 +1101,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_memories_showers_seas_2025",
-    "filmId": "film_memories_showers_seas_2025",
+    "filmId": "jiff2025_film_memories_showers_seas_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1111,7 +1111,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_tell_me_that_you_love_me_2025",
-    "filmId": "film_tell_me_that_you_love_me_2025",
+    "filmId": "jiff2025_film_tell_me_that_you_love_me_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1121,7 +1121,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_layover_hotel_2025",
-    "filmId": "film_layover_hotel_2025",
+    "filmId": "jiff2025_film_layover_hotel_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1131,7 +1131,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_home_behind_bars_2025",
-    "filmId": "film_home_behind_bars_2025",
+    "filmId": "jiff2025_film_home_behind_bars_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1141,7 +1141,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_hideaway_2024",
-    "filmId": "film_hideaway_2024",
+    "filmId": "jiff2025_film_hideaway_2024",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1151,7 +1151,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sea_tiger_2025",
-    "filmId": "film_sea_tiger_2025",
+    "filmId": "jiff2025_film_sea_tiger_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1160,18 +1160,8 @@
     "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5588&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D13"
   },
   {
-    "id": "ent_edition_jiff_2025_film_the_bek_show_end_of_civilization_2024",
-    "filmId": "film_the_bek_show_end_of_civilization_2024",
-    "editionId": "edition_jiff_2025",
-    "section": "코리안시네마",
-    "format": "DCP",
-    "color": "Color/B&W",
-    "premiere": "",
-    "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5589&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D13"
-  },
-  {
     "id": "ent_edition_jiff_2025_film_homeward_bound_2024",
-    "filmId": "film_homeward_bound_2024",
+    "filmId": "jiff2025_film_homeward_bound_2024",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1181,7 +1171,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_burglars_2025",
-    "filmId": "film_the_burglars_2025",
+    "filmId": "jiff2025_film_the_burglars_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1191,7 +1181,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sam_hee_the_adventure_of_3_joys_2025",
-    "filmId": "film_sam_hee_the_adventure_of_3_joys_2025",
+    "filmId": "jiff2025_film_sam_hee_the_adventure_of_3_joys_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1201,7 +1191,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_trials_and_initiation_2025",
-    "filmId": "film_trials_and_initiation_2025",
+    "filmId": "jiff2025_film_trials_and_initiation_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1211,7 +1201,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_edhi_alice_reverse_2024",
-    "filmId": "film_edhi_alice_reverse_2024",
+    "filmId": "jiff2025_film_edhi_alice_reverse_2024",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1221,7 +1211,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_shiso_2025",
-    "filmId": "film_shiso_2025",
+    "filmId": "jiff2025_film_shiso_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1231,7 +1221,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_i_d_like_that_corner_seat_over_there_2025",
-    "filmId": "film_i_d_like_that_corner_seat_over_there_2025",
+    "filmId": "jiff2025_film_i_d_like_that_corner_seat_over_there_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1241,7 +1231,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_rectangle_triangle_2025",
-    "filmId": "film_rectangle_triangle_2025",
+    "filmId": "jiff2025_film_rectangle_triangle_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1251,7 +1241,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_birds_who_lived_home_where_did_you_all_go_2025",
-    "filmId": "film_the_birds_who_lived_home_where_did_you_all_go_2025",
+    "filmId": "jiff2025_film_the_birds_who_lived_home_where_did_you_all_go_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1261,7 +1251,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_clear_2025",
-    "filmId": "film_clear_2025",
+    "filmId": "jiff2025_film_clear_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1271,7 +1261,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_pink_moon_2025",
-    "filmId": "film_pink_moon_2025",
+    "filmId": "jiff2025_film_pink_moon_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1281,7 +1271,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_heart_to_heart_2025",
-    "filmId": "film_heart_to_heart_2025",
+    "filmId": "jiff2025_film_heart_to_heart_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1291,7 +1281,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mr_driver_2025",
-    "filmId": "film_mr_driver_2025",
+    "filmId": "jiff2025_film_mr_driver_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1301,7 +1291,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_toe_tapping_tunes_2025",
-    "filmId": "film_toe_tapping_tunes_2025",
+    "filmId": "jiff2025_film_toe_tapping_tunes_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1311,7 +1301,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_i_told_you_2025",
-    "filmId": "film_i_told_you_2025",
+    "filmId": "jiff2025_film_i_told_you_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1321,7 +1311,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_womb_mates_2025",
-    "filmId": "film_womb_mates_2025",
+    "filmId": "jiff2025_film_womb_mates_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1331,7 +1321,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_roots_2025",
-    "filmId": "film_the_roots_2025",
+    "filmId": "jiff2025_film_the_roots_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1341,7 +1331,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_wayward_bird_2025",
-    "filmId": "film_the_wayward_bird_2025",
+    "filmId": "jiff2025_film_the_wayward_bird_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1351,7 +1341,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_fallen_dog_2024",
-    "filmId": "film_the_fallen_dog_2024",
+    "filmId": "jiff2025_film_the_fallen_dog_2024",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1361,7 +1351,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_on_the_crosswalk_2025",
-    "filmId": "film_on_the_crosswalk_2025",
+    "filmId": "jiff2025_film_on_the_crosswalk_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1371,7 +1361,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_galbi_2025",
-    "filmId": "film_galbi_2025",
+    "filmId": "jiff2025_film_galbi_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1381,7 +1371,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_umwelt_2025",
-    "filmId": "film_umwelt_2025",
+    "filmId": "jiff2025_film_umwelt_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1391,7 +1381,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_liminality_2025",
-    "filmId": "film_liminality_2025",
+    "filmId": "jiff2025_film_liminality_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1401,7 +1391,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_lesson_2024",
-    "filmId": "film_lesson_2024",
+    "filmId": "jiff2025_film_lesson_2024",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1411,7 +1401,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_live_after_death_2025",
-    "filmId": "film_live_after_death_2025",
+    "filmId": "jiff2025_film_live_after_death_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1421,7 +1411,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_poem_of_songju_2025",
-    "filmId": "film_poem_of_songju_2025",
+    "filmId": "jiff2025_film_poem_of_songju_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1431,7 +1421,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_god_complex_2025",
-    "filmId": "film_god_complex_2025",
+    "filmId": "jiff2025_film_god_complex_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1441,7 +1431,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_treeman_2025",
-    "filmId": "film_treeman_2025",
+    "filmId": "jiff2025_film_treeman_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1451,7 +1441,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_undercurrent_2025",
-    "filmId": "film_undercurrent_2025",
+    "filmId": "jiff2025_film_undercurrent_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1461,7 +1451,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_dogs_in_the_sun_2025",
-    "filmId": "film_dogs_in_the_sun_2025",
+    "filmId": "jiff2025_film_dogs_in_the_sun_2025",
     "editionId": "edition_jiff_2025",
     "section": "코리안시네마",
     "format": "DCP",
@@ -1471,7 +1461,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_close_up_of_bae_chang_ho_2025",
-    "filmId": "film_the_close_up_of_bae_chang_ho_2025",
+    "filmId": "jiff2025_film_the_close_up_of_bae_chang_ho_2025",
     "editionId": "edition_jiff_2025",
     "section": "배창호 특별전: 대중성과 실험성 사이에서",
     "format": "DCP",
@@ -1481,7 +1471,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_warm_it_was_that_winter_1984",
-    "filmId": "film_warm_it_was_that_winter_1984",
+    "filmId": "jiff2025_film_warm_it_was_that_winter_1984",
     "editionId": "edition_jiff_2025",
     "section": "배창호 특별전: 대중성과 실험성 사이에서",
     "format": "DCP",
@@ -1491,7 +1481,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_dream_1990",
-    "filmId": "film_the_dream_1990",
+    "filmId": "jiff2025_film_the_dream_1990",
     "editionId": "edition_jiff_2025",
     "section": "배창호 특별전: 대중성과 실험성 사이에서",
     "format": "DCP",
@@ -1501,7 +1491,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_hwang_jin_ie_1986",
-    "filmId": "film_hwang_jin_ie_1986",
+    "filmId": "jiff2025_film_hwang_jin_ie_1986",
     "editionId": "edition_jiff_2025",
     "section": "배창호 특별전: 대중성과 실험성 사이에서",
     "format": "DCP",
@@ -1511,7 +1501,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_7_walks_with_mark_brown_2024",
-    "filmId": "film_7_walks_with_mark_brown_2024",
+    "filmId": "jiff2025_film_7_walks_with_mark_brown_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1521,7 +1511,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_aoquic_iez_in_mexico_mexico_will_no_longer_exist_2024",
-    "filmId": "film_aoquic_iez_in_mexico_mexico_will_no_longer_exist_2024",
+    "filmId": "jiff2025_film_aoquic_iez_in_mexico_mexico_will_no_longer_exist_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1531,7 +1521,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_bluish_2024",
-    "filmId": "film_bluish_2024",
+    "filmId": "jiff2025_film_bluish_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1541,7 +1531,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_collective_monologue_2024",
-    "filmId": "film_collective_monologue_2024",
+    "filmId": "jiff2025_film_collective_monologue_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1551,7 +1541,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_evidence_2025",
-    "filmId": "film_evidence_2025",
+    "filmId": "jiff2025_film_evidence_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1561,7 +1551,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_fire_of_wind_2024",
-    "filmId": "film_fire_of_wind_2024",
+    "filmId": "jiff2025_film_fire_of_wind_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1571,7 +1561,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_les_habitants_2025",
-    "filmId": "film_les_habitants_2025",
+    "filmId": "jiff2025_film_les_habitants_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1581,7 +1571,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_nine_different_nuances_of_the_same_colour_2025",
-    "filmId": "film_nine_different_nuances_of_the_same_colour_2025",
+    "filmId": "jiff2025_film_nine_different_nuances_of_the_same_colour_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1591,7 +1581,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_welcome_interplanetary_and_sidereal_space_conquerors_2024",
-    "filmId": "film_welcome_interplanetary_and_sidereal_space_conquerors_2024",
+    "filmId": "jiff2025_film_welcome_interplanetary_and_sidereal_space_conquerors_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1601,7 +1591,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mare_imbrium_2024",
-    "filmId": "film_mare_imbrium_2024",
+    "filmId": "jiff2025_film_mare_imbrium_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1611,7 +1601,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_no_exorcism_film_2024",
-    "filmId": "film_no_exorcism_film_2024",
+    "filmId": "jiff2025_film_no_exorcism_film_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1621,7 +1611,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_archipelago_of_earthen_bones_to_bunya_2024",
-    "filmId": "film_archipelago_of_earthen_bones_to_bunya_2024",
+    "filmId": "jiff2025_film_archipelago_of_earthen_bones_to_bunya_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1631,7 +1621,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_revolving_rounds_2024",
-    "filmId": "film_revolving_rounds_2024",
+    "filmId": "jiff2025_film_revolving_rounds_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "35mm",
@@ -1641,7 +1631,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_thousand_waves_away_2025",
-    "filmId": "film_a_thousand_waves_away_2025",
+    "filmId": "jiff2025_film_a_thousand_waves_away_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1651,7 +1641,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_language_of_the_entrails_2025",
-    "filmId": "film_language_of_the_entrails_2025",
+    "filmId": "jiff2025_film_language_of_the_entrails_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1661,7 +1651,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_black_screen_too_2024",
-    "filmId": "film_a_black_screen_too_2024",
+    "filmId": "jiff2025_film_a_black_screen_too_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1671,7 +1661,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_wandering_star_along_the_silver_screen_2024",
-    "filmId": "film_wandering_star_along_the_silver_screen_2024",
+    "filmId": "jiff2025_film_wandering_star_along_the_silver_screen_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1681,7 +1671,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_ballroom_0_1_2024",
-    "filmId": "film_ballroom_0_1_2024",
+    "filmId": "jiff2025_film_ballroom_0_1_2024",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1691,7 +1681,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_station_2025",
-    "filmId": "film_station_2025",
+    "filmId": "jiff2025_film_station_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "DCP",
@@ -1701,7 +1691,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_echoed_silence_1998",
-    "filmId": "film_echoed_silence_1998",
+    "filmId": "jiff2025_film_echoed_silence_1998",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "16mm",
@@ -1711,7 +1701,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_landscape_in_the_afternoon_2013",
-    "filmId": "film_landscape_in_the_afternoon_2013",
+    "filmId": "jiff2025_film_landscape_in_the_afternoon_2013",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "16mm",
@@ -1721,7 +1711,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_chang_gyeong_2025",
-    "filmId": "film_chang_gyeong_2025",
+    "filmId": "jiff2025_film_chang_gyeong_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "16mm",
@@ -1731,7 +1721,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_photosynthesis_part_1_2025",
-    "filmId": "film_photosynthesis_part_1_2025",
+    "filmId": "jiff2025_film_photosynthesis_part_1_2025",
     "editionId": "edition_jiff_2025",
     "section": "영화보다 낯선",
     "format": "16mm",
@@ -1741,7 +1731,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_eephus_2024",
-    "filmId": "film_eephus_2024",
+    "filmId": "jiff2025_film_eephus_2024",
     "editionId": "edition_jiff_2025",
     "section": "시네마천국",
     "format": "DCP",
@@ -1751,7 +1741,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_escape_from_the_21st_century_2024",
-    "filmId": "film_escape_from_the_21st_century_2024",
+    "filmId": "jiff2025_film_escape_from_the_21st_century_2024",
     "editionId": "edition_jiff_2025",
     "section": "시네마천국",
     "format": "DCP",
@@ -1761,7 +1751,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_gesuidouz_2024",
-    "filmId": "film_the_gesuidouz_2024",
+    "filmId": "jiff2025_film_the_gesuidouz_2024",
     "editionId": "edition_jiff_2025",
     "section": "시네마천국",
     "format": "DCP",
@@ -1771,7 +1761,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_grand_maison_paris_2024",
-    "filmId": "film_grand_maison_paris_2024",
+    "filmId": "jiff2025_film_grand_maison_paris_2024",
     "editionId": "edition_jiff_2025",
     "section": "시네마천국",
     "format": "DCP",
@@ -1781,7 +1771,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_mother_and_the_bear_2023",
-    "filmId": "film_the_mother_and_the_bear_2023",
+    "filmId": "jiff2025_film_the_mother_and_the_bear_2023",
     "editionId": "edition_jiff_2025",
     "section": "시네마천국",
     "format": "DCP",
@@ -1791,7 +1781,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_queens_2023",
-    "filmId": "film_queens_2023",
+    "filmId": "jiff2025_film_queens_2023",
     "editionId": "edition_jiff_2025",
     "section": "시네마천국",
     "format": "DCP",
@@ -1801,7 +1791,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_way_we_talk_2024",
-    "filmId": "film_the_way_we_talk_2024",
+    "filmId": "jiff2025_film_the_way_we_talk_2024",
     "editionId": "edition_jiff_2025",
     "section": "시네마천국",
     "format": "DCP",
@@ -1811,7 +1801,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_1978_2024",
-    "filmId": "film_1978_2024",
+    "filmId": "jiff2025_film_1978_2024",
     "editionId": "edition_jiff_2025",
     "section": "불면의 밤",
     "format": "DCP",
@@ -1821,7 +1811,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_animale_2024",
-    "filmId": "film_animale_2024",
+    "filmId": "jiff2025_film_animale_2024",
     "editionId": "edition_jiff_2025",
     "section": "불면의 밤",
     "format": "DCP",
@@ -1831,7 +1821,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_frewaka_2024",
-    "filmId": "film_frewaka_2024",
+    "filmId": "jiff2025_film_frewaka_2024",
     "editionId": "edition_jiff_2025",
     "section": "불면의 밤",
     "format": "DCP",
@@ -1841,7 +1831,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_grafted_2024",
-    "filmId": "film_grafted_2024",
+    "filmId": "jiff2025_film_grafted_2024",
     "editionId": "edition_jiff_2025",
     "section": "불면의 밤",
     "format": "DCP",
@@ -1851,7 +1841,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_some_like_it_cold_2025",
-    "filmId": "film_some_like_it_cold_2025",
+    "filmId": "jiff2025_film_some_like_it_cold_2025",
     "editionId": "edition_jiff_2025",
     "section": "불면의 밤",
     "format": "DCP",
@@ -1861,7 +1851,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_wailing_2024",
-    "filmId": "film_the_wailing_2024",
+    "filmId": "jiff2025_film_the_wailing_2024",
     "editionId": "edition_jiff_2025",
     "section": "불면의 밤",
     "format": "DCP",
@@ -1871,7 +1861,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_all_i_had_was_nothingness_2025",
-    "filmId": "film_all_i_had_was_nothingness_2025",
+    "filmId": "jiff2025_film_all_i_had_was_nothingness_2025",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1881,7 +1871,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_declic_years_1984",
-    "filmId": "film_the_declic_years_1984",
+    "filmId": "jiff2025_film_the_declic_years_1984",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1891,7 +1881,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_dream_longer_than_the_night_1976",
-    "filmId": "film_a_dream_longer_than_the_night_1976",
+    "filmId": "jiff2025_film_a_dream_longer_than_the_night_1976",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1901,7 +1891,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_nightshift_1981",
-    "filmId": "film_nightshift_1981",
+    "filmId": "jiff2025_film_nightshift_1981",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1911,7 +1901,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_onda_nova_1983",
-    "filmId": "film_onda_nova_1983",
+    "filmId": "jiff2025_film_onda_nova_1983",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1921,7 +1911,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_one_is_few_two_would_fill_1970",
-    "filmId": "film_one_is_few_two_would_fill_1970",
+    "filmId": "jiff2025_film_one_is_few_two_would_fill_1970",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1931,7 +1921,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_sealed_soil_1977",
-    "filmId": "film_the_sealed_soil_1977",
+    "filmId": "jiff2025_film_the_sealed_soil_1977",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1941,7 +1931,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_shoah_1985",
-    "filmId": "film_shoah_1985",
+    "filmId": "jiff2025_film_shoah_1985",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1951,7 +1941,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_videoheaven_2025",
-    "filmId": "film_videoheaven_2025",
+    "filmId": "jiff2025_film_videoheaven_2025",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "DCP",
@@ -1961,7 +1951,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_old_mill_1937",
-    "filmId": "film_the_old_mill_1937",
+    "filmId": "jiff2025_film_the_old_mill_1937",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "35mm",
@@ -1971,7 +1961,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_divided_world_1948",
-    "filmId": "film_a_divided_world_1948",
+    "filmId": "jiff2025_film_a_divided_world_1948",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "35mm",
@@ -1981,7 +1971,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_four_times_2010",
-    "filmId": "film_the_four_times_2010",
+    "filmId": "jiff2025_film_the_four_times_2010",
     "editionId": "edition_jiff_2025",
     "section": "시네필전주",
     "format": "35mm",
@@ -1991,7 +1981,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_in_this_life_s_body_1984",
-    "filmId": "film_in_this_life_s_body_1984",
+    "filmId": "jiff2025_film_in_this_life_s_body_1984",
     "editionId": "edition_jiff_2025",
     "section": "게스트 시네필: 에이드리언 마틴",
     "format": "16mm",
@@ -2001,7 +1991,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_my_darling_in_stirling_2023",
-    "filmId": "film_my_darling_in_stirling_2023",
+    "filmId": "jiff2025_film_my_darling_in_stirling_2023",
     "editionId": "edition_jiff_2025",
     "section": "게스트 시네필: 에이드리언 마틴",
     "format": "DCP",
@@ -2011,7 +2001,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_dreams_never_end_1983",
-    "filmId": "film_dreams_never_end_1983",
+    "filmId": "jiff2025_film_dreams_never_end_1983",
     "editionId": "edition_jiff_2025",
     "section": "게스트 시네필: 에이드리언 마틴",
     "format": "DCP",
@@ -2021,7 +2011,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_experimenting_angel_2010",
-    "filmId": "film_the_experimenting_angel_2010",
+    "filmId": "jiff2025_film_the_experimenting_angel_2010",
     "editionId": "edition_jiff_2025",
     "section": "게스트 시네필: 에이드리언 마틴",
     "format": "DCP",
@@ -2031,7 +2021,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_into_the_wild_2011",
-    "filmId": "film_into_the_wild_2011",
+    "filmId": "jiff2025_film_into_the_wild_2011",
     "editionId": "edition_jiff_2025",
     "section": "게스트 시네필: 에이드리언 마틴",
     "format": "DCP",
@@ -2041,7 +2031,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_vacant_possession_1994",
-    "filmId": "film_vacant_possession_1994",
+    "filmId": "jiff2025_film_vacant_possession_1994",
     "editionId": "edition_jiff_2025",
     "section": "게스트 시네필: 에이드리언 마틴",
     "format": "DCP",
@@ -2051,7 +2041,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_undercurrents_meditations_on_power_2023",
-    "filmId": "film_undercurrents_meditations_on_power_2023",
+    "filmId": "jiff2025_film_undercurrents_meditations_on_power_2023",
     "editionId": "edition_jiff_2025",
     "section": "게스트 시네필: 에이드리언 마틴",
     "format": "DCP",
@@ -2061,7 +2051,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_afternoons_of_solitude_2024",
-    "filmId": "film_afternoons_of_solitude_2024",
+    "filmId": "jiff2025_film_afternoons_of_solitude_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2071,7 +2061,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_can_we_just_love_2018",
-    "filmId": "film_can_we_just_love_2018",
+    "filmId": "jiff2025_film_can_we_just_love_2018",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2081,7 +2071,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_hot_in_day_cold_at_night_2021",
-    "filmId": "film_hot_in_day_cold_at_night_2021",
+    "filmId": "jiff2025_film_hot_in_day_cold_at_night_2021",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2091,7 +2081,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_if_i_fall_don_t_pick_me_up_2024",
-    "filmId": "film_if_i_fall_don_t_pick_me_up_2024",
+    "filmId": "jiff2025_film_if_i_fall_don_t_pick_me_up_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2101,7 +2091,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_lazaro_at_night_2024",
-    "filmId": "film_lazaro_at_night_2024",
+    "filmId": "jiff2025_film_lazaro_at_night_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2111,7 +2101,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mondongo_i_the_tightrope_walker_2024",
-    "filmId": "film_mondongo_i_the_tightrope_walker_2024",
+    "filmId": "jiff2025_film_mondongo_i_the_tightrope_walker_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2121,7 +2111,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mondongo_ii_portrait_of_mondongo_2024",
-    "filmId": "film_mondongo_ii_portrait_of_mondongo_2024",
+    "filmId": "jiff2025_film_mondongo_ii_portrait_of_mondongo_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2131,7 +2121,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mondongo_iii_kunst_der_farbe_2024",
-    "filmId": "film_mondongo_iii_kunst_der_farbe_2024",
+    "filmId": "jiff2025_film_mondongo_iii_kunst_der_farbe_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2141,7 +2131,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_peaches_goes_bananas_2024",
-    "filmId": "film_peaches_goes_bananas_2024",
+    "filmId": "jiff2025_film_peaches_goes_bananas_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2151,7 +2141,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sleep_2_2024",
-    "filmId": "film_sleep_2_2024",
+    "filmId": "jiff2025_film_sleep_2_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2161,7 +2151,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_unhappy_hour_2023",
-    "filmId": "film_unhappy_hour_2023",
+    "filmId": "jiff2025_film_unhappy_hour_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2171,7 +2161,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_who_killed_cock_robin_2005",
-    "filmId": "film_who_killed_cock_robin_2005",
+    "filmId": "jiff2025_film_who_killed_cock_robin_2005",
     "editionId": "edition_jiff_2025",
     "section": "특별전: 가능한 영화를 향하여",
     "format": "DCP",
@@ -2181,7 +2171,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_petal_1996",
-    "filmId": "film_a_petal_1996",
+    "filmId": "jiff2025_film_a_petal_1996",
     "editionId": "edition_jiff_2025",
     "section": "J 스페셜: 올해의 프로그래머",
     "format": "DCP",
@@ -2191,7 +2181,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_alice_in_earnestland_2014",
-    "filmId": "film_alice_in_earnestland_2014",
+    "filmId": "jiff2025_film_alice_in_earnestland_2014",
     "editionId": "edition_jiff_2025",
     "section": "J 스페셜: 올해의 프로그래머",
     "format": "DCP",
@@ -2201,7 +2191,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_night_fishing_2011",
-    "filmId": "film_night_fishing_2011",
+    "filmId": "jiff2025_film_night_fishing_2011",
     "editionId": "edition_jiff_2025",
     "section": "J 스페셜: 올해의 프로그래머",
     "format": "DCP",
@@ -2210,18 +2200,8 @@
     "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5694&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D25"
   },
   {
-    "id": "ent_edition_jiff_2025_film_sympathy_for_mr_vengeance_2002",
-    "filmId": "film_sympathy_for_mr_vengeance_2002",
-    "editionId": "edition_jiff_2025",
-    "section": "J 스페셜: 올해의 프로그래머",
-    "format": "DCP",
-    "color": "Color",
-    "premiere": "",
-    "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5695&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D25"
-  },
-  {
     "id": "ent_edition_jiff_2025_film_the_child_2005",
-    "filmId": "film_the_child_2005",
+    "filmId": "jiff2025_film_the_child_2005",
     "editionId": "edition_jiff_2025",
     "section": "J 스페셜: 올해의 프로그래머",
     "format": "DCP",
@@ -2231,7 +2211,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_nobody_knows_2004",
-    "filmId": "film_nobody_knows_2004",
+    "filmId": "biff2025_jiff2025_film_nobody_knows_2004",
     "editionId": "edition_jiff_2025",
     "section": "J 스페셜: 올해의 프로그래머",
     "format": "DCP",
@@ -2241,7 +2221,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_bhiksuni_1984",
-    "filmId": "film_bhiksuni_1984",
+    "filmId": "jiff2025_film_bhiksuni_1984",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2251,7 +2231,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_bori_sign_language_film_audio_description_2018",
-    "filmId": "film_bori_sign_language_film_audio_description_2018",
+    "filmId": "jiff2025_film_bori_sign_language_film_audio_description_2018",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2261,7 +2241,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_12_12_the_day_sign_language_film_audio_description_2023",
-    "filmId": "film_12_12_the_day_sign_language_film_audio_description_2023",
+    "filmId": "jiff2025_film_12_12_the_day_sign_language_film_audio_description_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2271,7 +2251,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_just_joking_barrier_free_version_2024",
-    "filmId": "film_just_joking_barrier_free_version_2024",
+    "filmId": "jiff2025_film_just_joking_barrier_free_version_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2281,7 +2261,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_house_of_hummingbird_barrier_free_version_2018",
-    "filmId": "film_house_of_hummingbird_barrier_free_version_2018",
+    "filmId": "jiff2025_film_house_of_hummingbird_barrier_free_version_2018",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2291,7 +2271,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_girl_who_leapt_through_time_barrier_free_version_2006",
-    "filmId": "film_the_girl_who_leapt_through_time_barrier_free_version_2006",
+    "filmId": "jiff2025_film_the_girl_who_leapt_through_time_barrier_free_version_2006",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2301,7 +2281,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_twilight_withbom_version_2024",
-    "filmId": "film_twilight_withbom_version_2024",
+    "filmId": "jiff2025_film_twilight_withbom_version_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2311,7 +2291,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_farewell_withbom_version_2024",
-    "filmId": "film_farewell_withbom_version_2024",
+    "filmId": "jiff2025_film_farewell_withbom_version_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2321,7 +2301,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_hansel_two_school_skirts_withbom_version_2024",
-    "filmId": "film_hansel_two_school_skirts_withbom_version_2024",
+    "filmId": "jiff2025_film_hansel_two_school_skirts_withbom_version_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2331,7 +2311,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_unspoken_withbom_version_2024",
-    "filmId": "film_unspoken_withbom_version_2024",
+    "filmId": "jiff2025_film_unspoken_withbom_version_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2341,7 +2321,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_entering_your_heart_withbom_version_2022",
-    "filmId": "film_entering_your_heart_withbom_version_2022",
+    "filmId": "jiff2025_film_entering_your_heart_withbom_version_2022",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2351,7 +2331,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_yangnimdong_girl_sign_language_film_audio_description_2022",
-    "filmId": "film_yangnimdong_girl_sign_language_film_audio_description_2022",
+    "filmId": "jiff2025_film_yangnimdong_girl_sign_language_film_audio_description_2022",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2361,7 +2341,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_subscribe_and_like_withbom_version_2021",
-    "filmId": "film_subscribe_and_like_withbom_version_2021",
+    "filmId": "jiff2025_film_subscribe_and_like_withbom_version_2021",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2371,7 +2351,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_for_go_chul_withbom_version_1992",
-    "filmId": "film_for_go_chul_withbom_version_1992",
+    "filmId": "jiff2025_film_for_go_chul_withbom_version_1992",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2381,7 +2361,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_gold_rush_withbom_version_2023",
-    "filmId": "film_gold_rush_withbom_version_2023",
+    "filmId": "jiff2025_film_gold_rush_withbom_version_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2391,7 +2371,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_nape_withbom_version_2023",
-    "filmId": "film_the_nape_withbom_version_2023",
+    "filmId": "jiff2025_film_the_nape_withbom_version_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2401,7 +2381,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_wetland_withbom_version_2022",
-    "filmId": "film_wetland_withbom_version_2022",
+    "filmId": "jiff2025_film_wetland_withbom_version_2022",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2411,7 +2391,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_house_of_rising_sun_withbom_version_2019",
-    "filmId": "film_the_house_of_rising_sun_withbom_version_2019",
+    "filmId": "jiff2025_film_the_house_of_rising_sun_withbom_version_2019",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2421,7 +2401,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_final_semester_2024",
-    "filmId": "film_the_final_semester_2024",
+    "filmId": "jiff2025_film_the_final_semester_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2431,7 +2411,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_boundary_2024",
-    "filmId": "film_the_boundary_2024",
+    "filmId": "jiff2025_film_the_boundary_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2441,7 +2421,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_my_name_2024",
-    "filmId": "film_my_name_2024",
+    "filmId": "jiff2025_film_my_name_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2451,7 +2431,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_mission_2024",
-    "filmId": "film_the_mission_2024",
+    "filmId": "jiff2025_film_the_mission_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2461,7 +2441,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_night_ghosts_2023",
-    "filmId": "film_night_ghosts_2023",
+    "filmId": "jiff2025_film_night_ghosts_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2471,7 +2451,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_to_find_my_life_2025",
-    "filmId": "film_to_find_my_life_2025",
+    "filmId": "jiff2025_film_to_find_my_life_2025",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2481,7 +2461,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_i_am_love_2024",
-    "filmId": "film_i_am_love_2024",
+    "filmId": "jiff2025_film_i_am_love_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2491,7 +2471,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_a_ray_of_sunlight_2024",
-    "filmId": "film_a_ray_of_sunlight_2024",
+    "filmId": "jiff2025_film_a_ray_of_sunlight_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2501,7 +2481,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_indulge_in_suspicion_2025",
-    "filmId": "film_indulge_in_suspicion_2025",
+    "filmId": "jiff2025_film_indulge_in_suspicion_2025",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2511,7 +2491,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_stand_2025",
-    "filmId": "film_stand_2025",
+    "filmId": "jiff2025_film_stand_2025",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2521,7 +2501,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_for_girls_2023",
-    "filmId": "film_for_girls_2023",
+    "filmId": "jiff2025_film_for_girls_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2531,7 +2511,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_shadow_boy_2024",
-    "filmId": "film_shadow_boy_2024",
+    "filmId": "jiff2025_film_shadow_boy_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2541,7 +2521,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_dreams_come_true_2024",
-    "filmId": "film_dreams_come_true_2024",
+    "filmId": "jiff2025_film_dreams_come_true_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2551,7 +2531,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_bleak_day_2024",
-    "filmId": "film_bleak_day_2024",
+    "filmId": "jiff2025_film_bleak_day_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2561,7 +2541,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_in_secret_2024",
-    "filmId": "film_in_secret_2024",
+    "filmId": "jiff2025_film_in_secret_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2571,7 +2551,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_our_ordinary_days_2024",
-    "filmId": "film_our_ordinary_days_2024",
+    "filmId": "jiff2025_film_our_ordinary_days_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2581,7 +2561,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_gull_2020",
-    "filmId": "film_gull_2020",
+    "filmId": "jiff2025_film_gull_2020",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2591,7 +2571,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_secret_relationships_2025",
-    "filmId": "film_secret_relationships_2025",
+    "filmId": "jiff2025_film_secret_relationships_2025",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2601,7 +2581,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_victory_2024",
-    "filmId": "film_victory_2024",
+    "filmId": "jiff2025_film_victory_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2611,7 +2591,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_sweet_red_bean_paste_2015",
-    "filmId": "film_sweet_red_bean_paste_2015",
+    "filmId": "jiff2025_film_sweet_red_bean_paste_2015",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2621,7 +2601,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_end_of_animal_2010",
-    "filmId": "film_end_of_animal_2010",
+    "filmId": "jiff2025_film_end_of_animal_2010",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2631,7 +2611,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_don_t_go_back_2024",
-    "filmId": "film_don_t_go_back_2024",
+    "filmId": "jiff2025_film_don_t_go_back_2024",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2641,7 +2621,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_monster_2023",
-    "filmId": "film_monster_2023",
+    "filmId": "jiff2025_film_monster_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2651,7 +2631,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_all_about_lily_chou_chou_2005",
-    "filmId": "film_all_about_lily_chou_chou_2005",
+    "filmId": "jiff2025_film_all_about_lily_chou_chou_2005",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2661,37 +2641,37 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_minari_2021",
-    "filmId": "film_minari_2021",
+    "filmId": "jiff2025_film_minari_2021",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
     "color": "Color",
     "premiere": "",
     "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5741&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D30"
-  },
+  },  
   {
     "id": "ent_edition_jiff_2025_film_the_bek_show_end_of_civilization_2024",
-    "filmId": "film_the_bek_show_end_of_civilization_2024",
+    "filmId": "jiff2025_film_the_bek_show_end_of_civilization_2024",
     "editionId": "edition_jiff_2025",
-    "section": "특별상영",
+    "section": "코리안시네마 / 특별상영",
     "format": "DCP",
     "color": "Color/B&W",
     "premiere": "",
-    "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5742&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D30"
-  },
+    "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5589&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D13"
+  },  
   {
     "id": "ent_edition_jiff_2025_film_sympathy_for_mr_vengeance_2002",
-    "filmId": "film_sympathy_for_mr_vengeance_2002",
+    "filmId": "jiff2025_film_sympathy_for_mr_vengeance_2002",
     "editionId": "edition_jiff_2025",
-    "section": "특별상영",
+    "section": "J 스페셜: 올해의 프로그래머 / 특별상영",
     "format": "DCP",
     "color": "Color",
     "premiere": "",
-    "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5743&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D30"
+    "detail_url": "https://www.jeonjufest.kr/db/movieView.asp?idx=5695&listGubun=MOVIELIST&sType=&sText=&sEP_NUM=26&reUrl=%2Fdb%2FmovieList%2Easp%3FsType%3D%26sText%3D%26EP%5FNUM%3D26%26sectionList%3D%26nationList%3D%26keywordList%3D%26Page%3D25"
   },
   {
     "id": "ent_edition_jiff_2025_film_nobody_knows_2005",
-    "filmId": "film_nobody_knows_2005",
+    "filmId": "jiff2025_film_nobody_knows_2005",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2701,7 +2681,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_after_yang_2022",
-    "filmId": "film_after_yang_2022",
+    "filmId": "jiff2025_film_after_yang_2022",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2711,7 +2691,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_whiplash_2015",
-    "filmId": "film_whiplash_2015",
+    "filmId": "jiff2025_film_whiplash_2015",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2721,7 +2701,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_love_letter_1995",
-    "filmId": "film_love_letter_1995",
+    "filmId": "jiff2025_film_love_letter_1995",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2731,7 +2711,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_josee_the_tiger_and_the_fish_2004",
-    "filmId": "film_josee_the_tiger_and_the_fish_2004",
+    "filmId": "jiff2025_film_josee_the_tiger_and_the_fish_2004",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2741,7 +2721,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_inside_llewyn_davis_2014",
-    "filmId": "film_inside_llewyn_davis_2014",
+    "filmId": "jiff2025_film_inside_llewyn_davis_2014",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2751,7 +2731,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_perfect_days_2023",
-    "filmId": "film_perfect_days_2023",
+    "filmId": "jiff2025_film_perfect_days_2023",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2761,7 +2741,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_the_florida_project_2018",
-    "filmId": "film_the_florida_project_2018",
+    "filmId": "jiff2025_film_the_florida_project_2018",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2771,7 +2751,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_re_encounter_2010",
-    "filmId": "film_re_encounter_2010",
+    "filmId": "jiff2025_film_re_encounter_2010",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2781,7 +2761,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_casa_de_lava_1994",
-    "filmId": "film_casa_de_lava_1994",
+    "filmId": "jiff2025_film_casa_de_lava_1994",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2791,7 +2771,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_tastefully_yours_2025",
-    "filmId": "film_tastefully_yours_2025",
+    "filmId": "jiff2025_film_tastefully_yours_2025",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2801,7 +2781,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_mad_rush_2018",
-    "filmId": "film_mad_rush_2018",
+    "filmId": "jiff2025_film_mad_rush_2018",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2811,7 +2791,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_youngyoung_2025",
-    "filmId": "film_youngyoung_2025",
+    "filmId": "jiff2025_film_youngyoung_2025",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2821,7 +2801,7 @@
   },
   {
     "id": "ent_edition_jiff_2025_film_peppertones_in_cinema_everything_is_ok_2025",
-    "filmId": "film_peppertones_in_cinema_everything_is_ok_2025",
+    "filmId": "jiff2025_film_peppertones_in_cinema_everything_is_ok_2025",
     "editionId": "edition_jiff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -2831,7 +2811,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_no_other_choice_2025",
-    "filmId": "film_no_other_choice_2025",
+    "filmId": "biff2025_film_no_other_choice_2025",
     "editionId": "edition_biff_2025",
     "section": "개막작",
     "format": "DCP",
@@ -2841,7 +2821,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_leave_the_cat_alone_2025",
-    "filmId": "film_leave_the_cat_alone_2025",
+    "filmId": "biff2025_film_leave_the_cat_alone_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2851,7 +2831,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_resurrection_2025",
-    "filmId": "film_resurrection_2025",
+    "filmId": "biff2025_film_resurrection_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2861,7 +2841,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_by_another_name_2025",
-    "filmId": "film_by_another_name_2025",
+    "filmId": "biff2025_film_by_another_name_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2871,7 +2851,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_another_birth_2025",
-    "filmId": "film_another_birth_2025",
+    "filmId": "biff2025_film_another_birth_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2881,7 +2861,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_gloaming_in_luomu_2025",
-    "filmId": "film_gloaming_in_luomu_2025",
+    "filmId": "biff2025_film_gloaming_in_luomu_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2891,7 +2871,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_girl_2025",
-    "filmId": "film_girl_2025",
+    "filmId": "biff2025_film_girl_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2901,7 +2881,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_spying_stars_2025",
-    "filmId": "film_spying_stars_2025",
+    "filmId": "biff2025_film_spying_stars_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2911,7 +2891,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_seven_oclock_breakfast_club_for_the_brokenhearted_2025",
-    "filmId": "film_seven_oclock_breakfast_club_for_the_brokenhearted_2025",
+    "filmId": "biff2025_film_seven_oclock_breakfast_club_for_the_brokenhearted_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2921,7 +2901,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_bakas_identity_2025",
-    "filmId": "film_bakas_identity_2025",
+    "filmId": "biff2025_film_bakas_identity_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2931,7 +2911,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_two_seasons_two_strangers_2025",
-    "filmId": "film_two_seasons_two_strangers_2025",
+    "filmId": "biff2025_film_two_seasons_two_strangers_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2941,7 +2921,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_left_handed_girl_2025",
-    "filmId": "film_left_handed_girl_2025",
+    "filmId": "biff2025_film_left_handed_girl_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2951,7 +2931,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_en_route_to_2025",
-    "filmId": "film_en_route_to_2025",
+    "filmId": "biff2025_film_en_route_to_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2961,7 +2941,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_funky_freaky_freaks_2025",
-    "filmId": "film_funky_freaky_freaks_2025",
+    "filmId": "biff2025_film_funky_freaky_freaks_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2971,7 +2951,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_without_permission_2025",
-    "filmId": "film_without_permission_2025",
+    "filmId": "biff2025_film_without_permission_2025",
     "editionId": "edition_biff_2025",
     "section": "경쟁",
     "format": "DCP",
@@ -2981,7 +2961,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_kokuho_2025",
-    "filmId": "film_kokuho_2025",
+    "filmId": "biff2025_film_kokuho_2025",
     "editionId": "edition_biff_2025",
     "section": "갈라 프레젠테이션",
     "format": "DCP",
@@ -2991,7 +2971,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_good_news_2025",
-    "filmId": "film_good_news_2025",
+    "filmId": "biff2025_film_good_news_2025",
     "editionId": "edition_biff_2025",
     "section": "갈라 프레젠테이션",
     "format": "DCP",
@@ -3001,7 +2981,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_it_was_just_an_accident_2025",
-    "filmId": "film_it_was_just_an_accident_2025",
+    "filmId": "biff2025_film_it_was_just_an_accident_2025",
     "editionId": "edition_biff_2025",
     "section": "갈라 프레젠테이션",
     "format": "DCP",
@@ -3011,7 +2991,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_frankenstein_2025",
-    "filmId": "film_frankenstein_2025",
+    "filmId": "biff2025_film_frankenstein_2025",
     "editionId": "edition_biff_2025",
     "section": "갈라 프레젠테이션",
     "format": "DCP",
@@ -3021,7 +3001,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_eagles_of_the_republic_2025",
-    "filmId": "film_eagles_of_the_republic_2025",
+    "filmId": "biff2025_film_eagles_of_the_republic_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3031,7 +3011,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_below_the_clouds_2025",
-    "filmId": "film_below_the_clouds_2025",
+    "filmId": "biff2025_film_below_the_clouds_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3041,7 +3021,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_orphan_2025",
-    "filmId": "film_orphan_2025",
+    "filmId": "biff2025_film_orphan_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3051,7 +3031,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_nouvelle_vague_2025",
-    "filmId": "film_nouvelle_vague_2025",
+    "filmId": "biff2025_film_nouvelle_vague_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3061,7 +3041,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_two_prosecutors_2025",
-    "filmId": "film_two_prosecutors_2025",
+    "filmId": "biff2025_film_two_prosecutors_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3071,7 +3051,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dracula_2025",
-    "filmId": "film_dracula_2025",
+    "filmId": "biff2025_film_dracula_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3081,7 +3061,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dreams_2025",
-    "filmId": "film_dreams_2025",
+    "filmId": "biff2025_film_dreams_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3091,7 +3071,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_la_grazia_2025",
-    "filmId": "film_la_grazia_2025",
+    "filmId": "biff2025_film_la_grazia_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3101,7 +3081,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_romeria_2025",
-    "filmId": "film_romeria_2025",
+    "filmId": "biff2025_film_romeria_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3111,7 +3091,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_lost_bus_2025",
-    "filmId": "film_the_lost_bus_2025",
+    "filmId": "biff2025_film_the_lost_bus_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3121,7 +3101,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_a_magnificent_life_2025",
-    "filmId": "film_a_magnificent_life_2025",
+    "filmId": "biff2025_film_a_magnificent_life_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3131,7 +3111,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_mastermind_2025",
-    "filmId": "film_the_mastermind_2025",
+    "filmId": "biff2025_film_the_mastermind_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3141,7 +3121,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_magellan_2025",
-    "filmId": "film_magellan_2025",
+    "filmId": "biff2025_film_magellan_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3151,7 +3131,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_mirrors_no_3_2025",
-    "filmId": "film_mirrors_no_3_2025",
+    "filmId": "biff2025_film_mirrors_no_3_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3161,7 +3141,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_bugonia_2025",
-    "filmId": "film_bugonia_2025",
+    "filmId": "biff2025_film_bugonia_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3171,7 +3151,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_a_big_bold_beautiful_journey_2025",
-    "filmId": "film_a_big_bold_beautiful_journey_2025",
+    "filmId": "biff2025_film_a_big_bold_beautiful_journey_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3181,7 +3161,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dreams_sex_love_2024",
-    "filmId": "film_dreams_sex_love_2024",
+    "filmId": "biff2025_film_dreams_sex_love_2024",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3191,7 +3171,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_love_that_remains_2025",
-    "filmId": "film_the_love_that_remains_2025",
+    "filmId": "biff2025_film_the_love_that_remains_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3201,7 +3181,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_silent_friend_2025",
-    "filmId": "film_silent_friend_2025",
+    "filmId": "biff2025_film_silent_friend_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3211,7 +3191,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_sentimental_value_2025",
-    "filmId": "film_sentimental_value_2025",
+    "filmId": "biff2025_film_sentimental_value_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3221,7 +3201,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_sirat_2025",
-    "filmId": "film_sirat_2025",
+    "filmId": "biff2025_film_sirat_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3231,7 +3211,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_secret_agent_2025",
-    "filmId": "film_the_secret_agent_2025",
+    "filmId": "biff2025_film_the_secret_agent_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3241,7 +3221,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_alpha_2025",
-    "filmId": "film_alpha_2025",
+    "filmId": "biff2025_film_alpha_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3251,7 +3231,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_young_mothers_home_2025",
-    "filmId": "film_the_young_mothers_home_2025",
+    "filmId": "biff2025_film_the_young_mothers_home_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3261,7 +3241,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_enzo_2025",
-    "filmId": "film_enzo_2025",
+    "filmId": "biff2025_film_enzo_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3271,7 +3251,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_duse_2025",
-    "filmId": "film_duse_2025",
+    "filmId": "biff2025_film_duse_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3281,7 +3261,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_jay_kelly_2025",
-    "filmId": "film_jay_kelly_2025",
+    "filmId": "biff2025_film_jay_kelly_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3291,7 +3271,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_back_home_2025",
-    "filmId": "film_back_home_2025",
+    "filmId": "biff2025_film_back_home_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3301,7 +3281,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_wizard_of_the_kremlin_2025",
-    "filmId": "film_the_wizard_of_the_kremlin_2025",
+    "filmId": "biff2025_film_the_wizard_of_the_kremlin_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3311,7 +3291,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_father_mother_sister_brother_2025",
-    "filmId": "film_father_mother_sister_brother_2025",
+    "filmId": "biff2025_film_father_mother_sister_brother_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3321,7 +3301,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_franz_2025",
-    "filmId": "film_franz_2025",
+    "filmId": "biff2025_film_franz_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3331,7 +3311,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_stranger_2025",
-    "filmId": "film_the_stranger_2025",
+    "filmId": "biff2025_film_the_stranger_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3341,7 +3321,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_a_house_of_dynamite_2025",
-    "filmId": "film_a_house_of_dynamite_2025",
+    "filmId": "biff2025_film_a_house_of_dynamite_2025",
     "editionId": "edition_biff_2025",
     "section": "아이콘",
     "format": "DCP",
@@ -3351,7 +3331,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_girlfriends_2025",
-    "filmId": "film_girlfriends_2025",
+    "filmId": "biff2025_film_girlfriends_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3361,7 +3341,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_malika_2025",
-    "filmId": "film_malika_2025",
+    "filmId": "biff2025_film_malika_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3371,7 +3351,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_shape_of_momo_2025",
-    "filmId": "film_shape_of_momo_2025",
+    "filmId": "biff2025_film_shape_of_momo_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3381,7 +3361,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_if_on_a_winters_night_2025",
-    "filmId": "film_if_on_a_winters_night_2025",
+    "filmId": "biff2025_film_if_on_a_winters_night_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3391,7 +3371,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_all_greens_2025",
-    "filmId": "film_all_greens_2025",
+    "filmId": "biff2025_film_all_greens_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3401,7 +3381,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_kok_kok_kokoook_2025",
-    "filmId": "film_kok_kok_kokoook_2025",
+    "filmId": "biff2025_film_kok_kok_kokoook_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3411,7 +3391,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_kurak_2025",
-    "filmId": "film_kurak_2025",
+    "filmId": "biff2025_film_kurak_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3421,7 +3401,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_tiger_2025",
-    "filmId": "film_tiger_2025",
+    "filmId": "biff2025_film_tiger_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3431,7 +3411,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_on_your_lap_2025",
-    "filmId": "film_on_your_lap_2025",
+    "filmId": "biff2025_film_on_your_lap_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3441,7 +3421,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_black_rabbit_white_rabbit_2025",
-    "filmId": "film_black_rabbit_white_rabbit_2025",
+    "filmId": "biff2025_film_black_rabbit_white_rabbit_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3451,7 +3431,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_mothernet_2025",
-    "filmId": "film_mothernet_2025",
+    "filmId": "biff2025_film_mothernet_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3461,7 +3441,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_winter_days_2025",
-    "filmId": "film_winter_days_2025",
+    "filmId": "biff2025_film_winter_days_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3471,7 +3451,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_observers_journal_2025",
-    "filmId": "film_the_observers_journal_2025",
+    "filmId": "biff2025_film_the_observers_journal_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3481,7 +3461,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_beautiful_dreamer_2025",
-    "filmId": "film_beautiful_dreamer_2025",
+    "filmId": "biff2025_film_beautiful_dreamer_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3491,7 +3471,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_second_child_2025",
-    "filmId": "film_the_second_child_2025",
+    "filmId": "biff2025_film_the_second_child_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3501,7 +3481,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_maze_2025",
-    "filmId": "film_maze_2025",
+    "filmId": "biff2025_film_maze_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3511,7 +3491,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_mutation_2025",
-    "filmId": "film_the_mutation_2025",
+    "filmId": "biff2025_film_the_mutation_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3521,7 +3501,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_gorals_2025",
-    "filmId": "film_the_gorals_2025",
+    "filmId": "biff2025_film_the_gorals_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3531,7 +3511,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_accordion_door_2025",
-    "filmId": "film_the_accordion_door_2025",
+    "filmId": "biff2025_film_the_accordion_door_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3541,7 +3521,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_two_voices_into_an_echo_2025",
-    "filmId": "film_two_voices_into_an_echo_2025",
+    "filmId": "biff2025_film_two_voices_into_an_echo_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3551,7 +3531,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_coming_of_age_2025",
-    "filmId": "film_coming_of_age_2025",
+    "filmId": "biff2025_film_coming_of_age_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3561,7 +3541,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_love_of_truman_2025",
-    "filmId": "film_the_love_of_truman_2025",
+    "filmId": "biff2025_film_the_love_of_truman_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3571,7 +3551,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_journey_there_2025",
-    "filmId": "film_journey_there_2025",
+    "filmId": "biff2025_film_journey_there_2025",
     "editionId": "edition_biff_2025",
     "section": "비전",
     "format": "DCP",
@@ -3581,7 +3561,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_after_dreaming_2025",
-    "filmId": "film_after_dreaming_2025",
+    "filmId": "biff2025_film_after_dreaming_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3591,7 +3571,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_whisperings_of_the_moon_2025",
-    "filmId": "film_whisperings_of_the_moon_2025",
+    "filmId": "biff2025_film_whisperings_of_the_moon_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3601,7 +3581,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_presidents_cake_2025",
-    "filmId": "film_the_presidents_cake_2025",
+    "filmId": "biff2025_film_the_presidents_cake_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3611,7 +3591,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dear_stranger_2025",
-    "filmId": "film_dear_stranger_2025",
+    "filmId": "biff2025_film_dear_stranger_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3621,7 +3601,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_rangga_cinta_2025",
-    "filmId": "film_rangga_cinta_2025",
+    "filmId": "biff2025_film_rangga_cinta_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3631,7 +3611,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_renoir_2025",
-    "filmId": "film_renoir_2025",
+    "filmId": "biff2025_film_renoir_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3641,7 +3621,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_botanist_2025",
-    "filmId": "film_the_botanist_2025",
+    "filmId": "biff2025_film_the_botanist_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3651,7 +3631,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_becoming_2025",
-    "filmId": "film_becoming_2025",
+    "filmId": "biff2025_film_becoming_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3661,7 +3641,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_ky_nam_inn_2025",
-    "filmId": "film_ky_nam_inn_2025",
+    "filmId": "biff2025_film_ky_nam_inn_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3671,7 +3651,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_sand_city_2025",
-    "filmId": "film_sand_city_2025",
+    "filmId": "biff2025_film_sand_city_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3681,7 +3661,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dont_tell_mother_2025",
-    "filmId": "film_dont_tell_mother_2025",
+    "filmId": "biff2025_film_dont_tell_mother_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3691,7 +3671,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_a_useful_ghost_2025",
-    "filmId": "film_a_useful_ghost_2025",
+    "filmId": "biff2025_film_a_useful_ghost_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3701,7 +3681,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_in_the_land_of_arto_2025",
-    "filmId": "film_in_the_land_of_arto_2025",
+    "filmId": "biff2025_film_in_the_land_of_arto_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3711,7 +3691,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_amoeba_2025",
-    "filmId": "film_amoeba_2025",
+    "filmId": "biff2025_film_amoeba_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3721,7 +3701,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_full_plate_2025",
-    "filmId": "film_full_plate_2025",
+    "filmId": "biff2025_film_full_plate_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3731,7 +3711,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_fox_king_2025",
-    "filmId": "film_the_fox_king_2025",
+    "filmId": "biff2025_film_the_fox_king_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3741,7 +3721,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_love_on_trial_2025",
-    "filmId": "film_love_on_trial_2025",
+    "filmId": "biff2025_film_love_on_trial_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3751,7 +3731,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_sun_rises_on_us_all_2025",
-    "filmId": "film_the_sun_rises_on_us_all_2025",
+    "filmId": "biff2025_film_the_sun_rises_on_us_all_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3761,7 +3741,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_river_that_holds_our_hands_2025",
-    "filmId": "film_the_river_that_holds_our_hands_2025",
+    "filmId": "biff2025_film_the_river_that_holds_our_hands_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3771,7 +3751,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_sai_disaster_2025",
-    "filmId": "film_sai_disaster_2025",
+    "filmId": "biff2025_film_sai_disaster_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3781,7 +3761,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_bayaan_2025",
-    "filmId": "film_bayaan_2025",
+    "filmId": "biff2025_film_bayaan_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3791,7 +3771,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_raindrops_on_a_roof_2025",
-    "filmId": "film_raindrops_on_a_roof_2025",
+    "filmId": "biff2025_film_raindrops_on_a_roof_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3801,7 +3781,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_a_dance_in_vain_2025",
-    "filmId": "film_a_dance_in_vain_2025",
+    "filmId": "biff2025_film_a_dance_in_vain_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3811,7 +3791,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_becoming_human_2025",
-    "filmId": "film_becoming_human_2025",
+    "filmId": "biff2025_film_becoming_human_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3821,7 +3801,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_human_resource_2025",
-    "filmId": "film_human_resource_2025",
+    "filmId": "biff2025_film_human_resource_2025",
     "editionId": "edition_biff_2025",
     "section": "아시아영화의 창",
     "format": "DCP",
@@ -3831,7 +3811,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_great_flood_2025",
-    "filmId": "film_the_great_flood_2025",
+    "filmId": "biff2025_film_the_great_flood_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
@@ -3841,7 +3821,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_boss_2025",
-    "filmId": "film_boss_2025",
+    "filmId": "biff2025_film_boss_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
@@ -3851,7 +3831,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_people_upstairs_2025",
-    "filmId": "film_the_people_upstairs_2025",
+    "filmId": "biff2025_film_the_people_upstairs_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
@@ -3860,18 +3840,8 @@
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82620&c_idx=418&sp_idx=563"
   },
   {
-    "id": "ent_edition_biff_2025_film_audition_109_2025",
-    "filmId": "film_audition_109_2025",
-    "editionId": "edition_biff_2025",
-    "section": "한국영화의 오늘",
-    "format": "DCP",
-    "color": "Color",
-    "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82273&c_idx=418&sp_idx=563"
-  },
-  {
     "id": "ent_edition_biff_2025_film_project_y_2025",
-    "filmId": "film_project_y_2025",
+    "filmId": "biff2025_film_project_y_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
@@ -3881,7 +3851,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_time_of_cinema_2025",
-    "filmId": "film_time_of_cinema_2025",
+    "filmId": "biff2025_film_time_of_cinema_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
@@ -3891,7 +3861,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_be_my_baby_2025",
-    "filmId": "film_be_my_baby_2025",
+    "filmId": "biff2025_film_be_my_baby_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
@@ -3901,27 +3871,27 @@
   },
   {
     "id": "ent_edition_biff_2025_film_people_and_meat_2025",
-    "filmId": "film_people_and_meat_2025",
+    "filmId": "biff2025_film_people_and_meat_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=77675&c_idx=418&sp_idx=564"
-  },
+  },  
   {
     "id": "ent_edition_biff_2025_film_my_home_2025",
-    "filmId": "film_my_home_2025",
+    "filmId": "biff2025_film_my_home_2025",
     "editionId": "edition_biff_2025",
-    "section": "한국영화의 오늘",
+    "section": "한국영화의 오늘 / 미드나잇 패션",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82771&c_idx=418&sp_idx=564"
+    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82771&c_idx=423"
   },
   {
     "id": "ent_edition_biff_2025_film_the_old_woman_with_the_knife_international_cut_2025",
-    "filmId": "film_the_old_woman_with_the_knife_international_cut_2025",
+    "filmId": "biff2025_film_the_old_woman_with_the_knife_international_cut_2025",
     "editionId": "edition_biff_2025",
     "section": "한국영화의 오늘",
     "format": "DCP",
@@ -3931,7 +3901,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_phantoms_of_july_2025",
-    "filmId": "film_phantoms_of_july_2025",
+    "filmId": "biff2025_film_phantoms_of_july_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -3941,7 +3911,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_wedding_banquet_2025",
-    "filmId": "film_the_wedding_banquet_2025",
+    "filmId": "biff2025_film_the_wedding_banquet_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -3951,7 +3921,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_great_arch_2025",
-    "filmId": "film_the_great_arch_2025",
+    "filmId": "biff2025_film_the_great_arch_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -3961,7 +3931,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dont_let_the_sun_2025",
-    "filmId": "film_dont_let_the_sun_2025",
+    "filmId": "biff2025_film_dont_let_the_sun_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -3971,7 +3941,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_lovely_day_2025",
-    "filmId": "film_lovely_day_2025",
+    "filmId": "biff2025_film_lovely_day_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -3981,7 +3951,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_little_sister_2025",
-    "filmId": "film_the_little_sister_2025",
+    "filmId": "biff2025_film_the_little_sister_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -3991,7 +3961,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dry_leaf_2025",
-    "filmId": "film_dry_leaf_2025",
+    "filmId": "biff2025_film_dry_leaf_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4001,7 +3971,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_blue_trail_2025",
-    "filmId": "film_the_blue_trail_2025",
+    "filmId": "biff2025_film_the_blue_trail_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4011,7 +3981,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_chronology_of_water_2025",
-    "filmId": "film_the_chronology_of_water_2025",
+    "filmId": "biff2025_film_the_chronology_of_water_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4021,7 +3991,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_sound_of_falling_2025",
-    "filmId": "film_sound_of_falling_2025",
+    "filmId": "biff2025_film_sound_of_falling_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4031,7 +4001,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_meteors_2025",
-    "filmId": "film_meteors_2025",
+    "filmId": "biff2025_film_meteors_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4041,7 +4011,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_sweetheart_2025",
-    "filmId": "film_sweetheart_2025",
+    "filmId": "biff2025_film_sweetheart_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4051,7 +4021,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_god_will_not_help_2025",
-    "filmId": "film_god_will_not_help_2025",
+    "filmId": "biff2025_film_god_will_not_help_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4061,7 +4031,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_adams_sake_2025",
-    "filmId": "film_adams_sake_2025",
+    "filmId": "biff2025_film_adams_sake_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4071,7 +4041,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_islands_2025",
-    "filmId": "film_islands_2025",
+    "filmId": "biff2025_film_islands_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4081,7 +4051,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_that_summer_in_paris_2025",
-    "filmId": "film_that_summer_in_paris_2025",
+    "filmId": "biff2025_film_that_summer_in_paris_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4091,7 +4061,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_no_beast_so_fierce_2025",
-    "filmId": "film_no_beast_so_fierce_2025",
+    "filmId": "biff2025_film_no_beast_so_fierce_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4101,7 +4071,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_currents_2025",
-    "filmId": "film_the_currents_2025",
+    "filmId": "biff2025_film_the_currents_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4111,7 +4081,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_voice_of_hind_rajab_2025",
-    "filmId": "film_the_voice_of_hind_rajab_2025",
+    "filmId": "biff2025_film_the_voice_of_hind_rajab_2025",
     "editionId": "edition_biff_2025",
     "section": "월드 시네마",
     "format": "DCP",
@@ -4121,7 +4091,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_last_one_for_the_road_2025",
-    "filmId": "film_the_last_one_for_the_road_2025",
+    "filmId": "biff2025_film_the_last_one_for_the_road_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4131,7 +4101,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_a_year_of_school_2025",
-    "filmId": "film_a_year_of_school_2025",
+    "filmId": "biff2025_film_a_year_of_school_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4141,7 +4111,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_her_will_be_done_2025",
-    "filmId": "film_her_will_be_done_2025",
+    "filmId": "biff2025_film_her_will_be_done_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4151,7 +4121,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_i_only_rest_in_the_storm_2025",
-    "filmId": "film_i_only_rest_in_the_storm_2025",
+    "filmId": "biff2025_film_i_only_rest_in_the_storm_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4161,7 +4131,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_my_fathers_shadow_2025",
-    "filmId": "film_my_fathers_shadow_2025",
+    "filmId": "biff2025_film_my_fathers_shadow_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4171,7 +4141,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_lucky_lu_2025",
-    "filmId": "film_lucky_lu_2025",
+    "filmId": "biff2025_film_lucky_lu_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4181,7 +4151,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_reedland_2025",
-    "filmId": "film_reedland_2025",
+    "filmId": "biff2025_film_reedland_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4191,7 +4161,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_strange_river_2025",
-    "filmId": "film_strange_river_2025",
+    "filmId": "biff2025_film_strange_river_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4201,7 +4171,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_mysterious_gaze_of_the_flamingo_2025",
-    "filmId": "film_the_mysterious_gaze_of_the_flamingo_2025",
+    "filmId": "biff2025_film_the_mysterious_gaze_of_the_flamingo_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4211,7 +4181,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_omaha_2025",
-    "filmId": "film_omaha_2025",
+    "filmId": "biff2025_film_omaha_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4221,7 +4191,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_wild_foxes_2025",
-    "filmId": "film_wild_foxes_2025",
+    "filmId": "biff2025_film_wild_foxes_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4231,7 +4201,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_hana_korea_2025",
-    "filmId": "film_hana_korea_2025",
+    "filmId": "biff2025_film_hana_korea_2025",
     "editionId": "edition_biff_2025",
     "section": "플래시 포워드",
     "format": "DCP",
@@ -4241,7 +4211,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_a_man_who_takes_pictures_of_flowers_2025",
-    "filmId": "film_a_man_who_takes_pictures_of_flowers_2025",
+    "filmId": "biff2025_film_a_man_who_takes_pictures_of_flowers_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4251,7 +4221,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_yellow_ghost_2025",
-    "filmId": "film_yellow_ghost_2025",
+    "filmId": "biff2025_film_yellow_ghost_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4261,7 +4231,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_noise_cancellation_2025",
-    "filmId": "film_noise_cancellation_2025",
+    "filmId": "biff2025_film_noise_cancellation_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4271,7 +4241,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_backpike_2025",
-    "filmId": "film_backpike_2025",
+    "filmId": "biff2025_film_backpike_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4281,7 +4251,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_very_very_strange_love_2025",
-    "filmId": "film_very_very_strange_love_2025",
+    "filmId": "biff2025_film_very_very_strange_love_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4291,7 +4261,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_it_sounds_louder_on_rainy_days_2025",
-    "filmId": "film_it_sounds_louder_on_rainy_days_2025",
+    "filmId": "biff2025_film_it_sounds_louder_on_rainy_days_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4301,7 +4271,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_into_the_light_2025",
-    "filmId": "film_into_the_light_2025",
+    "filmId": "biff2025_film_into_the_light_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4311,7 +4281,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_fadeout_cosmos_2025",
-    "filmId": "film_fadeout_cosmos_2025",
+    "filmId": "biff2025_film_fadeout_cosmos_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4321,7 +4291,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_into_the_night_2025",
-    "filmId": "film_into_the_night_2025",
+    "filmId": "biff2025_film_into_the_night_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4331,7 +4301,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_poetry_syndrome_2025",
-    "filmId": "film_poetry_syndrome_2025",
+    "filmId": "biff2025_film_poetry_syndrome_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4341,7 +4311,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_cheat_2025",
-    "filmId": "film_the_cheat_2025",
+    "filmId": "biff2025_film_the_cheat_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4351,7 +4321,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_in_our_sunset_2025",
-    "filmId": "film_in_our_sunset_2025",
+    "filmId": "biff2025_film_in_our_sunset_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4361,7 +4331,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_throughout_these_cages_2025",
-    "filmId": "film_throughout_these_cages_2025",
+    "filmId": "biff2025_film_throughout_these_cages_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4371,7 +4341,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_in_the_valley_2025",
-    "filmId": "film_in_the_valley_2025",
+    "filmId": "biff2025_film_in_the_valley_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4381,7 +4351,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_rihanna_2025",
-    "filmId": "film_rihanna_2025",
+    "filmId": "biff2025_film_rihanna_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4391,7 +4361,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_delay_2025",
-    "filmId": "film_delay_2025",
+    "filmId": "biff2025_film_delay_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4401,7 +4371,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_ambush_2025",
-    "filmId": "film_ambush_2025",
+    "filmId": "biff2025_film_ambush_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4411,7 +4381,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_interface_2025",
-    "filmId": "film_interface_2025",
+    "filmId": "biff2025_film_interface_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4421,7 +4391,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_no_island_in_the_sea_2024",
-    "filmId": "film_no_island_in_the_sea_2024",
+    "filmId": "biff2025_film_no_island_in_the_sea_2024",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4431,7 +4401,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_fruit_2025",
-    "filmId": "film_fruit_2025",
+    "filmId": "biff2025_film_fruit_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4441,7 +4411,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_please_p_r_ay_attention_2025",
-    "filmId": "film_please_p_r_ay_attention_2025",
+    "filmId": "biff2025_film_please_p_r_ay_attention_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4451,7 +4421,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_karinji_2025",
-    "filmId": "film_karinji_2025",
+    "filmId": "biff2025_film_karinji_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4461,7 +4431,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_10s_across_the_borders_2025",
-    "filmId": "film_10s_across_the_borders_2025",
+    "filmId": "biff2025_film_10s_across_the_borders_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4471,7 +4441,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_in_the_sea_of_strange_thoughts_2025",
-    "filmId": "film_in_the_sea_of_strange_thoughts_2025",
+    "filmId": "biff2025_film_in_the_sea_of_strange_thoughts_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4481,7 +4451,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_habibi_hussein_2025",
-    "filmId": "film_habibi_hussein_2025",
+    "filmId": "biff2025_film_habibi_hussein_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4491,7 +4461,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_singing_wings_2025",
-    "filmId": "film_singing_wings_2025",
+    "filmId": "biff2025_film_singing_wings_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4501,7 +4471,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_where_we_stay_for_a_while_2025",
-    "filmId": "film_where_we_stay_for_a_while_2025",
+    "filmId": "biff2025_film_where_we_stay_for_a_while_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4511,7 +4481,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_baima_boy_2025",
-    "filmId": "film_baima_boy_2025",
+    "filmId": "biff2025_film_baima_boy_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4521,7 +4491,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_raining_dust_2025",
-    "filmId": "film_raining_dust_2025",
+    "filmId": "biff2025_film_raining_dust_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4531,7 +4501,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_relay_race_2025",
-    "filmId": "film_relay_race_2025",
+    "filmId": "biff2025_film_relay_race_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4541,7 +4511,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_ikaino_2025",
-    "filmId": "film_ikaino_2025",
+    "filmId": "biff2025_film_ikaino_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4551,7 +4521,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_panic_button_2025",
-    "filmId": "film_panic_button_2025",
+    "filmId": "biff2025_film_panic_button_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4561,7 +4531,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_coexistence_my_ass_2025",
-    "filmId": "film_coexistence_my_ass_2025",
+    "filmId": "biff2025_film_coexistence_my_ass_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4571,7 +4541,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_numakage_public_pool_2025",
-    "filmId": "film_numakage_public_pool_2025",
+    "filmId": "biff2025_film_numakage_public_pool_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4581,7 +4551,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_rose_come_back_to_me_2025",
-    "filmId": "film_the_rose_come_back_to_me_2025",
+    "filmId": "biff2025_film_the_rose_come_back_to_me_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4591,7 +4561,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_hair_paper_water_2025",
-    "filmId": "film_hair_paper_water_2025",
+    "filmId": "biff2025_film_hair_paper_water_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4601,7 +4571,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_have_you_seen_the_land_of_the_red_2025",
-    "filmId": "film_have_you_seen_the_land_of_the_red_2025",
+    "filmId": "biff2025_film_have_you_seen_the_land_of_the_red_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4611,7 +4581,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_i_poppy_2025",
-    "filmId": "film_i_poppy_2025",
+    "filmId": "biff2025_film_i_poppy_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4621,7 +4591,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_put_your_soul_on_your_hand_and_walk_2025",
-    "filmId": "film_put_your_soul_on_your_hand_and_walk_2025",
+    "filmId": "biff2025_film_put_your_soul_on_your_hand_and_walk_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4631,7 +4601,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_ozu_diaries_2025",
-    "filmId": "film_the_ozu_diaries_2025",
+    "filmId": "biff2025_film_the_ozu_diaries_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4641,7 +4611,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_imago_2025",
-    "filmId": "film_imago_2025",
+    "filmId": "biff2025_film_imago_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4651,7 +4621,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dear_juhee_2025",
-    "filmId": "film_dear_juhee_2025",
+    "filmId": "biff2025_film_dear_juhee_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4661,7 +4631,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_grounding_2025",
-    "filmId": "film_grounding_2025",
+    "filmId": "biff2025_film_grounding_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4671,7 +4641,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_sky_wind_stars_and_the_island_2025",
-    "filmId": "film_sky_wind_stars_and_the_island_2025",
+    "filmId": "biff2025_film_sky_wind_stars_and_the_island_2025",
     "editionId": "edition_biff_2025",
     "section": "와이드 앵글",
     "format": "DCP",
@@ -4681,7 +4651,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_arco_2025",
-    "filmId": "film_arco_2025",
+    "filmId": "biff2025_film_arco_2025",
     "editionId": "edition_biff_2025",
     "section": "오픈 시네마",
     "format": "DCP",
@@ -4691,27 +4661,27 @@
   },
   {
     "id": "ent_edition_biff_2025_film_bring_him_down_to_a_portable_size_2025",
-    "filmId": "film_bring_him_down_to_a_portable_size_2025",
+    "filmId": "biff2025_film_bring_him_down_to_a_portable_size_2025",
     "editionId": "edition_biff_2025",
     "section": "오픈 시네마",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82807&c_idx=422"
-  },
+  },  
   {
     "id": "ent_edition_biff_2025_film_audition_109_2025",
-    "filmId": "film_audition_109_2025",
+    "filmId": "biff2025_film_audition_109_2025",
     "editionId": "edition_biff_2025",
-    "section": "오픈 시네마",
+    "section": "한국영화의 오늘 / 오픈 시네마",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82273&c_idx=422"
+    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82273&c_idx=418&sp_idx=563"
   },
   {
     "id": "ent_edition_biff_2025_film_5_centimeters_per_second_2025",
-    "filmId": "film_5_centimeters_per_second_2025",
+    "filmId": "biff2025_film_5_centimeters_per_second_2025",
     "editionId": "edition_biff_2025",
     "section": "오픈 시네마",
     "format": "DCP",
@@ -4721,7 +4691,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_measure_in_love_2025",
-    "filmId": "film_measure_in_love_2025",
+    "filmId": "biff2025_film_measure_in_love_2025",
     "editionId": "edition_biff_2025",
     "section": "오픈 시네마",
     "format": "DCP",
@@ -4731,7 +4701,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_final_piece_2025",
-    "filmId": "film_the_final_piece_2025",
+    "filmId": "biff2025_film_the_final_piece_2025",
     "editionId": "edition_biff_2025",
     "section": "오픈 시네마",
     "format": "DCP",
@@ -4741,27 +4711,27 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_shadows_edge_2025",
-    "filmId": "film_the_shadows_edge_2025",
+    "filmId": "biff2025_film_the_shadows_edge_2025",
     "editionId": "edition_biff_2025",
     "section": "오픈 시네마",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82026&c_idx=422"
-  },
+  },  
   {
     "id": "ent_edition_biff_2025_film_the_lovers_on_the_bridge_1991",
-    "filmId": "film_the_lovers_on_the_bridge_1991",
+    "filmId": "biff2025_film_the_lovers_on_the_bridge_1991",
     "editionId": "edition_biff_2025",
-    "section": "오픈 시네마",
+    "section": "특별기획 프로그램 / 오픈 시네마",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82821&c_idx=422"
+    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82821&c_idx=425&sp_idx=575"
   },
   {
     "id": "ent_edition_biff_2025_film_exit_8_2025",
-    "filmId": "film_exit_8_2025",
+    "filmId": "biff2025_film_exit_8_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4771,7 +4741,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_bride_of_the_covenant_2025",
-    "filmId": "film_bride_of_the_covenant_2025",
+    "filmId": "biff2025_film_bride_of_the_covenant_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4781,7 +4751,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_furious_2025",
-    "filmId": "film_the_furious_2025",
+    "filmId": "biff2025_film_the_furious_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4790,18 +4760,8 @@
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82833&c_idx=423"
   },
   {
-    "id": "ent_edition_biff_2025_film_my_home_2025",
-    "filmId": "film_my_home_2025",
-    "editionId": "edition_biff_2025",
-    "section": "미드나잇 패션",
-    "format": "DCP",
-    "color": "Color",
-    "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82771&c_idx=423"
-  },
-  {
     "id": "ent_edition_biff_2025_film_weapons_2025",
-    "filmId": "film_weapons_2025",
+    "filmId": "biff2025_film_weapons_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4810,18 +4770,8 @@
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82829&c_idx=423"
   },
   {
-    "id": "ent_edition_biff_2025_film_exterior_night_2022",
-    "filmId": "film_exterior_night_2022",
-    "editionId": "edition_biff_2025",
-    "section": "미드나잇 패션",
-    "format": "DCP",
-    "color": "Color",
-    "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82805&c_idx=423"
-  },
-  {
     "id": "ent_edition_biff_2025_film_protector_2025",
-    "filmId": "film_protector_2025",
+    "filmId": "biff2025_film_protector_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4831,7 +4781,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_halabala_2025",
-    "filmId": "film_halabala_2025",
+    "filmId": "biff2025_film_halabala_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4841,7 +4791,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_honey_dont_2025",
-    "filmId": "film_honey_dont_2025",
+    "filmId": "biff2025_film_honey_dont_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4851,7 +4801,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_holy_boy_2025",
-    "filmId": "film_the_holy_boy_2025",
+    "filmId": "biff2025_film_the_holy_boy_2025",
     "editionId": "edition_biff_2025",
     "section": "미드나잇 패션",
     "format": "DCP",
@@ -4861,7 +4811,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_as_you_stood_by_2025",
-    "filmId": "film_as_you_stood_by_2025",
+    "filmId": "biff2025_film_as_you_stood_by_2025",
     "editionId": "edition_biff_2025",
     "section": "온 스크린",
     "format": "DCP",
@@ -4871,7 +4821,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_romantics_anonymous_2025",
-    "filmId": "film_romantics_anonymous_2025",
+    "filmId": "biff2025_film_romantics_anonymous_2025",
     "editionId": "edition_biff_2025",
     "section": "온 스크린",
     "format": "DCP",
@@ -4881,7 +4831,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_last_samurai_standing_2025",
-    "filmId": "film_last_samurai_standing_2025",
+    "filmId": "biff2025_film_last_samurai_standing_2025",
     "editionId": "edition_biff_2025",
     "section": "온 스크린",
     "format": "DCP",
@@ -4891,7 +4841,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dear_x_2025",
-    "filmId": "film_dear_x_2025",
+    "filmId": "biff2025_film_dear_x_2025",
     "editionId": "edition_biff_2025",
     "section": "온 스크린",
     "format": "DCP",
@@ -4901,7 +4851,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_murky_stream_2025",
-    "filmId": "film_the_murky_stream_2025",
+    "filmId": "biff2025_film_the_murky_stream_2025",
     "editionId": "edition_biff_2025",
     "section": "온 스크린",
     "format": "DCP",
@@ -4911,7 +4861,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_resurrected_2025",
-    "filmId": "film_the_resurrected_2025",
+    "filmId": "biff2025_film_the_resurrected_2025",
     "editionId": "edition_biff_2025",
     "section": "온 스크린",
     "format": "DCP",
@@ -4921,7 +4871,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_day_i_became_a_woman_2000",
-    "filmId": "film_the_day_i_became_a_woman_2000",
+    "filmId": "biff2025_film_the_day_i_became_a_woman_2000",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -4931,7 +4881,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_drive_my_car_2021",
-    "filmId": "film_drive_my_car_2021",
+    "filmId": "biff2025_film_drive_my_car_2021",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -4941,7 +4891,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_burning_2018",
-    "filmId": "film_burning_2018",
+    "filmId": "biff2025_film_burning_2018",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -4951,7 +4901,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_still_life_2006",
-    "filmId": "film_still_life_2006",
+    "filmId": "biff2025_film_still_life_2006",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -4961,7 +4911,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_nobody_knows_2004",
-    "filmId": "film_nobody_knows_2004",
+    "filmId": "biff2025_jiff2025_film_nobody_knows_2004",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -4971,7 +4921,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_goodbye_dragon_inn_2003",
-    "filmId": "film_goodbye_dragon_inn_2003",
+    "filmId": "biff2025_film_goodbye_dragon_inn_2003",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -4981,7 +4931,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_old_boy_2003",
-    "filmId": "film_old_boy_2003",
+    "filmId": "biff2025_film_old_boy_2003",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -4991,7 +4941,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_this_is_not_a_film_2011",
-    "filmId": "film_this_is_not_a_film_2011",
+    "filmId": "biff2025_film_this_is_not_a_film_2011",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5001,7 +4951,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_tie_xi_qu_west_of_the_tracks_2003",
-    "filmId": "film_tie_xi_qu_west_of_the_tracks_2003",
+    "filmId": "biff2025_film_tie_xi_qu_west_of_the_tracks_2003",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5011,7 +4961,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_election_2005",
-    "filmId": "film_election_2005",
+    "filmId": "biff2025_film_election_2005",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "35mm",
@@ -5021,7 +4971,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_good_morning_night_2003",
-    "filmId": "film_good_morning_night_2003",
+    "filmId": "biff2025_film_good_morning_night_2003",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5031,7 +4981,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_marx_can_wait_2021",
-    "filmId": "film_marx_can_wait_2021",
+    "filmId": "biff2025_film_marx_can_wait_2021",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5041,7 +4991,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_portobello_2025",
-    "filmId": "film_portobello_2025",
+    "filmId": "biff2025_film_portobello_2025",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5051,7 +5001,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_vincere_2009",
-    "filmId": "film_vincere_2009",
+    "filmId": "biff2025_film_vincere_2009",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5061,27 +5011,27 @@
   },
   {
     "id": "ent_edition_biff_2025_film_devil_in_the_flesh_1986",
-    "filmId": "film_devil_in_the_flesh_1986",
+    "filmId": "biff2025_film_devil_in_the_flesh_1986",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82802&c_idx=425&sp_idx=574"
-  },
+  },  
   {
     "id": "ent_edition_biff_2025_film_exterior_night_2022",
-    "filmId": "film_exterior_night_2022",
+    "filmId": "biff2025_film_exterior_night_2022",
     "editionId": "edition_biff_2025",
-    "section": "특별기획 프로그램",
+    "section": "특별기획 프로그램 / 미드나잇 패션",
     "format": "DCP",
     "color": "Color",
     "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82805&c_idx=425&sp_idx=574"
+    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82805&c_idx=423"
   },
   {
     "id": "ent_edition_biff_2025_film_a_leap_in_the_dark_1980",
-    "filmId": "film_a_leap_in_the_dark_1980",
+    "filmId": "biff2025_film_a_leap_in_the_dark_1980",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5091,7 +5041,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_fists_in_the_pocket_1965",
-    "filmId": "film_fists_in_the_pocket_1965",
+    "filmId": "biff2025_film_fists_in_the_pocket_1965",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5101,7 +5051,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_three_colours_blue_1993",
-    "filmId": "film_three_colours_blue_1993",
+    "filmId": "biff2025_film_three_colours_blue_1993",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5111,7 +5061,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_in_i_in_motion_2025",
-    "filmId": "film_in_i_in_motion_2025",
+    "filmId": "biff2025_film_in_i_in_motion_2025",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5120,18 +5070,8 @@
     "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82813&c_idx=425&sp_idx=575"
   },
   {
-    "id": "ent_edition_biff_2025_film_the_lovers_on_the_bridge_1991",
-    "filmId": "film_the_lovers_on_the_bridge_1991",
-    "editionId": "edition_biff_2025",
-    "section": "특별기획 프로그램",
-    "format": "DCP",
-    "color": "Color",
-    "premiere": null,
-    "detail_url": "https://www.biff.kr/kor/html/program/prog_view.asp?idx=82821&c_idx=425&sp_idx=575"
-  },
-  {
     "id": "ent_edition_biff_2025_film_take_care_of_my_cat_2001",
-    "filmId": "film_take_care_of_my_cat_2001",
+    "filmId": "biff2025_film_take_care_of_my_cat_2001",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5141,7 +5081,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_art_museum_by_the_zoo_1998",
-    "filmId": "film_art_museum_by_the_zoo_1998",
+    "filmId": "biff2025_film_art_museum_by_the_zoo_1998",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5151,7 +5091,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_memento_mori_1999",
-    "filmId": "film_memento_mori_1999",
+    "filmId": "biff2025_film_memento_mori_1999",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5161,7 +5101,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_waikiki_brothers_2001",
-    "filmId": "film_waikiki_brothers_2001",
+    "filmId": "biff2025_film_waikiki_brothers_2001",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5171,7 +5111,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_jealousy_is_my_middle_name_2002",
-    "filmId": "film_jealousy_is_my_middle_name_2002",
+    "filmId": "biff2025_film_jealousy_is_my_middle_name_2002",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5181,7 +5121,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_the_host_2006",
-    "filmId": "film_the_host_2006",
+    "filmId": "biff2025_film_the_host_2006",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5191,7 +5131,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_small_slow_but_steady_2022",
-    "filmId": "film_small_slow_but_steady_2022",
+    "filmId": "biff2025_film_small_slow_but_steady_2022",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5201,7 +5141,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dog_day_afternoon_1975",
-    "filmId": "film_dog_day_afternoon_1975",
+    "filmId": "biff2025_film_dog_day_afternoon_1975",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5211,7 +5151,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_eureka_remastered_2000",
-    "filmId": "film_eureka_remastered_2000",
+    "filmId": "biff2025_film_eureka_remastered_2000",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "DCP",
@@ -5221,7 +5161,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_woochi_2009",
-    "filmId": "film_woochi_2009",
+    "filmId": "biff2025_film_woochi_2009",
     "editionId": "edition_biff_2025",
     "section": "특별기획 프로그램",
     "format": "35mm",
@@ -5231,7 +5171,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_dancing_village_the_curse_begins_2024",
-    "filmId": "film_dancing_village_the_curse_begins_2024",
+    "filmId": "biff2025_film_dancing_village_the_curse_begins_2024",
     "editionId": "edition_biff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -5241,7 +5181,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_mr_kim_goes_to_the_cinema_2025",
-    "filmId": "film_mr_kim_goes_to_the_cinema_2025",
+    "filmId": "biff2025_film_mr_kim_goes_to_the_cinema_2025",
     "editionId": "edition_biff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -5251,7 +5191,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_kpop_demon_hunters_special_sing_along_2025",
-    "filmId": "film_kpop_demon_hunters_special_sing_along_2025",
+    "filmId": "biff2025_film_kpop_demon_hunters_special_sing_along_2025",
     "editionId": "edition_biff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -5261,7 +5201,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_life_of_hollywood_kid_1994",
-    "filmId": "film_life_of_hollywood_kid_1994",
+    "filmId": "biff2025_film_life_of_hollywood_kid_1994",
     "editionId": "edition_biff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -5271,7 +5211,7 @@
   },
   {
     "id": "ent_edition_biff_2025_film_heat_1995",
-    "filmId": "film_heat_1995",
+    "filmId": "biff2025_film_heat_1995",
     "editionId": "edition_biff_2025",
     "section": "특별상영",
     "format": "DCP",
@@ -5281,7 +5221,7 @@
   },
   {
     "id": "ent_biff_2025_festival",
-    "filmId": "film_biff_2025_festival",
+    "filmId": "biff2025_film_biff_2025_festival",
     "editionId": "edition_biff_2025",
     "section": "영화제",
     "program": null,
@@ -5289,7 +5229,7 @@
   },
   {
     "id": "ent_jiff_2025_festival",
-    "filmId": "film_jiff_2025_festival",
+    "filmId": "jiff2025_film_jiff_2025_festival",
     "editionId": "edition_jiff_2025",
     "section": "영화제",
     "program": null,

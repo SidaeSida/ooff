@@ -43,7 +43,11 @@
 /* Base */
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-html, body { background: var(--color-background); }
+html, body {
+  background: var(--color-background);
+  overscroll-behavior-y: none;              /* [UX] 스크롤 끝 튕김 방지 */
+  -webkit-tap-highlight-color: transparent; /* [UX] 터치 파란 박스 제거 */
+}
 body {
   margin: 0;
   color: var(--color-foreground);
@@ -108,3 +112,18 @@ img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
 /* 홈 전용 스크롤 잠금 */
 html.no-scroll, html.no-scroll body { overflow: hidden; }
 .home-viewport { height: 100dvh; overflow: hidden; overscroll-behavior: contain; }
+
+/* [UX] 터치 영역 확장 (시각적 크기는 유지하되 클릭 범위만 44px로 확대) */
+.touch-target {
+  position: relative;
+}
+.touch-target::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
