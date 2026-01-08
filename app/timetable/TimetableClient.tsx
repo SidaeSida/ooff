@@ -1093,13 +1093,30 @@ export default function TimetableClient({
   }
 
   // ---------------------------------------------------
-  // touchmove 방지 (iOS)
+  // [Fix] 드래그 중 스크롤 완벽 차단 (Scroll Lock)
   // ---------------------------------------------------
   useEffect(() => {
     if (!dragState) return;
-    const block = (e: TouchEvent) => e.preventDefault();
+
+    // 1. CSS 레벨에서 스크롤 아예 잠금 (.no-scroll 활용)
+    document.documentElement.classList.add("no-scroll");
+    document.body.classList.add("no-scroll");
+
+    // 2. 이벤트 레벨에서 터치 무시 (iOS 바운스 방지)
+    const block = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+    };
+    
+    // { passive: false } 필수: 스크롤 이벤트를 강제로 막겠다는 선언
     window.addEventListener("touchmove", block, { passive: false });
-    return () => window.removeEventListener("touchmove", block);
+
+    return () => {
+      // 드래그 끝나면 잠금 해제
+      document.documentElement.classList.remove("no-scroll");
+      document.body.classList.remove("no-scroll");
+      window.removeEventListener("touchmove", block);
+    };
   }, [dragState]);
 
   // ---------------------------------------------------

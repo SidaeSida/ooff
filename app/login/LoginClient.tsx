@@ -1,424 +1,74 @@
 // app/login/LoginClient.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-type SignUpState = {
-  email: string;
-  password: string;
-  confirm: string;
-  loading: boolean;
-  msg: string | null;
-};
-
-type SignInState = {
-  email: string;
-  password: string;
-  loading: boolean;
-  msg: string | null;
-};
-
 export default function LoginClient() {
-  const search = useSearchParams();
-  const nextUrl = search.get("next") || "/my";
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("next") || "/my";
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 로그인 상태
-  const [inState, setInState] = useState<SignInState>({
-    email: "",
-    password: "",
-    loading: false,
-    msg: null,
-  });
-
-  // 회원가입 상태
-  const [upState, setUpState] = useState<SignUpState>({
-    email: "",
-    password: "",
-    confirm: "",
-    loading: false,
-    msg: null,
-  });
-
-  // Sign up 토글
-  const [openSignUp, setOpenSignUp] = useState(false);
-
-  // 잠금 표시용 상태
-  const [lockRemain, setLockRemain] = useState<number | null>(null);
-  const [failCount, setFailCount] = useState<number | null>(null);
-
-  // CapsLock / ShowPassword
-  const [capsIn, setCapsIn] = useState(false);
-  const [capsUp, setCapsUp] = useState(false);
-  const [showInPw, setShowInPw] = useState(false);
-  const [showUpPw, setShowUpPw] = useState(false);
-  const [showUpPw2, setShowUpPw2] = useState(false);
-
-  // 회원가입 성공 시 상단 로그인 이메일 자동 채움
-  useEffect(() => {
-    if (upState.msg === "SIGNUP_SUCCESS" && upState.email) {
-      setInState((s) => ({ ...s, email: upState.email }));
-      setOpenSignUp(false);
-    }
-  }, [upState.msg, upState.email]);
-
-  // 잠금 카운트다운
-  useEffect(() => {
-    if (lockRemain == null) return;
-    if (lockRemain <= 0) {
-      setLockRemain(null);
-      setFailCount(null);
-      return;
-    }
-    const t = setInterval(
-      () => setLockRemain((s) => (s == null ? null : s - 1)),
-      1000,
-    );
-    return () => clearInterval(t);
-  }, [lockRemain]);
-
-  // 유효성
-  const validEmail = (v: string) => /\S+@\S+\.\S+/.test(v.trim());
-  const canSignIn =
-    validEmail(inState.email) && inState.password.length >= 1 && !inState.loading;
-  const canSignUp =
-    validEmail(upState.email) &&
-    upState.password.length >= 8 &&
-    upState.password === upState.confirm &&
-    !upState.loading;
-
-  // 잠금 상태 조회
-  const checkLock = async (email: string) => {
-    try {
-      const resp = await fetch(`/api/lock?email=${encodeURIComponent(email)}`, {
-        cache: "no-store",
-      });
-      if (!resp.ok) return false;
-      const data = await resp.json();
-      if (data.locked) {
-        setLockRemain(Number(data.remain) || 180);
-        setFailCount(Number(data.count) || 5);
-        setInState((s) => ({ ...s, msg: null }));
-        return true;
-      } else {
-        setLockRemain(null);
-        setFailCount(null);
-        return false;
-      }
-    } catch {
-      return false;
-    }
-  };
-
-  // 로그인 제출 — 성공/실패/잠금 분기
-  const onSubmitSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSignIn) return;
-
-    setInState((s) => ({ ...s, loading: true, msg: null }));
-    try {
-      const res = await signIn("credentials", {
-        email: inState.email.trim().toLowerCase(),
-        password: inState.password.trim(),
-        redirect: false,
-        callbackUrl: nextUrl,
-      });
-
-      if (res?.ok && res.url) {
-        window.location.assign(res.url);
-        return;
-      }
-
-      const locked = await checkLock(inState.email.trim().toLowerCase());
-      if (locked) return;
-
-      setLockRemain(null);
-      setFailCount(null);
-      setInState((s) => ({
-        ...s,
-        msg: "Email or password is incorrect.",
-      }));
-    } catch {
-      setInState((s) => ({
-        ...s,
-        msg: "Sign in failed. Please try again.",
-      }));
-    } finally {
-      setInState((s) => ({ ...s, loading: false }));
-    }
-  };
-
-  // 회원가입 제출
-  const onSubmitSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSignUp) return;
-
-    setUpState((s) => ({ ...s, loading: true, msg: null }));
-    try {
-      const resp = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: upState.email.trim().toLowerCase(),
-          password: upState.password,
-        }),
-      });
-
-      if (resp.status === 201) {
-        setUpState((s) => ({
-          ...s,
-          loading: false,
-          msg: "SIGNUP_SUCCESS",
-        }));
-      } else if (resp.status === 409) {
-        setUpState((s) => ({
-          ...s,
-          loading: false,
-          msg: "This email already exists.",
-        }));
-      } else if (resp.status === 400) {
-        setUpState((s) => ({
-          ...s,
-          loading: false,
-          msg: "Invalid input.",
-        }));
-      } else {
-        setUpState((s) => ({
-          ...s,
-          loading: false,
-          msg: "Sign up failed. Please try again.",
-        }));
-      }
-    } catch {
-      setUpState((s) => ({
-        ...s,
-        loading: false,
-        msg: "Network error. Please retry.",
-      }));
-    }
+  const handleLogin = (provider: "google" | "kakao") => {
+    setIsLoading(true);
+    signIn(provider, { callbackUrl });
   };
 
   return (
-    <main className="min-h-[70vh] py-6">
-      {/* 중복 타이틀 제거: 바로 Login부터 */}
-      <section className="mb-6">
-        <h2 className="text-base font-medium mb-3">Login</h2>
-        <form onSubmit={onSubmitSignIn} className="space-y-3 max-w-sm">
-          <div className="grid gap-1">
-            <label htmlFor="inEmail" className="text-sm text-gray-700">
-              Email
-            </label>
-            <input
-              id="inEmail"
-              type="email"
-              value={inState.email}
-              onChange={(e) =>
-                setInState((s) => ({ ...s, email: e.target.value }))
-              }
-              required
-              className="border rounded-lg px-3 py-2 text-sm"
-              placeholder="you@example.com"
-              autoComplete="email"
-            />
-          </div>
-          <div className="grid gap-1">
-            <label htmlFor="inPw" className="text-sm text-gray-700">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="inPw"
-                type={showInPw ? "text" : "password"}
-                value={inState.password}
-                onChange={(e) =>
-                  setInState((s) => ({ ...s, password: e.target.value }))
-                }
-                onKeyDown={(e) =>
-                  setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))
-                }
-                onKeyUp={(e) =>
-                  setCapsIn(e.getModifierState && e.getModifierState("CapsLock"))
-                }
-                required
-                className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
-                placeholder="Password"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowInPw((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs underline"
-                aria-label={showInPw ? "Hide password" : "Show password"}
-              >
-                {showInPw ? "Hide" : "Show"}
-              </button>
-            </div>
-            {capsIn && (
-              <p className="text-xs text-amber-700">Caps Lock is on.</p>
-            )}
-          </div>
+    <div className="flex flex-col items-center justify-center min-h-[40vh] px-4">
+      <div className="w-full max-w-[320px] space-y-20">
+        
+        {/* 심플한 타이틀 */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Welcome
+          </h1>
+        </div>
 
-          {/* 오류/잠금 메시지 */}
-          {lockRemain != null ? (
-            <p className="text-sm text-red-600">
-              Too many failed attempts. Please try again in{" "}
-              {String(Math.floor(lockRemain / 60)).padStart(2, "0")}:
-              {String(lockRemain % 60).padStart(2, "0")}
-              {typeof failCount === "number" ? ` (${failCount}/5)` : null}
-            </p>
-          ) : inState.msg ? (
-            <p className="text-sm text-red-600">{inState.msg}</p>
-          ) : null}
-
+        {/* 버튼 영역 */}
+        <div className="space-y-3">
+          {/* 1. Google Button */}
           <button
-            type="submit"
-            disabled={!canSignIn}
-            className={`px-3 py-2 text-sm rounded-lg border ${
-              canSignIn
-                ? "hover:bg-gray-50 cursor-pointer"
-                : "opacity-50 cursor-not-allowed"
-            }`}
+            onClick={() => handleLogin("google")}
+            disabled={isLoading}
+            className="relative flex items-center justify-center w-full h-12 px-4 bg-white border border-gray-300 rounded-xl text-[15px] font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Sign in
+            <svg className="w-5 h-5 absolute left-4" viewBox="0 0 24 24">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="#EA4335"
+              />
+            </svg>
+            <span>Continue with Google</span>
           </button>
-        </form>
-      </section>
 
-      {/* Sign up 토글 */}
-      <div className="my-6 flex items-center justify-center">
-        <button
-          type="button"
-          onClick={() => setOpenSignUp((v) => !v)}
-          className="text-sm underline hover:no-underline"
-          aria-expanded={openSignUp}
-          aria-controls="signup-panel"
-        >
-          {openSignUp ? "Hide sign up" : "Sign up"}
-        </button>
+          {/* 2. Kakao Button */}
+          <button
+            onClick={() => handleLogin("kakao")}
+            disabled={isLoading}
+            className="relative flex items-center justify-center w-full h-12 px-4 rounded-xl text-[15px] font-medium text-[#191919] hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed"
+            style={{ backgroundColor: "#FEE500" }}
+          >
+            <svg className="w-5 h-5 absolute left-4" viewBox="0 0 24 24" fill="#000000">
+              <path d="M12 3C5.925 3 1 6.925 1 11.775c0 3.1 2.025 5.8 5.125 7.375L4.55 22.95c-.1.35.3.625.6.4l4.225-2.8c.85.1 1.725.175 2.625.175 6.075 0 11-3.925 11-8.775C23 6.925 18.075 3 12 3z" />
+            </svg>
+            <span>Continue with Kakao</span>
+          </button>
+        </div>
       </div>
-
-      {/* Sign up 패널 */}
-      <section
-        id="signup-panel"
-        className={`transition-all duration-200 overflow-hidden ${
-          openSignUp ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <h2 className="sr-only">Sign up</h2>
-        <form onSubmit={onSubmitSignUp} className="space-y-3 max-w-sm">
-          <div className="grid gap-1">
-            <label htmlFor="upEmail" className="text-sm text-gray-700">
-              Email
-            </label>
-            <input
-              id="upEmail"
-              type="email"
-              value={upState.email}
-              onChange={(e) =>
-                setUpState((s) => ({ ...s, email: e.target.value }))
-              }
-              required
-              className="border rounded-lg px-3 py-2 text-sm"
-              placeholder="you@example.com"
-              autoComplete="email"
-            />
-          </div>
-          <div className="grid gap-1">
-            <label htmlFor="upPw" className="text-sm text-gray-700">
-              Password (min 8)
-            </label>
-            <div className="relative">
-              <input
-                id="upPw"
-                type={showUpPw ? "text" : "password"}
-                value={upState.password}
-                onChange={(e) =>
-                  setUpState((s) => ({ ...s, password: e.target.value }))
-                }
-                onKeyDown={(e) =>
-                  setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))
-                }
-                onKeyUp={(e) =>
-                  setCapsUp(e.getModifierState && e.getModifierState("CapsLock"))
-                }
-                required
-                className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
-                placeholder="Password"
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowUpPw((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs underline"
-                aria-label={showUpPw ? "Hide password" : "Show password"}
-              >
-                {showUpPw ? "Hide" : "Show"}
-              </button>
-            </div>
-            {capsUp && (
-              <p className="text-xs text-amber-700">Caps Lock is on.</p>
-            )}
-          </div>
-          <div className="grid gap-1">
-            <label htmlFor="upPw2" className="text-sm text-gray-700">
-              Confirm password
-            </label>
-            <div className="relative">
-              <input
-                id="upPw2"
-                type={showUpPw2 ? "text" : "password"}
-                value={upState.confirm}
-                onChange={(e) =>
-                  setUpState((s) => ({ ...s, confirm: e.target.value }))
-                }
-                required
-                className="border rounded-lg px-3 py-2 text-sm w-full pr-16"
-                placeholder="Confirm password"
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowUpPw2((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs underline"
-                aria-label={showUpPw2 ? "Hide password" : "Show password"}
-              >
-                {showUpPw2 ? "Hide" : "Show"}
-              </button>
-            </div>
-          </div>
-
-          {/* 검증 메시지 */}
-          {upState.password && upState.password.length < 8 && (
-            <p className="text-xs text-red-600">
-              Password must be at least 8 characters.
-            </p>
-          )}
-          {upState.confirm && upState.password !== upState.confirm && (
-            <p className="text-xs text-red-600">Passwords do not match.</p>
-          )}
-          {upState.msg && upState.msg !== "SIGNUP_SUCCESS" && (
-            <p className="text-sm text-red-600">{upState.msg}</p>
-          )}
-          {upState.msg === "SIGNUP_SUCCESS" && (
-            <p className="text-sm text-green-700">
-              Sign up successful. Please sign in above.
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={!canSignUp}
-            className={`px-3 py-2 text-sm rounded-lg border ${
-              canSignUp
-                ? "hover:bg-gray-50 cursor-pointer"
-                : "opacity-50 cursor-not-allowed"
-            }`}
-          >
-            Create account
-          </button>
-        </form>
-      </section>
-    </main>
+    </div>
   );
 }

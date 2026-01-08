@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,22 +9,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --------------------------------------
+// 1. NextAuth Models + SNS 확장
+// --------------------------------------
+
 model User {
-  id                String              @id @default(cuid())
-  email             String              @unique
-  passwordHash      String
-  createdAt         DateTime            @default(now())
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  
+  // [New] 닉네임 (고유값)
+  nickname      String?   @unique
+  
+  // 소셜 로그인은 비번이 없으므로 Optional
+  passwordHash  String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  
+  // [New] 팔로우 시스템 (Self-Relation)
+  // followedBy: 나를 팔로우하는 사람들 (Followers)
+  followedBy    User[]    @relation("UserFollows")
+  // following: 내가 팔로우하는 사람들 (Following)
+  following     User[]    @relation("UserFollows")
+  
+  // 기존 데이터 관계 유지
   UserEntry         UserEntry[]
   UserPrivacy       UserPrivacy?
   FavoriteScreening FavoriteScreening[]
 }
 
-model LoginAttempt {
-  email       String    @id
-  failCount   Int       @default(0)
-  lockedUntil DateTime?
-  updatedAt   DateTime  @updatedAt
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@unique([identifier, token])
+}
+
+// --------------------------------------
+// 2. OOFF Project Models (기존 유지)
+// --------------------------------------
 
 enum Visibility {
   private
@@ -41,7 +106,7 @@ model UserEntry {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, filmId])
   @@index([userId])
@@ -50,28 +115,23 @@ model UserEntry {
 
 model UserPrivacy {
   userId           String     @id
-  ratingVisibility Visibility @default(private)
-  reviewVisibility Visibility @default(private)
+  ratingVisibility Visibility @default(public)
+  reviewVisibility Visibility @default(public)
   updatedAt        DateTime   @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model FavoriteScreening {
   id          String @id @default(cuid())
   userId      String
   screeningId String
+  priority    Int?
+  sortOrder   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  /// 1·2순위 하트 색상용
-  priority Int?
-
-  /// 동일 날짜/영화제에서 좌우 순서를 저장 (0부터 시작)
-  sortOrder Int?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, screeningId])
   @@index([userId])

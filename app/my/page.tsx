@@ -2,60 +2,49 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import PrivacyControlsClient from "./PrivacyControlsClient";
-import MyRatingsClient from "./MyRatingsClient";
-import SignOutButton from "./SignOutButton";
+import MyPageClient from "./MyPageClient";
 import PageShowRefresh from "@/components/PageShowRefresh";
 
 export default async function MyPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/my");
 
-  const userId = session.user.id as string;
-  const email = session.user.email ?? "Unknown";
+  const userId = session.user.id;
 
-  let p:
-    | {
-        ratingVisibility: "private" | "friends" | "public";
-        reviewVisibility: "private" | "friends" | "public";
-      }
-    | null = null;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      nickname: true,
+      _count: {
+        select: {
+          followedBy: true,
+          following: true,
+        },
+      },
+    },
+  });
 
-  try {
-    p = await prisma.userPrivacy.findUnique({
-      where: { userId },
-      select: { ratingVisibility: true, reviewVisibility: true },
-    });
-  } catch {
-    // 테이블 미존재(P2021) 등 초기화 전에도 페이지가 뜨도록 폴백
-  }
+  if (!user) redirect("/login");
 
-  const initialPrivacy = {
-    ratingVisibility: (p?.ratingVisibility ?? "private") as
-      | "private"
-      | "friends"
-      | "public",
-    reviewVisibility: (p?.reviewVisibility ?? "private") as
-      | "private"
-      | "friends"
-      | "public",
-  };
+  // 닉네임이 Default 패턴(이메일앞3자리+숫자4개)인지 확인하는 로직 (Client에 힌트 전달)
+  const emailPrefix = user.email?.split("@")[0].slice(0, 3) ?? "";
+  // 예: kss1234 패턴이면 true
+  const isDefaultNickname = new RegExp(`^${emailPrefix}[0-9]{4}$`).test(user.nickname ?? "");
 
   return (
-    <main className="max-w-4xl mx-auto px-4 pt-1 pb-10">
-      {/* BFCache 복원 시 router.refresh() */}
+    <main className="max-w-4xl mx-auto px-4 pt-6 pb-20">
       <PageShowRefresh />
-      <p className="text-sm text-gray-600 mb-2">
-        Signed in as <span className="font-medium">{email}</span>
-      </p>
-      <div className="mb-3">
-        <SignOutButton />
-      </div>
-      <PrivacyControlsClient initial={initialPrivacy} />
-      <section className="mt-6">
-        <h2 className="text-xl font-semibold mb-3">My Ratings</h2>
-        <MyRatingsClient />
-      </section>
+      <MyPageClient
+        user={{
+          email: user.email ?? "",
+          nickname: user.nickname ?? "Guest",
+          followers: user._count.followedBy,
+          following: user._count.following,
+          isDefaultNickname,
+        }}
+      />
     </main>
   );
 }

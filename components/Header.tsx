@@ -20,7 +20,7 @@ export default async function Header() {
           <NavClient
             items={[
               { href: "/films", label: "Films" },
-              { href: "/screenings", label: "Screening" },
+              { href: "/screenings", label: "Screenings" },
               { href: "/timetable", label: "Timetable" },
               isLoggedIn
                 ? { href: "/my", label: "My" }

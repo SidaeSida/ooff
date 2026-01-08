@@ -71,7 +71,7 @@ export default function PrivacyControlsClient({
     value,
     onChange,
   }: {
-    label: "Rating" | "Review";
+    label: "Ratings" | "Reviews";
     value: Vis;
     onChange: (v: Vis) => void;
   }) => (
@@ -107,7 +107,7 @@ export default function PrivacyControlsClient({
       <div className="border-t border-gray-200 pt-2" />
 
       <Group
-        label="Rating"
+        label="Ratings"
         value={rating}
         onChange={(v) => {
           if (rating === v) return;
@@ -119,7 +119,7 @@ export default function PrivacyControlsClient({
         }}
       />
       <Group
-        label="Review"
+        label="Reviews"
         value={review}
         onChange={(v) => {
           if (review === v) return;
