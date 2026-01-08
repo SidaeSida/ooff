@@ -39,7 +39,7 @@ export default async function MyPage() {
       <MyPageClient
         user={{
           email: user.email ?? "",
-          nickname: user.nickname ?? "Guest",
+          nickname: user.nickname ?? emailPrefix,
           followers: user._count.followedBy,
           following: user._count.following,
           isDefaultNickname,
