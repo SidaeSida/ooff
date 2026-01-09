@@ -4,6 +4,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import PrivacyControlsClient from "@/app/my/PrivacyControlsClient";
+import DeleteAccountButton from "./DeleteAccountButton"; // 추가된 부분
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -54,24 +55,20 @@ export default async function SettingsPage() {
             <span className="text-sm text-gray-600">Email</span>
             <span className="text-sm font-medium text-gray-900">{session.user.email}</span>
           </div>
-          {/* SignOut is now on My Page, but kept here as backup or removed as per request. Removed for clean UI. */}
         </div>
       </section>
 
-      {/* 3. Account Management (구 Danger Zone) */}
+      {/* 3. Account Management */}
       <section className="space-y-4 pt-6 border-t">
-        {/* 제목은 건조하게 검은색으로 변경 */}
         <h2 className="text-lg font-semibold text-gray-900">Account Management</h2>
         
-        {/* 박스는 여전히 위험함을 알리기 위해 Red 톤 유지 */}
         <div className="bg-red-50 p-5 rounded-2xl border border-red-100 flex justify-between items-center">
           <div>
             <p className="text-sm font-bold text-red-900">Delete Account</p>
             <p className="text-xs text-red-700 mt-0.5">Permanently remove your data.</p>
           </div>
-          <button className="px-4 py-2 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-colors">
-            Delete
-          </button>
+          {/* 인터랙티브 버튼 컴포넌트로 교체 */}
+          <DeleteAccountButton />
         </div>
       </section>
     </main>

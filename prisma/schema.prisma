@@ -20,7 +20,7 @@ model User {
   emailVerified DateTime?
   image         String?
   
-  // [New] 닉네임 (고유값)
+  // 닉네임 (고유값)
   nickname      String?   @unique
   
   // 소셜 로그인은 비번이 없으므로 Optional
@@ -32,16 +32,33 @@ model User {
   accounts      Account[]
   sessions      Session[]
   
-  // [New] 팔로우 시스템 (Self-Relation)
-  // followedBy: 나를 팔로우하는 사람들 (Followers)
-  followedBy    User[]    @relation("UserFollows")
-  // following: 내가 팔로우하는 사람들 (Following)
-  following     User[]    @relation("UserFollows")
+  // [수정] 팔로우 시스템 (명시적 관계 - Follows 모델 참조)
+  // followedBy: 나를 팔로우하는 관계들 (Followers)
+  followedBy    Follows[] @relation("following")
+  // following: 내가 팔로우하는 관계들 (Following)
+  following     Follows[] @relation("follower")
   
   // 기존 데이터 관계 유지
   UserEntry         UserEntry[]
   UserPrivacy       UserPrivacy?
   FavoriteScreening FavoriteScreening[]
+}
+
+// [추가] 팔로우 관계 테이블 (명시적 모델)
+// 유저가 삭제되면 이 관계 데이터도 즉시 삭제됨 (Cascade)
+model Follows {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  // follower: 팔로우를 '하는' 사람
+  follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  // following: 팔로우를 '받는' 사람
+  following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId]) // 복합 키
+  @@index([followerId])
+  @@index([followingId])
 }
 
 model Account {
@@ -61,6 +78,7 @@ model Account {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // 유저 삭제 시 계정 정보 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -71,8 +89,10 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  
+  // 유저 삭제 시 세션 삭제
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -81,12 +101,12 @@ model VerificationToken {
   identifier String
   token      String
   expires    DateTime
- 
+  
   @@unique([identifier, token])
 }
 
 // --------------------------------------
-// 2. OOFF Project Models (기존 유지)
+// 2. OOFF Project Models
 // --------------------------------------
 
 enum Visibility {
@@ -96,16 +116,17 @@ enum Visibility {
 }
 
 model UserEntry {
-  id          String     @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
   filmId      String
-  rating      Decimal?   @db.Decimal(2, 1)
-  shortReview String?    @db.VarChar(200)
-  isStarred   Boolean    @default(false)
-  visibility  Visibility @default(private)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  rating      Decimal? @db.Decimal(2, 1)
+  shortReview String?  @db.VarChar(200)
+  isStarred   Boolean  @default(false)
+  visibility  Visibility @default(private) // (참고: 기본값을 public으로 바꾸셨다면 수정 필요)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  // 유저 삭제 시 평점/리뷰 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, filmId])
@@ -119,11 +140,12 @@ model UserPrivacy {
   reviewVisibility Visibility @default(public)
   updatedAt        DateTime   @updatedAt
 
+  // 유저 삭제 시 설정 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model FavoriteScreening {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
   screeningId String
   priority    Int?
@@ -131,6 +153,7 @@ model FavoriteScreening {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // 유저 삭제 시 즐겨찾기 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, screeningId])

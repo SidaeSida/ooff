@@ -6,13 +6,7 @@ import { useRouter } from "next/navigation";
 import filmsData from "@/data/films.json";
 
 type Vis = "private" | "friends" | "public";
-
-type Film = {
-  id: string;
-  title: string;
-  year?: number;
-  credits?: { directors?: string[] };
-};
+type FilmData = any;
 
 type Entry = {
   id: string;
@@ -29,17 +23,13 @@ export default function MyRatingsClient() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // 가드
   const mountedRef = useRef<boolean>(false);
   const inFlightRef = useRef<boolean>(false);
-
-  // BFCache 복귀 시 리마운트 키
   const [bfRev, setBfRev] = useState(0);
 
-  // 영화 메타
   const filmMap = useMemo(() => {
-    const map = new Map<string, Film>();
-    (filmsData as Film[]).forEach((f) => map.set(f.id, f));
+    const map = new Map<string, FilmData>();
+    filmsData.forEach((f) => map.set(f.id, f));
     return map;
   }, []);
 
@@ -51,10 +41,7 @@ export default function MyRatingsClient() {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), ms);
     try {
-      const resp = await fetch(input, {
-        ...init,
-        signal: controller.signal,
-      });
+      const resp = await fetch(input, { ...init, signal: controller.signal });
       return resp;
     } finally {
       clearTimeout(id);
@@ -68,15 +55,12 @@ export default function MyRatingsClient() {
     setErr(null);
     setLoading(true);
     try {
-      const r = await fetchWithTimeout(
-        "/api/user-entry/list",
-        {
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: { Accept: "application/json" },
-        },
-        10000,
-      );
+      const r = await fetchWithTimeout("/api/user-entry/list", {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+      }, 10000);
+
       if (!mountedRef.current) return;
       if (!r || !r.ok) {
         setErr(`Load error: ${r?.status ?? "?"} ${r?.statusText ?? ""}`);
@@ -98,13 +82,9 @@ export default function MyRatingsClient() {
   useEffect(() => {
     mountedRef.current = true;
     load();
-    return () => {
-      mountedRef.current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { mountedRef.current = false; };
   }, []);
 
-  // BFCache 복귀/가시성 복귀
   useEffect(() => {
     let t: number | null = null;
     const kick = (doRemount: boolean) => {
@@ -115,13 +95,8 @@ export default function MyRatingsClient() {
         load();
       }, 120);
     };
-    const onPageShow = (e: PageTransitionEvent) => {
-      // BFCache에서 돌아온 경우만
-      if ((e as any).persisted) kick(true);
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") kick(false);
-    };
+    const onPageShow = (e: PageTransitionEvent) => { if ((e as any).persisted) kick(true); };
+    const onVisibility = () => { if (document.visibilityState === "visible") kick(false); };
     window.addEventListener("pageshow", onPageShow as any);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
@@ -129,99 +104,108 @@ export default function MyRatingsClient() {
       window.removeEventListener("pageshow", onPageShow as any);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 렌더
   if (loading && !items) {
     return (
-      <div className="space-y-2">
-        <div className="h-16 rounded-lg bg-gray-100 animate-pulse" />
-        <div className="h-16 rounded-lg bg-gray-100 animate-pulse" />
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-28 rounded-xl bg-gray-100 animate-pulse" />
+        ))}
       </div>
     );
   }
 
-  if (err) {
-    return <p className="text-sm text-red-600">{err}</p>;
-  }
+  if (err) return <div className="text-sm text-red-600">{err}</div>;
 
   if (!items || items.length === 0) {
-    return <p className="text-sm text-gray-600">No ratings yet.</p>;
+    return (
+      <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+        <p className="text-sm text-gray-500">No ratings yet.</p>
+        <p className="text-xs text-gray-400 mt-1">Watch some films and rate them!</p>
+      </div>
+    );
   }
 
   return (
     <div key={bfRev} className="space-y-3">
       {items.map((e) => {
         const f = filmMap.get(e.filmId);
-        const title = f
-          ? `${f.title}${f.year ? ` (${f.year})` : ""}`
-          : e.filmId;
-        const directors = f?.credits?.directors?.length
-          ? f.credits.directors.join(", ")
-          : undefined;
+        
+        // 제목: 한글 우선
+        const titleKo = f?.title_ko;
+        const titleEn = f?.title;
+        const displayTitle = titleKo
+          ? `${titleKo}${titleEn && titleKo !== titleEn ? ` (${titleEn})` : ""}`
+          : (titleEn ?? e.filmId);
+
+        const year = f?.year ? ` (${f.year})` : "";
+        const fullTitle = `${displayTitle}${year}`;
+
+        // 감독: 한글 우선
+        const directors = f?.credits?.directors_ko?.length
+          ? f.credits.directors_ko.join(", ")
+          : (f.credits?.directors?.join(", ") ?? "");
 
         const d = new Date(e.updatedAt);
         const ymd = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
 
-        const badgeText =
-          e.rating === null || e.rating === ""
-            ? "-"
-            : Number(e.rating).toFixed(1);
-
+        const badgeText = e.rating === null || e.rating === "" ? "-" : Number(e.rating).toFixed(1);
+        
         return (
           <article
             key={e.id}
-            className="rounded-xl border px-3 py-2 transition-colors duration-300 ease-out"
+            // [수정] rounded-xl 적용하여 카드 모서리 통일
+            className="group relative rounded-xl border p-4 transition-all duration-200 hover:shadow-md cursor-pointer"
             style={{
+              // [수정] globals.css 변수 사용
               background: "var(--bg-rated)",
               borderColor: "var(--bd-rated)",
               color: "#FFFFFF",
             }}
+            onClick={() => router.push(`/films/${e.filmId}`)}
           >
-            {/* 본문 클릭으로 상세 이동 */}
-            <div
-              className="cursor-pointer"
-              onClick={() => router.push(`/films/${e.filmId}`)}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="text-[15px] font-semibold truncate text-white">
-                    {title}
+            <div className="flex flex-col gap-3">
+              {/* 상단: 제목/감독 및 평점 배지 */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  {/* 제목: 흰색, 굵게 */}
+                  <h3 className="text-lg font-bold text-white truncate leading-tight">
+                    {fullTitle}
                   </h3>
+                  {/* 감독: 흰색(약간 투명) */}
                   {directors && (
-                    <p className="text-xs truncate mt-0.5 text-white/80">
+                    <p className="text-xs text-white/80 mt-1 truncate">
                       {directors}
                     </p>
                   )}
                 </div>
 
-                {/* 배지: 원형에 가까운 평점 표시 */}
+                {/* 평점 배지: [수정] rounded-xl 적용하여 둥근 사각형으로 변경 */}
                 <div
-                  className="shrink-0 rounded-full min-w-10 h-10 px-3.5 flex items-center justify-center text-lg font-bold"
+                  className="shrink-0 rounded-xl min-w-[42px] h-[42px] flex items-center justify-center text-lg font-bold shadow-sm"
                   style={{
                     background: "var(--badge-rated-bg)",
                     color: "var(--badge-rated-fg)",
-                    border: "none",
                   }}
                 >
                   {badgeText}
                 </div>
               </div>
 
+              {/* 한줄평 (구분선 추가) */}
               {e.shortReview && (
-                <div
-                  className="mt-1 text-sm text-white/90 leading-[1.5] overflow-auto"
-                  style={{ whiteSpace: "pre-line", maxHeight: "12em" }}
-                >
-                  {e.shortReview}
+                <div className="pt-3 border-t border-white/20">
+                   <p className="text-[14px] text-white/95 leading-relaxed break-words whitespace-pre-wrap">
+                     {e.shortReview}
+                   </p>
                 </div>
               )}
-            </div>
 
-            {/* 푸터(업데이트 일시만 표기) */}
-            <div className="mt-1 flex items-center justify-between">
-              <p className="text-[11px] text-white/70">Updated {ymd}</p>
+              {/* 하단 날짜 */}
+              <div className="flex justify-end mt-auto pt-1">
+                <p className="text-[11px] text-white/60">{ymd}</p>
+              </div>
             </div>
           </article>
         );
