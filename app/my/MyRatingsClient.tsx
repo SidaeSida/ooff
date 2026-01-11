@@ -1,4 +1,3 @@
-// app/my/MyRatingsClient.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,7 +28,7 @@ export default function MyRatingsClient() {
 
   const filmMap = useMemo(() => {
     const map = new Map<string, FilmData>();
-    filmsData.forEach((f) => map.set(f.id, f));
+    filmsData.forEach((f: any) => map.set(f.id, f));
     return map;
   }, []);
 
@@ -55,11 +54,15 @@ export default function MyRatingsClient() {
     setErr(null);
     setLoading(true);
     try {
-      const r = await fetchWithTimeout("/api/user-entry/list", {
-        cache: "no-store",
-        credentials: "same-origin",
-        headers: { Accept: "application/json" },
-      }, 10000);
+      const r = await fetchWithTimeout(
+        "/api/user-entry/list",
+        {
+          cache: "no-store",
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+        },
+        10000
+      );
 
       if (!mountedRef.current) return;
       if (!r || !r.ok) {
@@ -82,7 +85,9 @@ export default function MyRatingsClient() {
   useEffect(() => {
     mountedRef.current = true;
     load();
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -95,8 +100,12 @@ export default function MyRatingsClient() {
         load();
       }, 120);
     };
-    const onPageShow = (e: PageTransitionEvent) => { if ((e as any).persisted) kick(true); };
-    const onVisibility = () => { if (document.visibilityState === "visible") kick(false); };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if ((e as any).persisted) kick(true);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") kick(false);
+    };
     window.addEventListener("pageshow", onPageShow as any);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
@@ -127,89 +136,99 @@ export default function MyRatingsClient() {
     );
   }
 
+  // FilmListCard 톤(평가된 카드) 기준 변수
+  const bg = "var(--bg-rated)";
+  const bd = "var(--bd-rated)";
+  const hover = "var(--bg-hover-r)";
+
   return (
-    <div key={bfRev} className="space-y-3">
+    <ul key={bfRev} className="space-y-3">
       {items.map((e) => {
         const f = filmMap.get(e.filmId);
-        
-        // 제목: 한글 우선
+
+        // 제목: 한글 우선 (영어 제목 괄호 표기 제거)
         const titleKo = f?.title_ko;
         const titleEn = f?.title;
-        const displayTitle = titleKo
-          ? `${titleKo}${titleEn && titleKo !== titleEn ? ` (${titleEn})` : ""}`
-          : (titleEn ?? e.filmId);
+
+        const displayTitle = titleKo ? titleKo : (titleEn ?? e.filmId);
 
         const year = f?.year ? ` (${f.year})` : "";
         const fullTitle = `${displayTitle}${year}`;
 
+
         // 감독: 한글 우선
         const directors = f?.credits?.directors_ko?.length
           ? f.credits.directors_ko.join(", ")
-          : (f.credits?.directors?.join(", ") ?? "");
+          : (f?.credits?.directors?.join(", ") ?? "");
 
         const d = new Date(e.updatedAt);
         const ymd = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
 
-        const badgeText = e.rating === null || e.rating === "" ? "-" : Number(e.rating).toFixed(1);
-        
+        const badgeText =
+          e.rating === null || e.rating === "" ? "-" : Number(e.rating).toFixed(1);
+
         return (
-          <article
+          <li
             key={e.id}
-            // [수정] rounded-xl 적용하여 카드 모서리 통일
-            className="group relative rounded-xl border p-4 transition-all duration-200 hover:shadow-md cursor-pointer"
-            style={{
-              // [수정] globals.css 변수 사용
-              background: "var(--bg-rated)",
-              borderColor: "var(--bd-rated)",
-              color: "#FFFFFF",
+            className="border rounded-lg p-4 transition cursor-pointer"
+            style={{ background: bg, borderColor: bd }}
+            onMouseEnter={(ev) => {
+              (ev.currentTarget as HTMLLIElement).style.background = hover;
             }}
+            onMouseLeave={(ev) => {
+              (ev.currentTarget as HTMLLIElement).style.background = bg;
+            }}
+            role="button"
+            tabIndex={0}
             onClick={() => router.push(`/films/${e.filmId}`)}
+            onKeyDown={(ev) => {
+              if (ev.key === "Enter" || ev.key === " ") router.push(`/films/${e.filmId}`);
+            }}
           >
-            <div className="flex flex-col gap-3">
-              {/* 상단: 제목/감독 및 평점 배지 */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  {/* 제목: 흰색, 굵게 */}
-                  <h3 className="text-lg font-bold text-white truncate leading-tight">
-                    {fullTitle}
-                  </h3>
-                  {/* 감독: 흰색(약간 투명) */}
-                  {directors && (
-                    <p className="text-xs text-white/80 mt-1 truncate">
-                      {directors}
-                    </p>
-                  )}
+            {/* 상단: 제목/감독 + 평점 원형 배지 */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-[1.0rem] leading-snug text-white truncate">
+                  {fullTitle}
                 </div>
 
-                {/* 평점 배지: [수정] rounded-xl 적용하여 둥근 사각형으로 변경 */}
-                <div
-                  className="shrink-0 rounded-xl min-w-[42px] h-[42px] flex items-center justify-center text-lg font-bold shadow-sm"
-                  style={{
-                    background: "var(--badge-rated-bg)",
-                    color: "var(--badge-rated-fg)",
-                  }}
-                >
-                  {badgeText}
-                </div>
+                {directors && (
+                  <div className="text-[0.875rem] text-white/90 mt-1 truncate">
+                    {directors}
+                  </div>
+                )}
               </div>
 
-              {/* 한줄평 (구분선 추가) */}
-              {e.shortReview && (
-                <div className="pt-3 border-t border-white/20">
-                   <p className="text-[14px] text-white/95 leading-relaxed break-words whitespace-pre-wrap">
-                     {e.shortReview}
-                   </p>
-                </div>
-              )}
-
-              {/* 하단 날짜 */}
-              <div className="flex justify-end mt-auto pt-1">
-                <p className="text-[11px] text-white/60">{ymd}</p>
+              {/* 평점 배지: 완전 원형 */}
+              <div
+                className="shrink-0 w-12 h-12 rounded-[20px] grid place-items-center text-[1.05rem] font-semibold select-none"
+                style={{
+                  background: "var(--badge-rated-bg)",
+                  color: "var(--badge-rated-fg)",
+                }}
+                aria-label={`Rating ${badgeText}`}
+              >
+                {badgeText}
               </div>
+
             </div>
-          </article>
+
+            {/* 한줄평 */}
+            {e.shortReview && (
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <p className="text-[14px] text-white/95 leading-relaxed break-words whitespace-pre-wrap">
+                  {e.shortReview}
+                </p>
+              </div>
+            )}
+
+            {/* 하단 날짜: Updated : 추가 */}
+            <div className="mt-3 flex justify-end">
+              <p className="text-[11px] text-white/60">Updated : {ymd}</p>
+            </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

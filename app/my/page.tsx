@@ -1,4 +1,3 @@
-// app/my/page.tsx
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -28,9 +27,7 @@ export default async function MyPage() {
 
   if (!user) redirect("/login");
 
-  // 닉네임이 Default 패턴(이메일앞3자리+숫자4개)인지 확인하는 로직 (Client에 힌트 전달)
   const emailPrefix = user.email?.split("@")[0].slice(0, 3) ?? "";
-  // 예: kss1234 패턴이면 true
   const isDefaultNickname = new RegExp(`^${emailPrefix}[0-9]{4}$`).test(user.nickname ?? "");
 
   return (
@@ -38,6 +35,7 @@ export default async function MyPage() {
       <PageShowRefresh />
       <MyPageClient
         user={{
+          id: user.id, // [추가] ID 전달
           email: user.email ?? "",
           nickname: user.nickname ?? emailPrefix,
           followers: user._count.followedBy,
