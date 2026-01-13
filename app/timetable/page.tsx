@@ -119,6 +119,15 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   }
   const userId = session.user.id;
 
+  // [수정] 닉네임 가져오기
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { nickname: true, email: true },
+  });
+  
+  // 닉네임 없으면 이메일 앞자리라도 쓰기 (방어 로직)
+  const displayNickname = user?.nickname || user?.email?.split("@")[0] || "User";
+
   // 즐겨찾기 조회
   let favoriteRows: { screeningId: string; priority: number | null; sortOrder: number | null }[] = [];
 
@@ -381,6 +390,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
           rows={filtered}
           editionLabel={currentEditionLabel}
           dateIso={currentDate}
+          userNickname={displayNickname} // [추가] 닉네임 전달
         />
       </section>
     </main>

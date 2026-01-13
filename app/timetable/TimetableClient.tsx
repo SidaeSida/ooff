@@ -11,6 +11,10 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+// [라이브러리] html-to-image
+import { toPng } from "html-to-image";
+import { ImageDown, Loader2 } from "lucide-react";
+
 
 import entriesData from "@/data/entries.json";
 import screeningsData from "@/data/screenings.json";
@@ -18,11 +22,10 @@ import { clamp } from "@/lib/utils";
 
 import type { TimetableRow } from "./page";
 
-// [Refactor] 로직 파일에서 상수/함수 import
 import {
   DAY_START_MIN, DAY_END_MIN, LOGICAL_DAY_END_MIN, TOTAL_MIN,
   PX_PER_MIN_PC, PX_PER_MIN_MOBILE,
-  LABEL_COL_WIDTH, GRID_GAP_LEFT, GRID_RIGHT_PADDING, BASE_LEFT_PX, BASE_PADDING_PX,
+  BASE_LEFT_PX, GRID_RIGHT_PADDING,
   HOUR_MARKS, DELETE_ZONE_WIDTH, SINGLE_CARD_DRAG_LIMIT_LEFT, SINGLE_CARD_DRAG_LIMIT_RIGHT,
   CONF_PC, CONF_MOBILE,
   groupByOverlap, idxFromSize, stepOffset, isoToAbsMinutes, absMinutesToHm,
@@ -31,12 +34,13 @@ import {
 } from "./logic";
 
 // ---------------------------------------------------
-// 타입 정의 (컴포넌트 로컬 상태용)
+// 타입 정의
 // ---------------------------------------------------
 type Props = {
   rows: TimetableRow[];
   editionLabel: string;
   dateIso: string;
+  userNickname: string;
 };
 
 type PlacedRow = TimetableRow & {
@@ -76,7 +80,7 @@ type DragState = {
   pointerClientX: number;
 };
 
-type ViewMode = "my" | "full" | "grid";
+type ViewMode = "jumpcut" | "onetake" | "storyboard";
 
 type CompressSegment = {
   start: number;
@@ -105,10 +109,8 @@ export default function TimetableClient({
   rows = [],
   editionLabel,
   dateIso,
+  userNickname,
 }: Props) {
-  // ---------------------------------------------------
-  // 모바일 판정
-  // ---------------------------------------------------
   const getIsMobile = () =>
     typeof window !== "undefined" && window.innerWidth < 420;
 
@@ -127,15 +129,16 @@ export default function TimetableClient({
   const CONF = isMobile ? CONF_MOBILE : CONF_PC;
   const pxPerMin = isMobile ? PX_PER_MIN_MOBILE : PX_PER_MIN_PC;
 
+  // [Ref] 스크린샷 캡처용 (전체 감싸기)
+  const captureRef = useRef<HTMLDivElement | null>(null);
+  
+  // [Ref] 타임라인 컨테이너 (스크롤 및 좌표 계산용)
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  // 현재 에디션 id (screenings 링크용)
+  
   const editionId = rows[0]?.editionId ?? "";
 
-  // ---------------------------------------------------
   // 상태
-  // ---------------------------------------------------
-  const [viewMode, setViewMode] = useState<ViewMode>("my");
+  const [viewMode, setViewMode] = useState<ViewMode>("jumpcut");
 
   const [activeIds, setActiveIds] = useState<Set<string>>(
     () => new Set(rows.map((r) => r.id)),
@@ -189,8 +192,8 @@ export default function TimetableClient({
 
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [deleteZoneActive, setDeleteZoneActive] = useState(false);
+  const [isSavingImage, setIsSavingImage] = useState(false);
 
-  // rows 변경 시 reset
   useEffect(() => {
     setActiveIds(new Set(rows.map((r) => r.id)));
     setZOverrides(new Map());
@@ -198,26 +201,70 @@ export default function TimetableClient({
 
     const m1 = new Map<string, PriorityOrNull>();
     for (const r of rows) {
-      const base =
-        typeof r.priority === "number"
-          ? (r.priority as Priority)
-          : null;
+      const base = typeof r.priority === "number" ? (r.priority as Priority) : null;
       m1.set(r.id, base);
     }
     setPriorityMap(m1);
 
     const m2 = new Map<string, number | null>();
     for (const r of rows) {
-      m2.set(
-        r.id,
-        typeof r.order === "number" ? (r.order as number) : null,
-      );
+      m2.set(r.id, typeof r.order === "number" ? (r.order as number) : null);
     }
     setOrderMap(m2);
   }, [rows]);
 
   // ---------------------------------------------------
-  // 필터
+  // [수정] 이미지 저장 (Free Slot 제외 + 타이틀 포함)
+  // ---------------------------------------------------
+  const handleSaveImage = async () => {
+    if (!captureRef.current) return;
+    setIsSavingImage(true);
+
+    try {
+      const element = captureRef.current;
+      
+      const dataUrl = await toPng(element, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        pixelRatio: 2, // 고해상도
+        // [중요] filter: 저장 시 제외할 요소 지정
+        filter: (node) => {
+          // 'data-hide-on-save' 속성이 있는 요소는 이미지에서 제외
+          if (node instanceof HTMLElement && node.hasAttribute('data-hide-on-save')) {
+            return false;
+          }
+          return true;
+        },
+        style: {
+          height: 'auto',
+          overflow: 'visible',
+          maxHeight: 'none',
+          border: 'none',
+          boxShadow: 'none',
+          // ▼▼▼ [튜닝 포인트] 이 값을 조절하여 X축 짤림 해결하세요 ▼▼▼
+          padding: '0px', // 예: 40px, 60px 등
+          // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        }
+      });
+
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      
+      const dateStr = dateIso.slice(0, 10);
+      const modeStr = viewMode === "jumpcut" ? "JumpCut" : viewMode === "onetake" ? "OneTake" : "Storyboard";
+      link.download = `OOFF_${userNickname}_${modeStr}_${dateStr}.png`;
+      
+      link.click();
+    } catch (err) {
+      console.error("Failed to capture image", err);
+      alert("Failed to save image. (Try refreshing the page)");
+    } finally {
+      setIsSavingImage(false);
+    }
+  };
+
+  // ---------------------------------------------------
+  // 로직
   // ---------------------------------------------------
   const visibleRows = useMemo(
     () => rows.filter((r) => activeIds.has(r.id)),
@@ -236,9 +283,6 @@ export default function TimetableClient({
     return v == null ? null : v;
   };
 
-  // ---------------------------------------------------
-  // 압축 타임라인 (My Day 뷰)
-  // ---------------------------------------------------
   const compression: CompressionConfig = useMemo(() => {
     const makeLinear = (): CompressionConfig => {
       const toY = (absMin: number) =>
@@ -258,17 +302,15 @@ export default function TimetableClient({
       };
     };
 
-    if (viewMode !== "my" || visibleRows.length === 0) {
+    if (viewMode !== "jumpcut" || visibleRows.length === 0) {
       return makeLinear();
     }
 
     const busy: { start: number; end: number }[] = [];
-
     for (const r of visibleRows) {
       let start = r.startMin;
       let end = r.endMin;
       if (end <= start) end += 24 * 60;
-
       start = clamp(start, DAY_START_MIN, DAY_END_MIN);
       end = clamp(end, DAY_START_MIN, DAY_END_MIN);
       if (end <= start) continue;
@@ -294,10 +336,8 @@ export default function TimetableClient({
 
     const segments: CompressSegment[] = [];
     let cursor = DAY_START_MIN;
-
     const BUSY_RATE = 1.0;
     const FREE_RATE = 0.25;
-
     let acc = 0;
 
     for (const iv of merged) {
@@ -317,7 +357,6 @@ export default function TimetableClient({
         });
         acc += height;
       }
-
       const start = iv.start;
       const end = iv.end;
       const dur = end - start || 1;
@@ -393,20 +432,15 @@ export default function TimetableClient({
       height: acc,
       freeSlots,
     };
-
   }, [viewMode, visibleRows, pxPerMin]);
 
-  // Full Day 모드에서 사용할 free slot
   const fullFreeSlots: FreeSlot[] = useMemo(() => {
     if (visibleRows.length === 0) return [];
-
     const busy: { start: number; end: number }[] = [];
-
     for (const r of visibleRows) {
       let start = r.startMin;
       let end = r.endMin;
       if (end <= start) end += 24 * 60;
-
       start = clamp(start, DAY_START_MIN, DAY_END_MIN);
       end = clamp(end, DAY_START_MIN, DAY_END_MIN);
       if (end <= start) continue;
@@ -426,7 +460,6 @@ export default function TimetableClient({
     }
 
     busy.sort((a, b) => a.start - b.start);
-
     const merged: { start: number; end: number }[] = [];
     let cur = busy[0];
     for (let i = 1; i < busy.length; i++) {
@@ -442,7 +475,6 @@ export default function TimetableClient({
 
     const free: FreeSlot[] = [];
     let cursor = DAY_START_MIN;
-
     for (const iv of merged) {
       if (iv.start > cursor) {
         const start = cursor;
@@ -474,16 +506,11 @@ export default function TimetableClient({
         last.endAbs = LOGICAL_DAY_END_MIN;
       }
     }
-
     return free;
-
   }, [visibleRows, pxPerMin]);
 
   const timelineHeight = compression.height;
 
-  // ---------------------------------------------------
-  // 카드 배치
-  // ---------------------------------------------------
   const placedRows: PlacedRow[] = useMemo(() => {
     const groups = groupByOverlap(visibleRows);
     const placed: PlacedRow[] = [];
@@ -498,17 +525,14 @@ export default function TimetableClient({
       meta.sort((a, b) => {
         const oa = a.order;
         const ob = b.order;
-
         if (oa != null && ob != null && oa !== ob) return oa - ob;
         if (oa != null && ob == null) return -1;
         if (oa == null && ob != null) return 1;
-
         const ca = parseInt(a.row.code ?? "0", 10);
         const cb = parseInt(b.row.code ?? "0", 10);
         if (!Number.isNaN(ca) && !Number.isNaN(cb) && ca !== cb) {
           return ca - cb;
         }
-
         return a.row.startMin - b.row.startMin;
       });
 
@@ -529,20 +553,10 @@ export default function TimetableClient({
         const dragId = dragState.id;
         const baseIndex = meta.findIndex((g) => g.row.id === dragId);
         if (baseIndex >= 0) {
-          const delta =
-            dragState.visualClientX - dragState.startClientX;
+          const delta = dragState.visualClientX - dragState.startClientX;
           const offset = stepOffset(delta, step);
-          const newIndex = clamp(
-            baseIndex + offset,
-            0,
-            size - 1,
-          );
-          dragInfo = {
-            dragId,
-            originIndex: baseIndex,
-            newIndex,
-            delta,
-          };
+          const newIndex = clamp(baseIndex + offset, 0, size - 1);
+          dragInfo = { dragId, originIndex: baseIndex, newIndex, delta };
         }
       }
 
@@ -556,19 +570,17 @@ export default function TimetableClient({
         const duration = Math.max(endClamped - startClamped, 40);
 
         const top =
-          viewMode === "my"
+          viewMode === "jumpcut"
             ? compression.toY(startClamped)
             : (startClamped - DAY_START_MIN) * pxPerMin;
         const height =
-          viewMode === "my"
+          viewMode === "jumpcut"
             ? compression.toHeight(startClamped, endClamped)
             : duration * pxPerMin;
 
         let visualIndex = baseIndex;
-
         if (dragInfo && dragInfo.originIndex !== dragInfo.newIndex) {
           const { dragId, originIndex, newIndex } = dragInfo;
-
           if (row.id === dragId) {
             visualIndex = originIndex;
           } else if (newIndex > originIndex) {
@@ -582,10 +594,7 @@ export default function TimetableClient({
           }
         }
 
-        const left = isSingle
-          ? BASE_LEFT_PX
-          : BASE_LEFT_PX + visualIndex * step;
-
+        const left = isSingle ? BASE_LEFT_PX : BASE_LEFT_PX + visualIndex * step;
         let zBase = 100 + (size - baseIndex);
         if (priority === 1) zBase += 100;
         else if (priority === 2) zBase += 50;
@@ -604,24 +613,12 @@ export default function TimetableClient({
         });
       });
     }
-
     return placed;
   }, [
-    visibleRows,
-    zOverrides,
-    pxPerMin,
-    CONF.steps,
-    CONF.widths,
-    priorityMap,
-    orderMap,
-    dragState,
-    viewMode,
-    compression,
+    visibleRows, zOverrides, pxPerMin, CONF.steps, CONF.widths,
+    priorityMap, orderMap, dragState, viewMode, compression,
   ]);
 
-  // ---------------------------------------------------
-  // 삭제존 위치
-  // ---------------------------------------------------
   let deleteZoneTop = timelineHeight / 2 - 40;
   let deleteZoneHeight = 80;
   if (dragState) {
@@ -633,23 +630,17 @@ export default function TimetableClient({
   }
 
   // ---------------------------------------------------
-  // 날짜 / 요약 라벨
+  // [수정] 타이틀 생성 로직 (05.03(토) 형식)
   // ---------------------------------------------------
-  const dateSummaryLabel = useMemo(() => {
+  const formattedDate = useMemo(() => {
     const d = new Date(dateIso);
-    if (Number.isNaN(d.getTime())) {
-      return `${editionLabel} · ${dateIso} · ${visibleRows.length}개 상영`;
-    }
-
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
+    if (Number.isNaN(d.getTime())) return dateIso;
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
     const w = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
-    return `${editionLabel} · ${month}월${day}일(${w}) · ${visibleRows.length}개 상영`;
-  }, [editionLabel, dateIso, visibleRows.length]);
+    return `${month}.${day} (${w})`;
+  }, [dateIso]);
 
-  // ---------------------------------------------------
-  // 우선순위 메뉴
-  // ---------------------------------------------------
   function bringToFront(id: string) {
     setZOverrides((prev) => {
       const next = new Map(prev);
@@ -669,8 +660,8 @@ export default function TimetableClient({
     const MENU_WIDTH = 40;
     const MENU_HEIGHT = 132;
     const MARGIN = 8;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const vw = (window as any).innerWidth;
+    const vh = (window as any).innerHeight;
 
     let x = clientX - MENU_WIDTH / 2;
     if (x < MARGIN) x = MARGIN;
@@ -696,16 +687,13 @@ export default function TimetableClient({
     action: "first" | "second" | "normal" | "remove",
   ) {
     closePriorityMenu();
-
     if (action === "remove") {
       await removeFavorite(screeningId);
       return;
     }
-
     let newPriority: Priority = 0;
     if (action === "first") newPriority = 1;
     if (action === "second") newPriority = 2;
-
     await savePriority(screeningId, newPriority);
   }
 
@@ -718,7 +706,6 @@ export default function TimetableClient({
       next.set(screeningId, newPriority);
       return next;
     });
-
     try {
       const resp = await fetch("/api/favorite-screening", {
         method: "PUT",
@@ -730,15 +717,11 @@ export default function TimetableClient({
           sortOrder: getOrder(screeningId),
         }),
       });
-
       if (!resp.ok) throw new Error();
     } catch {
       const m = new Map<string, PriorityOrNull>();
       for (const r of rows) {
-        const base =
-          typeof r.priority === "number"
-            ? (r.priority as Priority)
-            : null;
+        const base = typeof r.priority === "number" ? (r.priority as Priority) : null;
         m.set(r.id, base);
       }
       setPriorityMap(m);
@@ -748,35 +731,27 @@ export default function TimetableClient({
   async function removeFavorite(screeningId: string) {
     const wasActive = activeIds.has(screeningId);
     if (!wasActive) return;
-
     setActiveIds((prev) => {
       const next = new Set(prev);
       next.delete(screeningId);
       return next;
     });
-
     setPriorityMap((prev) => {
       const next = new Map(prev);
       next.delete(screeningId);
       return next;
     });
-
     setOrderMap((prev) => {
       const next = new Map(prev);
       next.delete(screeningId);
       return next;
     });
-
     try {
       const resp = await fetch("/api/favorite-screening", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          screeningId,
-          favorite: false,
-        }),
+        body: JSON.stringify({ screeningId, favorite: false }),
       });
-
       if (!resp.ok) throw new Error();
     } catch {
       setActiveIds((prev) => {
@@ -823,7 +798,6 @@ export default function TimetableClient({
       clearHeartLongPressTimer();
       st.id = null;
       st.triggered = false;
-
       if (!triggered) {
         const current = getPriority(screeningId);
         const next = getNextPriority(current);
@@ -854,54 +828,39 @@ export default function TimetableClient({
   function handleCardPointerDown(id: string) {
     return (e: React.PointerEvent<HTMLElement>) => {
       if (dragState) return;
-
       const target = e.target as HTMLElement;
       if (target.closest("a, button")) return;
-
       e.preventDefault();
       e.stopPropagation();
-
       try {
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       } catch {}
-
       const st = cardLongPressRef.current;
       clearCardLongPressTimer();
       st.id = id;
       st.startClientX = e.clientX;
       st.timer = window.setTimeout(() => {
         if (!st.id) return;
-
-        // [UX] 햅틱 피드백 (카드 집기)
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(10);
         }
-
         const row = placedRows.find((r) => r.id === st.id);
         if (!row) return;
-
         const rowStart = row.startMin;
         let rowEnd = row.endMin;
         if (rowEnd <= rowStart) rowEnd += 24 * 60;
-
         const group = placedRows
           .filter((other) => {
             if (other.id === row.id) return true;
-
             const otherStart = other.startMin;
             let otherEnd = other.endMin;
             if (otherEnd <= otherStart) otherEnd += 24 * 60;
-
-            const overlap =
-              !(otherEnd <= rowStart || otherStart >= rowEnd);
-
+            const overlap = !(otherEnd <= rowStart || otherStart >= rowEnd);
             return overlap;
           })
           .sort((a, b) => a.left - b.left);
-
         const originIndex = group.findIndex((g) => g.id === row.id);
         const groupIds = group.map((g) => g.id);
-
         setDragState({
           id: row.id,
           groupIds,
@@ -910,7 +869,6 @@ export default function TimetableClient({
           visualClientX: st.startClientX,
           pointerClientX: st.startClientX,
         });
-
         setDeleteZoneActive(false);
       }, 400) as any;
     };
@@ -919,56 +877,43 @@ export default function TimetableClient({
   function handleCardPointerMove(id: string) {
     return (e: React.PointerEvent<HTMLElement>) => {
       if (!dragState || dragState.id !== id) return;
-
       const target = e.target as HTMLElement;
       if (target.closest("a, button")) return;
-
       e.preventDefault();
       e.stopPropagation();
       const clientX = e.clientX;
-
       setDragState((prev) => {
         if (!prev || prev.id !== id) return prev;
         const groupSize = prev.groupIds.length;
-
         if (groupSize <= 1) {
           const rawDelta = clientX - prev.startClientX;
-
           const clampedDelta = clamp(
             rawDelta,
             -SINGLE_CARD_DRAG_LIMIT_LEFT,
             SINGLE_CARD_DRAG_LIMIT_RIGHT,
           );
-
           const visualX = prev.startClientX + clampedDelta;
-
           return {
             ...prev,
             visualClientX: visualX,
             pointerClientX: clientX,
           };
         }
-
         const idx = idxFromSize(groupSize);
         const step = CONF.steps[idx];
-
         const minOffset = -prev.originIndex;
         const maxOffset = groupSize - 1 - prev.originIndex;
-
         const rawDelta = clientX - prev.startClientX;
         const minDelta = minOffset * step;
         const maxDelta = maxOffset * step;
-
         const clampedDelta = clamp(rawDelta, minDelta, maxDelta);
         const visualX = prev.startClientX + clampedDelta;
-
         return {
           ...prev,
           visualClientX: visualX,
           pointerClientX: clientX,
         };
       });
-
       if (typeof window !== "undefined") {
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
@@ -981,18 +926,8 @@ export default function TimetableClient({
 
   async function finalizeDrag() {
     if (!dragState) return;
-
-    const {
-      id,
-      groupIds,
-      originIndex,
-      startClientX,
-      visualClientX,
-      pointerClientX,
-    } = dragState;
-
+    const { id, groupIds, originIndex, startClientX, visualClientX, pointerClientX } = dragState;
     const groupSize = groupIds.length;
-
     if (typeof window !== "undefined") {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
@@ -1005,25 +940,20 @@ export default function TimetableClient({
         }
       }
     }
-
     if (groupSize <= 1) {
       setDragState(null);
       setDeleteZoneActive(false);
       return;
     }
-
     const idx = idxFromSize(groupSize);
     const step = CONF.steps[idx];
     const delta = visualClientX - startClientX;
     const offset = stepOffset(delta, step);
-
     let targetIndex = originIndex + offset;
     targetIndex = clamp(targetIndex, 0, groupSize - 1);
-
     const finalIds = [...groupIds];
     finalIds.splice(originIndex, 1);
     finalIds.splice(targetIndex, 0, id);
-
     setOrderMap((prev) => {
       const next = new Map(prev);
       finalIds.forEach((sid, index) => {
@@ -1031,10 +961,8 @@ export default function TimetableClient({
       });
       return next;
     });
-
     setDragState(null);
     setDeleteZoneActive(false);
-
     try {
       await Promise.all(
         finalIds.map(async (sid, index) => {
@@ -1052,7 +980,6 @@ export default function TimetableClient({
         }),
       );
     } catch (e) {}
-    // [UX] 햅틱 피드백 (드래그 종료)
     if (typeof navigator !== "undefined" && navigator.vibrate) {
       navigator.vibrate(10);
     }
@@ -1062,18 +989,12 @@ export default function TimetableClient({
     return async (e: React.PointerEvent<HTMLElement>) => {
       const target = e.target as HTMLElement;
       if (target.closest("a, button")) return;
-
       e.preventDefault();
       e.stopPropagation();
-
       try {
-        (e.currentTarget as HTMLElement).releasePointerCapture(
-          e.pointerId,
-        );
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
       } catch {}
-
       clearCardLongPressTimer();
-
       if (dragState && dragState.id === id) {
         await finalizeDrag();
       } else {
@@ -1092,189 +1013,125 @@ export default function TimetableClient({
     };
   }
 
-  // ---------------------------------------------------
-  // [Fix] 드래그 중 스크롤 완벽 차단 (Scroll Lock)
-  // ---------------------------------------------------
   useEffect(() => {
     if (!dragState) return;
-
-    // 1. CSS 레벨에서 스크롤 아예 잠금 (.no-scroll 활용)
     document.documentElement.classList.add("no-scroll");
     document.body.classList.add("no-scroll");
-
-    // 2. 이벤트 레벨에서 터치 무시 (iOS 바운스 방지)
     const block = (e: TouchEvent) => {
       if (e.cancelable) e.preventDefault();
       e.stopPropagation();
     };
-    
-    // { passive: false } 필수: 스크롤 이벤트를 강제로 막겠다는 선언
     window.addEventListener("touchmove", block, { passive: false });
-
     return () => {
-      // 드래그 끝나면 잠금 해제
       document.documentElement.classList.remove("no-scroll");
       document.body.classList.remove("no-scroll");
       window.removeEventListener("touchmove", block);
     };
   }, [dragState]);
 
-  // ---------------------------------------------------
-  // Free slot 클릭 → Screenings 새 탭
-  // ---------------------------------------------------
   function openFreeSlotInScreenings(startAbs: number, endAbs: number) {
     if (!editionId) return;
     const startHm = absMinutesToHm(startAbs);
     const endHm = absMinutesToHm(endAbs);
-
     const params = new URLSearchParams();
     params.set("edition", editionId);
     params.set("date", dateIso);
     params.set("start", startHm);
     params.set("end", endHm);
-
     const url = `/screenings?${params.toString()}`;
     if (typeof window !== "undefined") {
       window.open(url, "_blank", "noopener");
     }
   }
 
-  // ---------------------------------------------------
-  // Free slot용 상영 개수 데이터
-  // ---------------------------------------------------
-  const allScreeningsForCount = useMemo(
-    () => {
-      if (!editionId) return [] as SlotCountScreening[];
+  const allScreeningsForCount = useMemo(() => {
+    if (!editionId) return [] as SlotCountScreening[];
+    const entriesById = new Map<string, any>();
+    (entriesData as any[]).forEach((e: any) => {
+      if (!e || !e.id) return;
+      entriesById.set(e.id, e);
+    });
+    const map = new Map<string, SlotCountScreening>();
+    (screeningsData as any[]).forEach((s: any) => {
+      const entry = entriesById.get(s.entryId);
+      if (!entry) return;
+      if (entry.editionId !== editionId) return;
+      if (!s.startsAt || typeof s.startsAt !== "string") return;
+      if (dateIso && s.startsAt.slice(0, 10) !== dateIso) return;
+      const keyParts: string[] = [];
+      if (s.code != null) keyParts.push(String(s.code));
+      else if (s.id != null) keyParts.push(String(s.id));
+      else keyParts.push(String(s.entryId));
+      keyParts.push(String(s.venue ?? ""));
+      keyParts.push(String(s.startsAt));
+      const key = keyParts.join("|");
+      const startAbs = isoToAbsMinutes(s.startsAt);
+      let endAbs = startAbs + 120;
+      if (typeof s.endsAt === "string" && s.endsAt) {
+        endAbs = isoToAbsMinutes(s.endsAt);
+      }
+      if (endAbs <= startAbs) {
+        endAbs += 24 * 60;
+      }
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, { startAbs, endAbs });
+      } else {
+        if (startAbs < existing.startAbs) existing.startAbs = startAbs;
+        if (endAbs > existing.endAbs) existing.endAbs = endAbs;
+      }
+    });
+    return Array.from(map.values());
+  }, [editionId, dateIso]);
 
-      const entriesById = new Map<string, any>();
-      (entriesData as any[]).forEach((e: any) => {
-        if (!e || !e.id) return;
-        entriesById.set(e.id, e);
-      });
-
-      const map = new Map<string, SlotCountScreening>();
-
-      (screeningsData as any[]).forEach((s: any) => {
-        const entry = entriesById.get(s.entryId);
-        if (!entry) return;
-        if (entry.editionId !== editionId) return;
-        if (!s.startsAt || typeof s.startsAt !== "string") return;
-        if (dateIso && s.startsAt.slice(0, 10) !== dateIso) return;
-
-        const keyParts: string[] = [];
-        if (s.code != null) keyParts.push(String(s.code));
-        else if (s.id != null) keyParts.push(String(s.id));
-        else keyParts.push(String(s.entryId));
-        keyParts.push(String(s.venue ?? ""));
-        keyParts.push(String(s.startsAt));
-        const key = keyParts.join("|");
-
-        const startAbs = isoToAbsMinutes(s.startsAt);
-        let endAbs = startAbs + 120;
-        if (typeof s.endsAt === "string" && s.endsAt) {
-          endAbs = isoToAbsMinutes(s.endsAt);
-        }
-        if (endAbs <= startAbs) {
-          endAbs += 24 * 60;
-        }
-
-        const existing = map.get(key);
-        if (!existing) {
-          map.set(key, { startAbs, endAbs });
-        } else {
-          if (startAbs < existing.startAbs) existing.startAbs = startAbs;
-          if (endAbs > existing.endAbs) existing.endAbs = endAbs;
-        }
-      });
-
-      return Array.from(map.values());
-    },
-    [editionId, dateIso],
-  );
-
-  // ---------------------------------------------------
-  // Grid view 데이터
-  // ---------------------------------------------------
   const gridGroups = useMemo(() => {
     if (visibleRows.length === 0) return [];
-
     const groups = groupByOverlap(visibleRows);
-
     const mapped = groups.map((group) => {
       let meta = group.map((row) => ({
         row,
         priority: getPriority(row.id),
         order: getOrder(row.id),
       }));
-
       meta.sort((a, b) => {
         const oa = a.order;
         const ob = b.order;
-
         if (oa != null && ob != null && oa !== ob) return oa - ob;
         if (oa != null && ob == null) return -1;
         if (oa == null && ob != null) return 1;
-
         const ca = parseInt(a.row.code ?? "0", 10);
         const cb = parseInt(b.row.code ?? "0", 10);
         if (!Number.isNaN(ca) && !Number.isNaN(cb) && ca !== cb) {
           return ca - cb;
         }
-
         return a.row.startMin - b.row.startMin;
       });
-
       if (meta.length === 0) {
         return {
           startAbs: DAY_START_MIN,
-          cards: [] as {
-            row: TimetableRow;
-            left: number;
-            width: string;
-            z: number;
-          }[],
+          cards: [] as { row: TimetableRow; left: number; width: string; z: number }[],
         };
       }
-
       const startAbs = meta[0].row.startMin;
       const size = meta.length;
-
       const idx = idxFromSize(size);
       const step = CONF.steps[idx];
       const width = `calc(100% - ${step * (size - 1)}px)`;
-
-      let dragInfo: {
-        dragId: string;
-        originIndex: number;
-        newIndex: number;
-      } | null = null;
-
+      let dragInfo: { dragId: string; originIndex: number; newIndex: number } | null = null;
       if (dragState && size > 1) {
         const dragId = dragState.id;
         const baseIndex = meta.findIndex((g) => g.row.id === dragId);
         if (baseIndex >= 0) {
-          const delta =
-            dragState.visualClientX - dragState.startClientX;
+          const delta = dragState.visualClientX - dragState.startClientX;
           const offset = stepOffset(delta, step);
-          const newIndex = clamp(
-            baseIndex + offset,
-            0,
-            size - 1,
-          );
-          dragInfo = {
-            dragId,
-            originIndex: baseIndex,
-            newIndex,
-          };
+          const newIndex = clamp(baseIndex + offset, 0, size - 1);
+          dragInfo = { dragId, originIndex: baseIndex, newIndex };
         }
       }
-
       const cards = meta.map(({ row, priority }, baseIndex) => {
         let visualIndex = baseIndex;
-
         if (dragInfo && dragInfo.originIndex !== dragInfo.newIndex) {
           const { dragId, originIndex, newIndex } = dragInfo;
-
           if (row.id === dragId) {
             visualIndex = originIndex;
           } else if (newIndex > originIndex) {
@@ -1287,88 +1144,78 @@ export default function TimetableClient({
             }
           }
         }
-
         let zBase = 100 + (size - baseIndex);
         if (priority === 1) zBase += 100;
         else if (priority === 2) zBase += 50;
-
         let z = zBase;
         const override = zOverrides.get(row.id);
         if (override != null) z = 1000 + override;
-
         const left = visualIndex * step;
-
-        return {
-          row,
-          left,
-          width,
-          z,
-        };
+        return { row, left, width, z };
       });
-
       return { startAbs, cards };
     });
-
     mapped.sort((a, b) => a.startAbs - b.startAbs);
-
     return mapped;
   }, [visibleRows, priorityMap, orderMap, CONF.steps, zOverrides, dragState]);
 
-  // ---------------------------------------------------
-  // 렌더링
-  // ---------------------------------------------------
   const isDraggingAny = !!dragState;
-
-  const freeSlotsToRender =
-    viewMode === "my"
-      ? compression.freeSlots
-      : viewMode === "full"
-      ? fullFreeSlots
-      : [];
-
-  const viewLabel = (mode: ViewMode) =>
-    mode === "my"
-      ? "My Day"
-      : mode === "full"
-      ? "Full Day"
-      : "List";
-
+  const freeSlotsToRender = viewMode === "jumpcut" ? compression.freeSlots : viewMode === "onetake" ? fullFreeSlots : [];
+  const viewLabel = (mode: ViewMode) => (mode === "jumpcut" ? "Jump Cut" : mode === "onetake" ? "One Take" : "Storyboard");
   const viewBtnClass = (mode: ViewMode) =>
     "px-2.5 py-1 rounded-full text-[11px] border cursor-pointer whitespace-nowrap " +
-    (viewMode === mode
-      ? "bg-black text-white border-black"
-      : "bg-white text-gray-700 border-gray-300");
+    (viewMode === mode ? "bg-black text-white border-black" : "bg-white text-gray-700 border-gray-300");
 
   return (
     <section className="space-y-3">
-      <div className="space-y-1">
-        <div className="text-sm text-gray-700">{dateSummaryLabel}</div>
-        <div className="flex justify-end">
+      {/* 1. 컨트롤 영역 (저장 시 제외됨) */}
+      <div className="flex items-center justify-between gap-2">
+        {/* Left: View Mode Toggles (왼쪽 고정, 필요 시 가로 스크롤) */}
+        <div className="min-w-0 flex-1 overflow-x-auto">
           <div className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-1 py-0.5 border border-gray-200">
             <button
               type="button"
-              className={viewBtnClass("my")}
-              onClick={() => setViewMode("my")}
+              className={viewBtnClass("jumpcut")}
+              onClick={() => setViewMode("jumpcut")}
             >
-              {viewLabel("my")}
+              {viewLabel("jumpcut")}
             </button>
             <button
               type="button"
-              className={viewBtnClass("full")}
-              onClick={() => setViewMode("full")}
+              className={viewBtnClass("onetake")}
+              onClick={() => setViewMode("onetake")}
             >
-              {viewLabel("full")}
+              {viewLabel("onetake")}
             </button>
             <button
               type="button"
-              className={viewBtnClass("grid")}
-              onClick={() => setViewMode("grid")}
+              className={viewBtnClass("storyboard")}
+              onClick={() => setViewMode("storyboard")}
             >
-              {viewLabel("grid")}
+              {viewLabel("storyboard")}
             </button>
           </div>
         </div>
+
+        {/* Right: Save Image Button (오른쪽 고정, 원형 SVG 버튼) */}
+        <div className="shrink-0">
+          <button
+            type="button"
+            onClick={handleSaveImage}
+            disabled={isSavingImage}
+            aria-label="Save image"
+            title="Save image"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 bg-white shadow-sm hover:bg-gray-50 active:bg-gray-100 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isSavingImage ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <ImageDown className="w-5 h-5" />
+            )}
+          </button>
+        </div>
       </div>
+
 
       {visibleRows.length === 0 && (
         <div className="text-sm text-gray-500 border rounded-lg px-3 py-2">
@@ -1376,548 +1223,326 @@ export default function TimetableClient({
         </div>
       )}
 
-      {/* 메인 타임라인 (My Day / Full Day) */}
-      {visibleRows.length > 0 && viewMode !== "grid" && (
-        <div className="mt-1 bg-white px-1.5 py-2">
-          <div
-            ref={containerRef}
-            className="relative"
-            style={{
-              height: timelineHeight,
-              userSelect: "none",
-              WebkitUserSelect: "none",
-              WebkitTouchCallout: "none",
-              touchAction: isDraggingAny ? "none" : "auto",
-            }}
-          >
-            {/* 시간 그리드 */}
-            {HOUR_MARKS.map((h) => {
-              const abs = h * 60;
-              if (abs < DAY_START_MIN || abs > DAY_END_MIN) return null;
+      {/* 2. 캡처 대상 영역 (Title + Timeline) */}
+      <div ref={captureRef} className="bg-white">
+        
+        {/* [수정] 타이틀 (화면에도 보이고, 캡처에도 포함됨) */}
+        <div className="text-center pb-6 pt-2">
+          <h1 className="text-lg font-extrabold text-gray-900 tracking-tight">
+            &lt; {userNickname}'s {editionLabel} / {formattedDate} &gt;
+          </h1>
+        </div>
 
-              const top =
-                viewMode === "my"
-                  ? compression.toY(abs)
-                  : (abs - DAY_START_MIN) * pxPerMin;
-
-              const 강조 = h === 12 || h === 18 || h === 24;
-
-              let labelHour = h;
-              if (h > 24) labelHour = h - 24;
-
-              return (
-                <div key={h} className="absolute left-0 right-0" style={{ top }}>
-                  <div className="flex items-center">
-                    <div
-                      className={
-                        강조
-                          ? "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-900 font-semibold"
-                          : "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-400"
-                      }
-                    >
-                      {labelHour.toString().padStart(2, "0")}:00
-                    </div>
-                    <div className="flex-1 border-t border-dashed border-gray-200" />
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Free Slot 리본 */}
-            {(viewMode === "my" || viewMode === "full") &&
-              freeSlotsToRender.map((slot, idx) => {
-                const availableCount = countScreeningsForSlot(
-                  allScreeningsForCount,
-                  slot.startAbs,
-                  slot.endAbs,
-                );
-
-                const clickable = availableCount > 0;
-
+        {/* 메인 타임라인 (Jump Cut / One Take) */}
+        {visibleRows.length > 0 && viewMode !== "storyboard" && (
+          <div className="bg-white px-1.5 pb-2">
+            <div
+              ref={containerRef}
+              className="relative bg-white"
+              data-timetable-container="true"
+              style={{
+                height: timelineHeight,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+                WebkitTouchCallout: "none",
+                touchAction: isDraggingAny ? "none" : "auto",
+              }}
+            >
+              {/* 시간 그리드 */}
+              {HOUR_MARKS.map((h) => {
+                const abs = h * 60;
+                if (abs < DAY_START_MIN || abs > DAY_END_MIN) return null;
+                const top = viewMode === "jumpcut" ? compression.toY(abs) : (abs - DAY_START_MIN) * pxPerMin;
+                const 강조 = h === 12 || h === 18 || h === 24;
+                let labelHour = h;
+                if (h > 24) labelHour = h - 24;
                 return (
-                  <button
-                    key={`${slot.startAbs}-${idx}`}
-                    type="button"
-                    disabled={!clickable}
-                    className={[
-                      "absolute rounded-2xl border border-dashed",
-                      "flex items-center justify-between",
-                      "px-3",
-                      "text-[13px] leading-none",
-                      clickable
-                        ? "bg-gray-50/80 text-gray-900 cursor-pointer hover:bg-gray-100"
-                        : "bg-gray-100/80 text-gray-900 cursor-default opacity-70",
-                    ].join(" ")}
-                    style={{
-                      top: slot.top + 4,
-                      height: Math.max(slot.height - 8, 24),
-                      left: BASE_LEFT_PX,
-                      right: GRID_RIGHT_PADDING,
-                      zIndex: 10,
-                    }}
-                    onClick={
-                      clickable
-                        ? () =>
-                            openFreeSlotInScreenings(
-                              slot.startAbs,
-                              slot.endAbs,
-                            )
-                        : undefined
-                    }
-                  >
-                    <span className="truncate">
-                      Free slot{" "}
-                      {absMinutesToHm(slot.startAbs)} ~{" "}
-                      {absMinutesToHm(slot.endAbs)}
-                    </span>
-                    <span className="ml-2 text-[11px] font-semibold">
-                      {availableCount > 0
-                        ? `${availableCount} screenings fit`
-                        : "No screening fit"}
-                    </span>
-                  </button>
+                  <div key={h} className="absolute left-0 right-0" style={{ top }}>
+                    <div className="flex items-center">
+                      <div className={강조 ? "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-900 font-semibold" : "w-[36px] pl-[2px] text-[10px] text-left leading-none text-gray-400"}>
+                        {labelHour.toString().padStart(2, "0")}:00
+                      </div>
+                      <div className="flex-1 border-t border-dashed border-gray-200" />
+                    </div>
+                  </div>
                 );
               })}
 
-            {/* 상영 카드 */}
-            {placedRows.map((s) => {
-              const priority = getPriority(s.id);
-              const isDragging = dragState?.id === s.id;
-              const dragDeltaX =
-                isDragging && dragState
-                  ? dragState.visualClientX - dragState.startClientX
-                  : 0;
-
-              const palette = getPriorityStyles(priority);
-
-              const hasBundle =
-                Array.isArray(s.bundleFilms) &&
-                s.bundleFilms.length > 1;
-
-              const { startLabel, endLabel, isEndEstimated } =
-                getTimeRangeInfo(s);
-
-              return (
-                <article
-                  key={s.id}
-                  // [UX] overflow-hidden 제거 (터치 영역이 카드 밖으로 나가도 잘리지 않게)
-                  className="absolute rounded-3xl px-3 py-2 shadow-sm text-[10px]"
-                  style={{
-                    top: s.top,
-                    left: s.left,
-                    width: s.width,
-                    height: s.height,
-                    zIndex: isDragging ? 3000 : s.z,
-                    cursor: isDraggingAny ? "grabbing" : "pointer",
-                    boxShadow: isDragging
-                      ? "0 10px 24px rgba(0,0,0,0.25)"
-                      : "0 4px 12px rgba(0,0,0,0.06)",
-                    borderWidth: 1,
-                    borderStyle: "solid",
-                    borderColor: isDragging
-                      ? "var(--badge-rated-bg)"
-                      : palette.cardBorder,
-                    backgroundColor: palette.cardBg,
-                    transform: isDragging
-                      ? `translateX(${dragDeltaX}px)`
-                      : undefined,
-                    transition: isDragging
-                      ? "none"
-                      : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
-                    userSelect: "none",
-                    WebkitUserSelect: "none",
-                    WebkitTouchCallout: "none",
-                    touchAction: isDragging ? "none" : "auto",
-                  }}
-                  onPointerDown={handleCardPointerDown(s.id)}
-                  onPointerMove={handleCardPointerMove(s.id)}
-                  onPointerUp={handleCardPointerUp(s.id)}
-                  onPointerCancel={handleCardPointerUp(s.id)}
-                  onPointerLeave={handleCardPointerLeave(s.id)}
-                >
-                  {/* 시간 + 하트 */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 text-[12px] font-semibold text-gray-900 truncate">
-                      <span>{startLabel}</span>
-                      {endLabel && (
-                        <>
-                          <span> ~ </span>
-                          <span
-                            className={
-                              isEndEstimated
-                                ? "text-gray-400"
-                                : "text-gray-900"
-                            }
-                          >
-                            {endLabel}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onPointerDown={onHeartPointerDown(s.id)}
-                      onPointerUp={onHeartPointerUp(s.id)}
-                      onPointerLeave={onHeartPointerLeave()}
-                      // [UX] touch-target 클래스 추가
-                      className="touch-target shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border bg-white cursor-pointer text-[12px]"
-                      style={{
-                        borderColor: palette.heartBorder,
-                        color: palette.heartColor,
-                      }}
-                    >
-                      <span className="text-[12px] leading-none">♥</span>
-                    </button>
-                  </div>
-
-                  {/* Venue */}
-                  <div className="mt-[1px] text-[10px] text-gray-700 truncate">
-                    {s.venue}
-                  </div>
-
-                  {/* 섹션 */}
-                  {s.section && (
-                    <div className="mt-[1px] text-[10px] text-gray-500 truncate">
-                      {s.section}
-                    </div>
-                  )}
-
-                  {/* 제목 */}
-                  <div className="mt-[1px] text-[12px] font-semibold leading-snug line-clamp-2 break-words">
-                    {hasBundle
-                      ? s.bundleFilms!.map((bf, idx) => (
-                          <span key={bf.filmId}>
-                            {idx > 0 && (
-                              <span className="mx-[1px] text-[11px] text-gray-700">
-                                +{" "}
-                              </span>
-                            )}
-                            <Link
-                              href={`/films/${encodeURIComponent(
-                                bf.filmId,
-                              )}`}
-                              className="hover:underline underline-offset-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {bf.title}
-                            </Link>
-                          </span>
-                        ))
-                      : (
-                        <Link
-                          href={`/films/${encodeURIComponent(s.filmId)}`}
-                          className="hover:underline underline-offset-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {s.filmTitle}
-                        </Link>
-                      )}
-                  </div>
-
-                  {/* rating, GV, code */}
-                  {(s.rating || s.withGV || s.code) && (
-                    <div className="mt-[2px] flex items-center justify-between text-[9px]">
-                      <div className="text-gray-600 truncate">
-                        {s.rating && <span>{s.rating}</span>}
-                        {s.rating && s.withGV && (
-                          <span className="mx-[2px]">·</span>
-                        )}
-                        {s.withGV && <span>GV</span>}
-                      </div>
-                      {s.code && (
-                        <span className="text-gray-400 truncate ml-1">
-                          code: {s.code}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-
-            {/* 삭제 영역 */}
-            {dragState && (
-              <div
-                className="pointer-events-none absolute right-0 flex items-center justify-center text-[10px]"
-                style={{
-                  top: deleteZoneTop,
-                  height: deleteZoneHeight,
-                  width: DELETE_ZONE_WIDTH,
-                  borderRadius: 4,
-                  zIndex: 5000,
-                  backgroundColor: deleteZoneActive
-                    ? "rgba(220,38,38,0.40)"
-                    : "rgba(148,163,184,0.55)",
-                  color: deleteZoneActive ? "#B91C1C" : "#111827",
-                  boxShadow: deleteZoneActive
-                    ? "0 0 0 1px rgba(220,38,38,0.7)"
-                    : "0 0 0 1px rgba(148,163,184,0.7)",
-                  userSelect: "none",
-                  WebkitUserSelect: "none",
-                }}
-              >
-                <span className="font-semibold text-[11px] leading-none">
-                  DEL
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Grid View (겹침 그룹 요약) */}
-      {visibleRows.length > 0 && viewMode === "grid" && (
-        <div
-          ref={containerRef}
-          className="mt-2 bg-white border rounded-lg px-2 py-2 space-y-2 relative"
-        >
-          {gridGroups.map((group, idx) => (
-            <div
-              key={`${group.startAbs}-${idx}`}
-              className="flex items-start gap-2 border-b border-dashed border-gray-200 pb-2 last:border-b-0"
-            >
-              <div className="w-[52px] text-[10px] text-right pt-1 text-gray-500">
-                {absMinutesToHm(group.startAbs)}
-              </div>
-
-              <div
-                className="relative flex-1 py-1"
-                style={{ minHeight: 80 }}
-              >
-                {group.cards.map(({ row, left, width, z }) => {
-                  const s = row;
-                  const priority = getPriority(s.id);
-                  const palette = getPriorityStyles(priority);
-
-                  const { startLabel, endLabel, isEndEstimated } =
-                    getTimeRangeInfo(s);
-
-                  const cityLabel =
-                    (s as any).city && typeof (s as any).city === "string"
-                      ? (s as any).city
-                      : null;
-
-                  const hasBundle =
-                    Array.isArray(s.bundleFilms) &&
-                    s.bundleFilms.length > 1;
-
-                  const isDragging = dragState?.id === s.id;
-                  const dragDeltaX =
-                    isDragging && dragState
-                      ? dragState.visualClientX - dragState.startClientX
-                      : 0;
+              {/* Free Slot 리본 */}
+              {(viewMode === "jumpcut" || viewMode === "onetake") &&
+                freeSlotsToRender.map((slot, idx) => {
+                  const availableCount = countScreeningsForSlot(allScreeningsForCount, slot.startAbs, slot.endAbs);
+                  const clickable = availableCount > 0;
+                  // [수정] 1시간(60분) 미만이고 비어있으면 렌더링 안 함
+                  const durationMin = slot.endAbs - slot.startAbs;
+                  if (durationMin < 60 && availableCount === 0) return null;
 
                   return (
-                    <article
-                      key={s.id}
-                      className="absolute rounded-2xl px-2 py-1 text-[10px] shadow-sm overflow-hidden"
+                    <button
+                      key={`${slot.startAbs}-${idx}`}
+                      type="button"
+                      // [수정] 저장 시 제외 속성 추가
+                      data-hide-on-save="true"
+                      disabled={!clickable}
+                      className={[
+                        "absolute rounded-2xl border border-dashed",
+                        "flex items-center justify-between",
+                        "px-3",
+                        "text-[13px] leading-none",
+                        clickable ? "bg-gray-50/80 text-gray-900 cursor-pointer hover:bg-gray-100" : "bg-gray-100/80 text-gray-900 cursor-default opacity-70",
+                      ].join(" ")}
                       style={{
-                        top: 0,
-                        left,
-                        zIndex: isDragging ? 3000 : z,
-                        width,
-                        borderWidth: 1,
-                        borderStyle: "solid",
-                        borderColor: isDragging
-                          ? "var(--badge-rated-bg)"
-                          : palette.cardBorder,
-                        backgroundColor: palette.cardBg,
-                        transform: isDragging
-                          ? `translateX(${dragDeltaX}px)`
-                          : undefined,
-                        transition: isDragging
-                          ? "none"
-                          : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
-                        cursor: isDraggingAny ? "grabbing" : "pointer",
-                        userSelect: "none",
-                        WebkitUserSelect: "none",
-                        WebkitTouchCallout: "none",
-                        touchAction: isDragging ? "none" : "auto",
-                        boxShadow: isDragging
-                          ? "0 10px 24px rgba(0,0,0,0.25)"
-                          : "0 4px 12px rgba(0,0,0,0.06)",
+                        top: slot.top + 4,
+                        height: Math.max(slot.height - 8, 24),
+                        left: BASE_LEFT_PX,
+                        right: GRID_RIGHT_PADDING,
+                        zIndex: 10,
                       }}
-                      onPointerDown={handleCardPointerDown(s.id)}
-                      onPointerMove={handleCardPointerMove(s.id)}
-                      onPointerUp={handleCardPointerUp(s.id)}
-                      onPointerCancel={handleCardPointerUp(s.id)}
-                      onPointerLeave={handleCardPointerLeave(s.id)}
+                      onClick={clickable ? () => openFreeSlotInScreenings(slot.startAbs, slot.endAbs) : undefined}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="flex-1 text-[11px] font-semibold text-gray-900 truncate">
-                          <span>{startLabel}</span>
-                          {endLabel && (
-                            <>
-                              <span> ~ </span>
-                              <span
-                                className={
-                                  isEndEstimated
-                                    ? "text-gray-400"
-                                    : "text-gray-900"
-                                }
-                              >
-                                {endLabel}
-                              </span>
-                            </>
-                          )}
-                        </span>
-                        <button
-                          type="button"
-                          onPointerDown={onHeartPointerDown(s.id)}
-                          onPointerUp={onHeartPointerUp(s.id)}
-                          onPointerLeave={onHeartPointerLeave()}
-                          // [UX] touch-target 클래스 추가
-                          className="touch-target shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border bg-white cursor-pointer text-[12px]"
-                          style={{
-                            borderColor: palette.heartBorder,
-                            color: palette.heartColor,
-                          }}
-                        >
-                          ♥
-                        </button>
-                      </div>
-
-                      <div className="mt-[1px] text-[10px] text-gray-700 truncate">
-                        {s.venue}
-                      </div>
-
-                      <div className="mt-[1px] text-[11px] font-semibold leading-snug line-clamp-1 break-words">
-                        {hasBundle
-                          ? s.bundleFilms!.map((bf, bundleIdx) => (
-                              <span key={bf.filmId}>
-                                {bundleIdx > 0 && (
-                                  <span className="mx-[1px] text-[10px] text-gray-700">
-                                    +{" "}
-                                  </span>
-                                )}
-                                <Link
-                                  href={`/films/${encodeURIComponent(
-                                    bf.filmId,
-                                  )}`}
-                                  className="hover:underline underline-offset-2"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {bf.title}
-                                </Link>
-                              </span>
-                            ))
-                          : (
-                            <Link
-                              href={`/films/${encodeURIComponent(s.filmId)}`}
-                              className="hover:underline underline-offset-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {s.filmTitle}
-                            </Link>
-                          )}
-                      </div>
-
-                      {(cityLabel || s.code) && (
-                        <div className="mt-[1px] flex items-center justify-between text-[9px] text-gray-600">
-                          <div className="truncate">
-                            {cityLabel && <span>{cityLabel}</span>}
-                          </div>
-                          {s.code && (
-                            <span className="text-gray-400 truncate ml-1">
-                              code: {s.code}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </article>
+                      <span className="truncate">Free slot {absMinutesToHm(slot.startAbs)} ~ {absMinutesToHm(slot.endAbs)}</span>
+                      <span className="ml-2 text-[11px] font-semibold">{availableCount > 0 ? `${availableCount} screenings fit` : "No screening fit"}</span>
+                    </button>
                   );
                 })}
-              </div>
-            </div>
-          ))}
 
-          {dragState && (
-            <div
-              className="pointer-events-none absolute right-0 flex items-center justify-center text-[10px]"
-              style={{
-                top: 0,
-                height: "100%",
-                width: DELETE_ZONE_WIDTH,
-                borderRadius: 4,
-                zIndex: 5000,
-                backgroundColor: deleteZoneActive
-                  ? "rgba(220,38,38,0.40)"
-                  : "rgba(148,163,184,0.55)",
-                color: deleteZoneActive ? "#B91C1C" : "#111827",
-                boxShadow: deleteZoneActive
-                  ? "0 0 0 1px rgba(220,38,38,0.7)"
-                  : "0 0 0 1px rgba(148,163,184,0.7)",
-                userSelect: "none",
-                WebkitUserSelect: "none",
-              }}
-            >
-              <span className="font-semibold text-[11px] leading-none">
-                DEL
-              </span>
+              {/* 상영 카드 */}
+              {placedRows.map((s) => {
+                const priority = getPriority(s.id);
+                const isDragging = dragState?.id === s.id;
+                const dragDeltaX = isDragging && dragState ? dragState.visualClientX - dragState.startClientX : 0;
+                const palette = getPriorityStyles(priority);
+                const hasBundle = Array.isArray(s.bundleFilms) && s.bundleFilms.length > 1;
+                const { startLabel, endLabel, isEndEstimated } = getTimeRangeInfo(s);
+                return (
+                  <article
+                    key={s.id}
+                    className="absolute rounded-3xl px-3 py-2 shadow-sm text-[10px]"
+                    style={{
+                      top: s.top,
+                      left: s.left,
+                      width: s.width,
+                      height: s.height,
+                      zIndex: isDragging ? 3000 : s.z,
+                      cursor: isDraggingAny ? "grabbing" : "pointer",
+                      boxShadow: isDragging ? "0 10px 24px rgba(0,0,0,0.25)" : "0 4px 12px rgba(0,0,0,0.06)",
+                      borderWidth: 1,
+                      borderStyle: "solid",
+                      borderColor: isDragging ? "var(--badge-rated-bg)" : palette.cardBorder,
+                      backgroundColor: palette.cardBg,
+                      transform: isDragging ? `translateX(${dragDeltaX}px)` : undefined,
+                      transition: isDragging ? "none" : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
+                      WebkitTouchCallout: "none",
+                      touchAction: isDragging ? "none" : "auto",
+                    }}
+                    onPointerDown={handleCardPointerDown(s.id)}
+                    onPointerMove={handleCardPointerMove(s.id)}
+                    onPointerUp={handleCardPointerUp(s.id)}
+                    onPointerCancel={handleCardPointerUp(s.id)}
+                    onPointerLeave={handleCardPointerLeave(s.id)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 text-[12px] font-semibold text-gray-900 truncate">
+                        <span>{startLabel}</span>
+                        {endLabel && (
+                          <>
+                            <span> ~ </span>
+                            <span className={isEndEstimated ? "text-gray-400" : "text-gray-900"}>{endLabel}</span>
+                          </>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onPointerDown={onHeartPointerDown(s.id)}
+                        onPointerUp={onHeartPointerUp(s.id)}
+                        onPointerLeave={onHeartPointerLeave()}
+                        className="touch-target shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border bg-white cursor-pointer text-[12px]"
+                        style={{ borderColor: palette.heartBorder, color: palette.heartColor }}
+                      >
+                        <span className="text-[12px] leading-none">♥</span>
+                      </button>
+                    </div>
+                    <div className="mt-[1px] text-[10px] text-gray-700 truncate">{s.venue}</div>
+                    {s.section && <div className="mt-[1px] text-[10px] text-gray-500 truncate">{s.section}</div>}
+                    <div className="mt-[1px] text-[12px] font-semibold leading-snug line-clamp-2 break-words">
+                      {hasBundle ? s.bundleFilms!.map((bf, idx) => (
+                        <span key={bf.filmId}>
+                          {idx > 0 && <span className="mx-[1px] text-[11px] text-gray-700"> + </span>}
+                          <Link href={`/films/${encodeURIComponent(bf.filmId)}`} className="hover:underline underline-offset-2" onClick={(e) => e.stopPropagation()}>{bf.title}</Link>
+                        </span>
+                      )) : (
+                        <Link href={`/films/${encodeURIComponent(s.filmId)}`} className="hover:underline underline-offset-2" onClick={(e) => e.stopPropagation()}>{s.filmTitle}</Link>
+                      )}
+                    </div>
+                    {(s.rating || s.withGV || s.code) && (
+                      <div className="mt-[2px] flex items-center justify-between text-[9px]">
+                        <div className="text-gray-600 truncate">
+                          {s.rating && <span>{s.rating}</span>}
+                          {s.rating && s.withGV && <span className="mx-[2px]">·</span>}
+                          {s.withGV && <span>GV</span>}
+                        </div>
+                        {s.code && <span className="text-gray-400 truncate ml-1">code: {s.code}</span>}
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+
+              {/* DEL 존 */}
+              {dragState && (
+                <div
+                  className="pointer-events-none absolute right-0 flex items-center justify-center text-[10px]"
+                  style={{
+                    top: deleteZoneTop,
+                    height: deleteZoneHeight,
+                    width: DELETE_ZONE_WIDTH,
+                    borderRadius: 4,
+                    zIndex: 5000,
+                    backgroundColor: deleteZoneActive ? "rgba(220,38,38,0.40)" : "rgba(148,163,184,0.55)",
+                    color: deleteZoneActive ? "#B91C1C" : "#111827",
+                    boxShadow: deleteZoneActive ? "0 0 0 1px rgba(220,38,38,0.7)" : "0 0 0 1px rgba(148,163,184,0.7)",
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                  }}
+                >
+                  <span className="font-semibold text-[11px] leading-none">DEL</span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {/* Storyboard View (Grid) */}
+        {visibleRows.length > 0 && viewMode === "storyboard" && (
+          <div ref={containerRef} data-timetable-container="true" className="bg-white border-t border-gray-100 rounded-lg px-2 py-2 space-y-2 relative">
+            {gridGroups.map((group, idx) => (
+              <div key={`${group.startAbs}-${idx}`} className="flex items-start gap-2 border-b border-dashed border-gray-200 pb-2 last:border-b-0">
+                <div className="w-[52px] text-[10px] text-right pt-1 text-gray-500">{absMinutesToHm(group.startAbs)}</div>
+                <div className="relative flex-1 py-1" style={{ minHeight: 80 }}>
+                  {group.cards.map(({ row, left, width, z }) => {
+                    const s = row;
+                    const priority = getPriority(s.id);
+                    const palette = getPriorityStyles(priority);
+                    const { startLabel, endLabel, isEndEstimated } = getTimeRangeInfo(s);
+                    const cityLabel = (s as any).city && typeof (s as any).city === "string" ? (s as any).city : null;
+                    const hasBundle = Array.isArray(s.bundleFilms) && s.bundleFilms.length > 1;
+                    const isDragging = dragState?.id === s.id;
+                    const dragDeltaX = isDragging && dragState ? dragState.visualClientX - dragState.startClientX : 0;
+
+                    return (
+                      <article
+                        key={s.id}
+                        className="absolute rounded-2xl px-2 py-1 text-[10px] shadow-sm overflow-hidden"
+                        style={{
+                          top: 0,
+                          left,
+                          zIndex: isDragging ? 3000 : z,
+                          width,
+                          borderWidth: 1,
+                          borderStyle: "solid",
+                          borderColor: isDragging ? "var(--badge-rated-bg)" : palette.cardBorder,
+                          backgroundColor: palette.cardBg,
+                          transform: isDragging ? `translateX(${dragDeltaX}px)` : undefined,
+                          transition: isDragging ? "none" : "transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out",
+                          cursor: isDraggingAny ? "grabbing" : "pointer",
+                          userSelect: "none",
+                          WebkitUserSelect: "none",
+                          WebkitTouchCallout: "none",
+                          touchAction: isDragging ? "none" : "auto",
+                          boxShadow: isDragging ? "0 10px 24px rgba(0,0,0,0.25)" : "0 4px 12px rgba(0,0,0,0.06)",
+                        }}
+                        onPointerDown={handleCardPointerDown(s.id)}
+                        onPointerMove={handleCardPointerMove(s.id)}
+                        onPointerUp={handleCardPointerUp(s.id)}
+                        onPointerCancel={handleCardPointerUp(s.id)}
+                        onPointerLeave={handleCardPointerLeave(s.id)}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="flex-1 text-[11px] font-semibold text-gray-900 truncate">
+                            <span>{startLabel}</span>
+                            {endLabel && (
+                              <><span className="mx-1">~</span><span className={isEndEstimated ? "text-gray-400" : "text-gray-900"}>{endLabel}</span></>
+                            )}
+                          </span>
+                          <button
+                            type="button"
+                            onPointerDown={onHeartPointerDown(s.id)}
+                            onPointerUp={onHeartPointerUp(s.id)}
+                            onPointerLeave={onHeartPointerLeave()}
+                            className="touch-target shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full border bg-white cursor-pointer text-[12px]"
+                            style={{ borderColor: palette.heartBorder, color: palette.heartColor }}
+                          >
+                            ♥
+                          </button>
+                        </div>
+                        <div className="mt-[1px] text-[10px] text-gray-700 truncate">{s.venue}</div>
+                        <div className="mt-[1px] text-[11px] font-semibold leading-snug line-clamp-1 break-words">
+                          {hasBundle ? s.bundleFilms!.map((bf, bundleIdx) => (
+                            <span key={bf.filmId}>
+                              {bundleIdx > 0 && <span className="mx-[1px] text-[10px] text-gray-700"> + </span>}
+                              <Link href={`/films/${encodeURIComponent(bf.filmId)}`} className="hover:underline underline-offset-2" onClick={(e) => e.stopPropagation()}>{bf.title}</Link>
+                            </span>
+                          )) : (
+                            <Link href={`/films/${encodeURIComponent(s.filmId)}`} className="hover:underline underline-offset-2" onClick={(e) => e.stopPropagation()}>{s.filmTitle}</Link>
+                          )}
+                        </div>
+                        {(cityLabel || s.code) && (
+                          <div className="mt-[1px] flex items-center justify-between text-[9px] text-gray-600">
+                            <div className="truncate">{cityLabel && <span>{cityLabel}</span>}</div>
+                            {s.code && <span className="text-gray-400 truncate ml-1">code: {s.code}</span>}
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                  
+                  {/* [수정] Storyboard용 DEL 표시 (꽉 찬 높이) */}
+                  {dragState && gridGroups[idx].cards.some(c => c.row.id === dragState.id) && (
+                     <div
+                      className="pointer-events-none absolute right-0 flex items-center justify-center text-[10px]"
+                      style={{
+                        top: 0,
+                        bottom: -5,
+                        width: DELETE_ZONE_WIDTH,
+                        borderRadius: 4,
+                        zIndex: 5000,
+                        backgroundColor: deleteZoneActive ? "rgba(220,38,38,0.40)" : "rgba(148,163,184,0.55)",
+                        color: deleteZoneActive ? "#B91C1C" : "#111827",
+                        boxShadow: deleteZoneActive ? "0 0 0 1px rgba(220,38,38,0.7)" : "0 0 0 1px rgba(148,163,184,0.7)",
+                        userSelect: "none",
+                        WebkitUserSelect: "none",
+                      }}
+                    >
+                      <span className="font-semibold text-[11px] leading-none">DEL</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {priorityMenu && (
-        <div
-          className="fixed inset-0 z-[6000] bg-black/10"
-          onClick={closePriorityMenu}
-        >
+        <div className="fixed inset-0 z-[6000] bg-black/10" onClick={closePriorityMenu}>
           <div
-            className="
-              absolute rounded-xl bg-white/95 
-              border border-gray-300 shadow-[0_8px_20px_rgba(0,0,0,0.18)]
-              w-[40px] text-[14px]
-            "
+            className="absolute rounded-xl bg-white/95 border border-gray-300 shadow-[0_8px_20px_rgba(0,0,0,0.18)] w-[40px] text-[14px]"
             style={{ left: priorityMenu.x, top: priorityMenu.y }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col divide-y divide-gray-200">
-              <button
-                type="button"
-                className="w-full py-1 text-center hover:bg-gray-50"
-                onClick={() =>
-                  handlePriorityAction(priorityMenu.screeningId, "first")
-                }
-              >
-                <span
-                  className="font-medium"
-                  style={{ color: "var(--badge-rated-bg)" }}
-                >
-                  1
-                </span>
+              <button type="button" className="w-full py-1 text-center hover:bg-gray-50" onClick={() => handlePriorityAction(priorityMenu.screeningId, "first")}>
+                <span className="font-medium" style={{ color: "var(--badge-rated-bg)" }}>1</span>
               </button>
-              <button
-                type="button"
-                className="w-full py-1 text-center hover:bg-gray-50"
-                onClick={() =>
-                  handlePriorityAction(priorityMenu.screeningId, "second")
-                }
-              >
-                <span
-                  className="font-medium"
-                  style={{ color: "var(--bar-fill-rated)" }}
-                >
-                  2
-                </span>
+              <button type="button" className="w-full py-1 text-center hover:bg-gray-50" onClick={() => handlePriorityAction(priorityMenu.screeningId, "second")}>
+                <span className="font-medium" style={{ color: "var(--bar-fill-rated)" }}>2</span>
               </button>
-              <button
-                type="button"
-                className="w-full py-1 text-center hover:bg-gray-50"
-                onClick={() =>
-                  handlePriorityAction(priorityMenu.screeningId, "normal")
-                }
-              >
+              <button type="button" className="w-full py-1 text-center hover:bg-gray-50" onClick={() => handlePriorityAction(priorityMenu.screeningId, "normal")}>
                 <span style={{ color: "var(--bar-fill-unrated)" }}>0</span>
               </button>
-              <button
-                type="button"
-                className="w-full py-1 text-center hover:bg-gray-100"
-                onClick={() =>
-                  handlePriorityAction(priorityMenu.screeningId, "remove")
-                }
-              >
+              <button type="button" className="w-full py-1 text-center hover:bg-gray-100" onClick={() => handlePriorityAction(priorityMenu.screeningId, "remove")}>
                 <span className="text-gray-500 text-[11px]">X</span>
               </button>
             </div>

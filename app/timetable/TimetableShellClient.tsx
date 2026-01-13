@@ -22,6 +22,7 @@ type Props = {
   rows: TimetableRow[];
   editionLabel: string;
   dateIso: string;
+  userNickname: string; // [추가]
 };
 
 export default function TimetableShellClient(props: Props) {
