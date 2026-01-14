@@ -226,8 +226,12 @@ export default function TimetableClient({
     try {
       const element = captureRef.current;
 
+      // capture-mode CSS가 실제로 적용된 뒤 캡처되도록 2프레임 대기 (iOS 음영/밴딩 방지)
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
       const dataUrl = await toPng(element, {
+
         cacheBust: true,
         backgroundColor: "#ffffff",
         pixelRatio: 2,
@@ -257,41 +261,57 @@ export default function TimetableClient({
       const filename = `OOFF_${userNickname}_${modeStr}_${dateStr}.png`;
 
       // ----------------------------
-      // [모바일 우선] iOS/모바일: Share Sheet로 "이미지 저장" 유도
+      // [모바일] 다운로드/파일팝업 금지
+      // - Web Share(files)만 사용
+      // - 취소(AbortError)면 그대로 종료
+      // - share/files 미지원이면 이미지 새 탭 오픈(롱프레스 저장)
       // ----------------------------
       const navAny = typeof navigator !== "undefined" ? (navigator as any) : null;
 
-      // isMobile일 때만 share 시도 (원하시면 iPad까지 포함하려면 조건 조정)
-      if (isMobile && navAny?.share) {
-        try {
-          // dataURL -> Blob -> File
-          const blob = await (await fetch(dataUrl)).blob();
-          const file = new File([blob], filename, { type: blob.type || "image/png" });
+      // isMobile(width)만 쓰면 가로모드/태블릿에서 빠질 수 있어서 UA로 한 번 더 보강
+      const isMobileShare =
+        typeof navigator !== "undefined" &&
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-          // canShare가 있으면 files 지원 여부 확인
-          const canShareFiles =
-            typeof navAny.canShare === "function" ? navAny.canShare({ files: [file] }) : true;
+      if (isMobileShare) {
+        if (navAny?.share) {
+          try {
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], filename, { type: blob.type || "image/png" });
 
-          if (canShareFiles) {
-            await navAny.share({
-              files: [file],
-              title: filename,
-            });
-            // 공유 시트에서 "이미지 저장"을 누르면 사진앱에 저장됨
-            return;
+            const canShareFiles =
+              typeof navAny.canShare === "function"
+                ? navAny.canShare({ files: [file] })
+                : true;
+
+            if (canShareFiles) {
+              // url/text/title을 넣지 않음 → 카톡에서 링크가 붙는 케이스 최소화
+              await navAny.share({ files: [file] });
+              return;
+            }
+          } catch (e: any) {
+            // 사용자가 "취소"한 경우: 아무것도 하지 않고 종료 (다운로드 폴백 금지)
+            if (e?.name === "AbortError") return;
+            // 그 외 에러는 아래 새 탭 오픈으로 처리
           }
-        } catch (e) {
-          // 사용자가 공유 시트 취소하거나(AbortError), iOS 버그/제약으로 실패하면 아래 다운로드로 폴백
         }
+
+        // share(files) 불가/미지원: 다운로드 대신 이미지 새 탭만 오픈
+        window.open(dataUrl, "_blank", "noopener,noreferrer");
+        return;
       }
 
       // ----------------------------
-      // [폴백] 기존 다운로드 방식 (PC/지원 안 되는 모바일)
+      // [PC] 기존 다운로드 방식
       // ----------------------------
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = filename;
+      link.rel = "noopener";
+      document.body.appendChild(link);
       link.click();
+      link.remove();
+
     } catch (err) {
       console.error("Failed to capture image", err);
       alert("Failed to save image. (Try refreshing the page)");
@@ -1590,9 +1610,13 @@ export default function TimetableClient({
       )}
 
       <style jsx global>{`
-        /* html-to-image 캡처 시 iOS에서 카드 오른쪽에 생기는 음영/밴딩 제거 */
+        /* html-to-image 캡처 시 iOS에서 카드 오른쪽 음영/밴딩 아티팩트 제거 */
         [data-capture-mode="true"] article {
           box-shadow: none !important;
+          filter: none !important;
+          -webkit-filter: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
         }
       `}</style>
 
