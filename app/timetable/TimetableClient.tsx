@@ -217,84 +217,89 @@ export default function TimetableClient({
   // [수정] 이미지 저장 (Free Slot 제외 + 타이틀 포함)
   // ---------------------------------------------------
   const handleSaveImage = async () => {
-  if (!captureRef.current) return;
-  setIsSavingImage(true);
+    if (!captureRef.current) return;
+    setIsSavingImage(true);
 
-  try {
-    const element = captureRef.current;
+    // [캡처 전용] 저장 이미지에서 카드 음영(그림자) 아티팩트 제거용
+    captureRef.current.setAttribute("data-capture-mode", "true");
 
-    const dataUrl = await toPng(element, {
-      cacheBust: true,
-      backgroundColor: "#ffffff",
-      pixelRatio: 2,
-      filter: (node) => {
-        if (node instanceof HTMLElement && node.hasAttribute("data-hide-on-save")) {
-          return false;
+    try {
+      const element = captureRef.current;
+
+
+      const dataUrl = await toPng(element, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.hasAttribute("data-hide-on-save")) {
+            return false;
+          }
+          return true;
+        },
+        style: {
+          height: "auto",
+          overflow: "visible",
+          maxHeight: "none",
+          border: "none",
+          boxShadow: "none",
+          padding: "0px",
+        },
+      });
+
+      const dateStr = dateIso.slice(0, 10);
+      const modeStr =
+        viewMode === "jumpcut"
+          ? "JumpCut"
+          : viewMode === "onetake"
+          ? "OneTake"
+          : "Storyboard";
+      const filename = `OOFF_${userNickname}_${modeStr}_${dateStr}.png`;
+
+      // ----------------------------
+      // [모바일 우선] iOS/모바일: Share Sheet로 "이미지 저장" 유도
+      // ----------------------------
+      const navAny = typeof navigator !== "undefined" ? (navigator as any) : null;
+
+      // isMobile일 때만 share 시도 (원하시면 iPad까지 포함하려면 조건 조정)
+      if (isMobile && navAny?.share) {
+        try {
+          // dataURL -> Blob -> File
+          const blob = await (await fetch(dataUrl)).blob();
+          const file = new File([blob], filename, { type: blob.type || "image/png" });
+
+          // canShare가 있으면 files 지원 여부 확인
+          const canShareFiles =
+            typeof navAny.canShare === "function" ? navAny.canShare({ files: [file] }) : true;
+
+          if (canShareFiles) {
+            await navAny.share({
+              files: [file],
+              title: filename,
+            });
+            // 공유 시트에서 "이미지 저장"을 누르면 사진앱에 저장됨
+            return;
+          }
+        } catch (e) {
+          // 사용자가 공유 시트 취소하거나(AbortError), iOS 버그/제약으로 실패하면 아래 다운로드로 폴백
         }
-        return true;
-      },
-      style: {
-        height: "auto",
-        overflow: "visible",
-        maxHeight: "none",
-        border: "none",
-        boxShadow: "none",
-        padding: "0px",
-      },
-    });
-
-    const dateStr = dateIso.slice(0, 10);
-    const modeStr =
-      viewMode === "jumpcut"
-        ? "JumpCut"
-        : viewMode === "onetake"
-        ? "OneTake"
-        : "Storyboard";
-    const filename = `OOFF_${userNickname}_${modeStr}_${dateStr}.png`;
-
-    // ----------------------------
-    // [모바일 우선] iOS/모바일: Share Sheet로 "이미지 저장" 유도
-    // ----------------------------
-    const navAny = typeof navigator !== "undefined" ? (navigator as any) : null;
-
-    // isMobile일 때만 share 시도 (원하시면 iPad까지 포함하려면 조건 조정)
-    if (isMobile && navAny?.share) {
-      try {
-        // dataURL -> Blob -> File
-        const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], filename, { type: blob.type || "image/png" });
-
-        // canShare가 있으면 files 지원 여부 확인
-        const canShareFiles =
-          typeof navAny.canShare === "function" ? navAny.canShare({ files: [file] }) : true;
-
-        if (canShareFiles) {
-          await navAny.share({
-            files: [file],
-            title: filename,
-          });
-          // 공유 시트에서 "이미지 저장"을 누르면 사진앱에 저장됨
-          return;
-        }
-      } catch (e) {
-        // 사용자가 공유 시트 취소하거나(AbortError), iOS 버그/제약으로 실패하면 아래 다운로드로 폴백
       }
-    }
 
-    // ----------------------------
-    // [폴백] 기존 다운로드 방식 (PC/지원 안 되는 모바일)
-    // ----------------------------
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = filename;
-    link.click();
-  } catch (err) {
-    console.error("Failed to capture image", err);
-    alert("Failed to save image. (Try refreshing the page)");
-  } finally {
-    setIsSavingImage(false);
-  }
-};
+      // ----------------------------
+      // [폴백] 기존 다운로드 방식 (PC/지원 안 되는 모바일)
+      // ----------------------------
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = filename;
+      link.click();
+    } catch (err) {
+      console.error("Failed to capture image", err);
+      alert("Failed to save image. (Try refreshing the page)");
+    } finally {
+      captureRef.current?.removeAttribute("data-capture-mode");
+      setIsSavingImage(false);
+    }
+  };
 
 
   // ---------------------------------------------------
@@ -1583,6 +1588,14 @@ export default function TimetableClient({
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        /* html-to-image 캡처 시 iOS에서 카드 오른쪽에 생기는 음영/밴딩 제거 */
+        [data-capture-mode="true"] article {
+          box-shadow: none !important;
+        }
+      `}</style>
+
     </section>
   );
 }

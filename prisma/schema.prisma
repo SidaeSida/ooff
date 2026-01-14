@@ -32,33 +32,54 @@ model User {
   accounts      Account[]
   sessions      Session[]
   
-  // [수정] 팔로우 시스템 (명시적 관계 - Follows 모델 참조)
-  // followedBy: 나를 팔로우하는 관계들 (Followers)
+  // 팔로우 시스템
   followedBy    Follows[] @relation("following")
-  // following: 내가 팔로우하는 관계들 (Following)
   following     Follows[] @relation("follower")
   
-  // 기존 데이터 관계 유지
+  // [추가] 내가 누른 좋아요 (내가 주체)
+  likes         Like[]
+
+  // [추가] 차단 시스템
+  blockedBy     Block[]   @relation("blockedBy") // 나를 차단한 사람들 (내가 차단 당함)
+  blocking      Block[]   @relation("blocking")  // 내가 차단한 사람들 (내가 차단 함)
+  
+  // 기존 데이터 관계
   UserEntry         UserEntry[]
   UserPrivacy       UserPrivacy?
   FavoriteScreening FavoriteScreening[]
 }
 
-// [추가] 팔로우 관계 테이블 (명시적 모델)
-// 유저가 삭제되면 이 관계 데이터도 즉시 삭제됨 (Cascade)
+// 팔로우 관계 테이블
 model Follows {
   followerId  String
   followingId String
   createdAt   DateTime @default(now())
 
-  // follower: 팔로우를 '하는' 사람
   follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-  // following: 팔로우를 '받는' 사람
   following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
-  @@id([followerId, followingId]) // 복합 키
+  @@id([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+}
+
+// [추가] 차단 관계 테이블
+model Block {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  // 차단 주체 (내가)
+  blockerId   String
+  blocker     User     @relation("blocking", fields: [blockerId], references: [id], onDelete: Cascade)
+
+  // 차단 대상 (너를)
+  blockedId   String
+  blocked     User     @relation("blockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  // 중복 차단 방지 (A가 B를 두 번 차단할 수 없음)
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
 }
 
 model Account {
@@ -78,7 +99,6 @@ model Account {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 유저 삭제 시 계정 정보 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -90,7 +110,6 @@ model Session {
   userId       String
   expires      DateTime
   
-  // 유저 삭제 시 세션 삭제
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   createdAt DateTime @default(now())
@@ -122,16 +141,42 @@ model UserEntry {
   rating      Decimal? @db.Decimal(2, 1)
   shortReview String?  @db.VarChar(200)
   isStarred   Boolean  @default(false)
-  visibility  Visibility @default(private) // (참고: 기본값을 public으로 바꾸셨다면 수정 필요)
+  visibility  Visibility @default(private)
+  
+  // [추가] 좋아요 개수 (성능 최적화용 필드)
+  // 해당 한줄평이 받은 좋아요의 총 개수
+  likeCount   Int      @default(0)
+
+  // [추가] 이 한줄평에 달린 좋아요 데이터들
+  likes       Like[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // 유저 삭제 시 평점/리뷰 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, filmId])
   @@index([userId])
   @@index([filmId])
+}
+
+// [추가] 좋아요 테이블
+model Like {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+
+  // 좋아요 누른 사람
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 좋아요 눌린 한줄평(UserEntry)
+  userEntryId String
+  userEntry   UserEntry @relation(fields: [userEntryId], references: [id], onDelete: Cascade)
+
+  // 한 유저가 한 글에 중복 좋아요 방지
+  @@unique([userId, userEntryId])
+  @@index([userId])
+  @@index([userEntryId])
 }
 
 model UserPrivacy {
@@ -140,7 +185,6 @@ model UserPrivacy {
   reviewVisibility Visibility @default(public)
   updatedAt        DateTime   @updatedAt
 
-  // 유저 삭제 시 설정 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -153,7 +197,6 @@ model FavoriteScreening {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // 유저 삭제 시 즐겨찾기 삭제
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, screeningId])
