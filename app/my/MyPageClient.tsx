@@ -1,4 +1,3 @@
-// app/my/MyPageClient.tsx
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -9,10 +8,12 @@ import MyRatingsClient from "./MyRatingsClient";
 import SignOutButton from "./SignOutButton";
 import { searchUsers, toggleFollow, toggleBlock, getBlockedUsers } from "./actions";
 import { getFollowList } from "../users/actions";
+import FeedTab from "./FeedTab";
 
-type Tab = "ratings" | "friends" | "timetable";
+type Tab = "ratings" | "friends" | "feed";
 
 interface Props {
+  initialTab?: Tab;
   user: {
     id: string;
     email: string;
@@ -37,6 +38,7 @@ type ListUser = {
 function AutoFitSingleLineText({ text, className = "", maxPx = 36, minPx = 18, stepPx = 1 }: any) {
   const elRef = useRef<HTMLSpanElement | null>(null);
   const [fontPx, setFontPx] = useState<number>(maxPx);
+
   const fit = useCallback(() => {
     const el = elRef.current;
     if (!el) return;
@@ -44,10 +46,15 @@ function AutoFitSingleLineText({ text, className = "", maxPx = 36, minPx = 18, s
     el.style.fontSize = `${size}px`;
     const clientW = el.clientWidth;
     if (!clientW) { setFontPx(size); return; }
-    while (size > minPx && el.scrollWidth > clientW) { size -= stepPx; el.style.fontSize = `${size}px`; }
+    while (size > minPx && el.scrollWidth > clientW) {
+      size -= stepPx;
+      el.style.fontSize = `${size}px`;
+    }
     setFontPx(size);
   }, [maxPx, minPx, stepPx]);
+
   useLayoutEffect(() => { fit(); }, [text, fit]);
+
   useEffect(() => {
     fit();
     const onResize = () => fit();
@@ -56,19 +63,36 @@ function AutoFitSingleLineText({ text, className = "", maxPx = 36, minPx = 18, s
     if (ro && elRef.current) ro.observe(elRef.current);
     return () => { window.removeEventListener("resize", onResize); ro?.disconnect(); };
   }, [fit]);
-  return <span ref={elRef} className={`block w-full whitespace-nowrap overflow-hidden text-ellipsis ${className}`} style={{ fontSize: fontPx }} title={text}>{text}</span>;
+
+  return (
+    <span
+      ref={elRef}
+      className={`block w-full whitespace-nowrap overflow-hidden text-ellipsis ${className}`}
+      style={{ fontSize: fontPx }}
+      title={text}
+    >
+      {text}
+    </span>
+  );
 }
 
-export default function MyPageClient({ user }: Props) {
+export default function MyPageClient({ user, initialTab }: Props) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>("ratings");
+
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab ?? "ratings");
   const [searchQuery, setSearchQuery] = useState("");
   const [userList, setUserList] = useState<ListUser[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"search" | "followers" | "following" | "blocked">("search");
 
+  // URL searchParams 탭 변경(/my?tab=friends 등)에도 즉시 반영
+  useEffect(() => {
+    if (!initialTab) return;
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return;
+    if (e.key !== "Enter") return;
     if (!searchQuery.trim()) {
       setUserList(null);
       return;
@@ -78,7 +102,11 @@ export default function MyPageClient({ user }: Props) {
     try {
       const results = await searchUsers(searchQuery);
       setUserList(results);
-    } catch (error) { console.error(error); } finally { setIsLoading(false); }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const loadList = async (type: "followers" | "following" | "blocked") => {
@@ -94,7 +122,11 @@ export default function MyPageClient({ user }: Props) {
         const list = await getFollowList(user.id, type);
         setUserList(list);
       }
-    } catch (error) { console.error(error); } finally { setIsLoading(false); }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const switchTabAndLoad = (type: "followers" | "following") => {
@@ -103,19 +135,21 @@ export default function MyPageClient({ user }: Props) {
   };
 
   const handleToggle = async (targetId: string, currentStatus: boolean) => {
-    setUserList((prev) => prev?.map(u => u.id === targetId ? { ...u, isFollowing: !currentStatus } : u) ?? null);
+    setUserList((prev) => prev?.map((u) => (u.id === targetId ? { ...u, isFollowing: !currentStatus } : u)) ?? null);
+
     try {
       await toggleFollow(targetId);
       router.refresh();
     } catch (error) {
-      setUserList((prev) => prev?.map(u => u.id === targetId ? { ...u, isFollowing: currentStatus } : u) ?? null);
+      setUserList((prev) => prev?.map((u) => (u.id === targetId ? { ...u, isFollowing: currentStatus } : u)) ?? null);
       alert("Failed to update follow status");
     }
   };
 
   const handleUnblock = async (targetId: string) => {
     if (!confirm("Unblock this user?")) return;
-    setUserList((prev) => prev?.filter(u => u.id !== targetId) ?? null);
+    setUserList((prev) => prev?.filter((u) => u.id !== targetId) ?? null);
+
     try {
       await toggleBlock(targetId);
       router.refresh();
@@ -139,7 +173,7 @@ export default function MyPageClient({ user }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </Link>
-        
+
         <div className="pt-2">
           {/* Nickname Row */}
           <div className="pr-12">
@@ -149,7 +183,9 @@ export default function MyPageClient({ user }: Props) {
               </div>
               {user.isDefaultNickname && (
                 <Link href="/settings" className="shrink-0 text-red-500 hover:text-red-700 p-1 animate-pulse" title="Change your nickname">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
                 </Link>
               )}
             </div>
@@ -162,67 +198,96 @@ export default function MyPageClient({ user }: Props) {
                 {user.bio}
               </p>
             )}
-            
+
             {/* Social Icons Row */}
             {(user.letterboxdId || user.twitterId || user.threadsId || user.instagramId) && (
               <div className="flex items-center gap-3">
                 {/* 1. Letterboxd */}
                 {user.letterboxdId && (
-                  <a 
-                    href={`https://letterboxd.com/${user.letterboxdId}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={`https://letterboxd.com/${user.letterboxdId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-gray-400 hover:text-[#00E054] transition-colors"
                     title={`Letterboxd: @${user.letterboxdId}`}
+                    aria-label={`Letterboxd: @${user.letterboxdId}`}
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><circle cx="20" cy="4" r="1"/>
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="8.6" cy="12" r="5" fill="#40BCF4" />
+                      <circle cx="15.4" cy="12" r="5" fill="#FF8000" />
+                      <circle cx="12" cy="12" r="5" fill="#00E054" />
                     </svg>
                   </a>
                 )}
 
                 {/* 2. X (Twitter) */}
                 {user.twitterId && (
-                  <a 
-                    href={`https://x.com/${user.twitterId}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={`https://x.com/${user.twitterId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-gray-400 hover:text-black transition-colors"
                     title={`X: @${user.twitterId}`}
+                    aria-label={`X: @${user.twitterId}`}
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/>
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.96 6.817H1.688l7.73-8.84L1.25 2.25h6.75l4.713 6.231L18.244 2.25Zm-1.161 17.52h1.833L6.69 4.126H4.723L17.083 19.77Z"
+                      />
                     </svg>
                   </a>
                 )}
 
                 {/* 3. Threads */}
                 {user.threadsId && (
-                  <a 
-                    href={`https://www.threads.net/@${user.threadsId}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={`https://www.threads.net/@${user.threadsId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-gray-400 hover:text-black transition-colors"
                     title={`Threads: @${user.threadsId}`}
+                    aria-label={`Threads: @${user.threadsId}`}
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 12a4 4 0 1 0 4 4 4 4 0 0 0-4-4Z"/>
-                      <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>
+                    <svg
+                      className="w-6 h-6"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94" />
                     </svg>
                   </a>
                 )}
 
                 {/* 4. Instagram */}
                 {user.instagramId && (
-                  <a 
-                    href={`https://instagram.com/${user.instagramId}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={`https://instagram.com/${user.instagramId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-gray-400 hover:text-[#E1306C] transition-colors"
                     title={`Instagram: @${user.instagramId}`}
+                    aria-label={`Instagram: @${user.instagramId}`}
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                    <svg
+                      className="w-6 h-6"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                      <circle cx="12" cy="12" r="4" />
+                      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
                     </svg>
                   </a>
                 )}
@@ -233,11 +298,17 @@ export default function MyPageClient({ user }: Props) {
           {/* Stats & SignOut */}
           <div className="mt-5 flex items-center w-full gap-2">
             <div className="flex items-center gap-2">
-              <button onClick={() => switchTabAndLoad("followers")} className={`${statsChipBase} ${activeTab === "friends" && viewMode === "followers" ? statsChipActive : statsChipIdle}`}>
+              <button
+                onClick={() => switchTabAndLoad("followers")}
+                className={`${statsChipBase} ${activeTab === "friends" && viewMode === "followers" ? statsChipActive : statsChipIdle}`}
+              >
                 <span className="tabular-nums">{user.followers}</span>
                 <span className="text-[11px] font-medium opacity-90">Followers</span>
               </button>
-              <button onClick={() => switchTabAndLoad("following")} className={`${statsChipBase} ${activeTab === "friends" && viewMode === "following" ? statsChipActive : statsChipIdle}`}>
+              <button
+                onClick={() => switchTabAndLoad("following")}
+                className={`${statsChipBase} ${activeTab === "friends" && viewMode === "following" ? statsChipActive : statsChipIdle}`}
+              >
                 <span className="tabular-nums">{user.following}</span>
                 <span className="text-[11px] font-medium opacity-90">Following</span>
               </button>
@@ -251,8 +322,16 @@ export default function MyPageClient({ user }: Props) {
 
       {/* Tabs */}
       <nav className="flex w-full border-b border-gray-200">
-        {(["ratings", "friends", "timetable"] as Tab[]).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === tab ? "border-gray-900 text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200"}`}>
+        {(["ratings", "friends", "feed"] as Tab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${
+              activeTab === tab
+                ? "border-gray-900 text-gray-900"
+                : "border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200"
+            }`}
+          >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
@@ -260,10 +339,20 @@ export default function MyPageClient({ user }: Props) {
 
       {/* Content */}
       <section className="min-h-[300px]">
-        {activeTab === "ratings" && <div className="animate-in fade-in duration-300"><MyRatingsClient /></div>}
+        {activeTab === "ratings" && (
+          <div className="animate-in fade-in duration-300">
+            <MyRatingsClient />
+          </div>
+        )}
+
+        {activeTab === "feed" && (
+          <div className="animate-in fade-in duration-300">
+            <FeedTab />
+          </div>
+        )}
 
         {activeTab === "friends" && (
-          <div className="space-y-6 animate-in fade-in duration-300">    
+          <div className="space-y-6 animate-in fade-in duration-300">
             {/* Search Input */}
             <div className="relative">
               <input
@@ -273,10 +362,15 @@ export default function MyPageClient({ user }: Props) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
-                onFocus={() => { if(viewMode !== 'search') { setViewMode('search'); setUserList(null); } }}
+                onFocus={() => {
+                  if (viewMode !== "search") {
+                    setViewMode("search");
+                    setUserList(null);
+                  }
+                }}
               />
               <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-x6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
 
@@ -284,43 +378,91 @@ export default function MyPageClient({ user }: Props) {
             <div className="space-y-3 min-h-[100px]">
               {/* Sub Navigation */}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1 border-b border-gray-100 pb-2">
-                 <h3 className="text-sm font-bold text-gray-900 capitalize min-w-[60px]">{viewMode}</h3>
-                 <div className="flex gap-1">
-                    <button onClick={() => { setViewMode("search"); setUserList(null); }} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === 'search' ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200'}`}>Search</button>
-                    <button onClick={() => loadList("followers")} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === 'followers' ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200'}`}>Followers</button>
-                    <button onClick={() => loadList("following")} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === 'following' ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200'}`}>Following</button>
-                    <button onClick={() => loadList("blocked")} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === 'blocked' ? 'bg-red-50 text-red-600 border-red-200 font-medium' : 'bg-white text-gray-400 border-gray-200'}`}>Blocked</button>
-                 </div>
+                <h3 className="text-sm font-bold text-gray-900 capitalize min-w-[60px]">{viewMode}</h3>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => {
+                      setViewMode("search");
+                      setUserList(null);
+                    }}
+                    className={`px-2 py-0.5 text-[11px] rounded border ${
+                      viewMode === "search" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"
+                    }`}
+                  >
+                    Search
+                  </button>
+                  <button
+                    onClick={() => loadList("followers")}
+                    className={`px-2 py-0.5 text-[11px] rounded border ${
+                      viewMode === "followers" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"
+                    }`}
+                  >
+                    Followers
+                  </button>
+                  <button
+                    onClick={() => loadList("following")}
+                    className={`px-2 py-0.5 text-[11px] rounded border ${
+                      viewMode === "following" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"
+                    }`}
+                  >
+                    Following
+                  </button>
+                  <button
+                    onClick={() => loadList("blocked")}
+                    className={`px-2 py-0.5 text-[11px] rounded border ${
+                      viewMode === "blocked"
+                        ? "bg-red-50 text-red-600 border-red-200 font-medium"
+                        : "bg-white text-gray-400 border-gray-200"
+                    }`}
+                  >
+                    Blocked
+                  </button>
+                </div>
               </div>
 
               {isLoading && <p className="text-center text-sm text-gray-400 py-4">Loading...</p>}
+
               {!isLoading && userList && userList.length === 0 && (
-                 <p className="text-center text-sm text-gray-400 py-4">
-                   {viewMode === 'search' ? "No user found." : viewMode === 'blocked' ? "No blocked users." : "List is empty."}
-                 </p>
+                <p className="text-center text-sm text-gray-400 py-4">
+                  {viewMode === "search" ? "No user found." : viewMode === "blocked" ? "No blocked users." : "List is empty."}
+                </p>
               )}
 
-              {!isLoading && userList?.map((u) => (
-                <div key={u.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-                  <Link href={`/users/${u.id}`} className="min-w-0 flex-1 pr-4 cursor-pointer hover:opacity-70 transition-opacity">
-                     <p className="font-bold text-gray-900 truncate">{u.nickname}</p>
-                  </Link>
-                  {viewMode === 'blocked' ? (
-                    <button onClick={() => handleUnblock(u.id)} className="shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border bg-white text-red-600 border-red-200 hover:bg-red-50">Unblock</button>
-                  ) : (
-                    <button onClick={() => handleToggle(u.id, u.isFollowing)} className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border ${u.isFollowing ? "bg-white text-gray-900 border-gray-300 hover:text-red-600" : "bg-gray-900 text-white border-transparent hover:bg-gray-800"}`}>
-                      {u.isFollowing ? "Following" : "Follow"}
-                    </button>
-                  )}
-                </div>
-              ))}
-              {!isLoading && !userList && viewMode === 'search' && (
+              {!isLoading &&
+                userList?.map((u) => (
+                  <div key={u.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
+                    <Link href={`/users/${u.id}`} className="min-w-0 flex-1 pr-4 cursor-pointer hover:opacity-70 transition-opacity">
+                      <p className="font-bold text-gray-900 truncate">{u.nickname}</p>
+                    </Link>
+
+                    {viewMode === "blocked" ? (
+                      <button
+                        onClick={() => handleUnblock(u.id)}
+                        className="shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border bg-white text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        Unblock
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggle(u.id, u.isFollowing)}
+                        className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                          u.isFollowing
+                            ? "bg-white text-gray-900 border-gray-300 hover:text-red-600"
+                            : "bg-gray-900 text-white border-transparent hover:bg-gray-800"
+                        }`}
+                      >
+                        {u.isFollowing ? "Following" : "Follow"}
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+              {!isLoading && !userList && viewMode === "search" && (
                 <div className="text-center py-10 text-gray-400 text-sm">Search friends or click stats to view lists.</div>
               )}
             </div>
           </div>
         )}
-        {activeTab === "timetable" && <div className="text-center py-20 text-gray-400">Timetable coming soon...</div>}
       </section>
     </div>
   );

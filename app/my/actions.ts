@@ -1,4 +1,3 @@
-// app/my/actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -10,7 +9,12 @@ type ActionState = {
   message?: string;
 };
 
-// [수정] 닉네임 + 프로필(Bio, SNS) 변경 통합
+type FeedCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+// 1. 프로필 업데이트
 export async function updateProfile(formData: FormData): Promise<ActionState> {
   const session = await auth();
   if (!session?.user?.id) return { success: false, message: "Unauthorized" };
@@ -20,27 +24,26 @@ export async function updateProfile(formData: FormData): Promise<ActionState> {
   const instagramId = String(formData.get("instagramId") ?? "").trim();
   const twitterId = String(formData.get("twitterId") ?? "").trim();
   const letterboxdId = String(formData.get("letterboxdId") ?? "").trim();
-  const threadsId = String(formData.get("threadsId") ?? "").trim(); // [추가]
+  const threadsId = String(formData.get("threadsId") ?? "").trim();
 
-  // 1. 닉네임 유효성 검사
   if (nickname.length < 2 || nickname.length > 20) {
     return { success: false, message: "Nickname must be between 2 and 20 characters." };
   }
   if (/[^a-zA-Z0-9가-힣._-]/.test(nickname)) {
-     return { success: false, message: "Nickname: Only letters, numbers, ., -, _ allowed." };
+    return { success: false, message: "Nickname: Only letters, numbers, ., -, _ allowed." };
   }
 
-  // 2. SNS ID 간단 검사 (공백이나 특수문자 등)
   const snsRegex = /[^a-zA-Z0-9._]/;
-  if ((instagramId && snsRegex.test(instagramId)) || 
-      (twitterId && snsRegex.test(twitterId)) || 
-      (letterboxdId && snsRegex.test(letterboxdId)) ||
-      (threadsId && snsRegex.test(threadsId))) {
+  if (
+    (instagramId && snsRegex.test(instagramId)) ||
+    (twitterId && snsRegex.test(twitterId)) ||
+    (letterboxdId && snsRegex.test(letterboxdId)) ||
+    (threadsId && snsRegex.test(threadsId))
+  ) {
     return { success: false, message: "SNS ID: 영문, 숫자, ., _ 만 가능합니다." };
   }
 
   try {
-    // 닉네임 중복 체크
     const existing = await prisma.user.findUnique({ where: { nickname } });
     if (existing && existing.id !== session.user.id) {
       return { success: false, message: "Nickname already taken." };
@@ -48,20 +51,20 @@ export async function updateProfile(formData: FormData): Promise<ActionState> {
 
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { 
+      data: {
         nickname,
         bio: bio || null,
         instagramId: instagramId || null,
         twitterId: twitterId || null,
         letterboxdId: letterboxdId || null,
-        threadsId: threadsId || null, // [추가]
+        threadsId: threadsId || null,
       },
     });
 
     revalidatePath("/my");
     revalidatePath("/settings");
     revalidatePath(`/users/${session.user.id}`);
-    
+
     return { success: true };
   } catch (e: any) {
     return { success: false, message: "Server error occurred." };
@@ -82,26 +85,22 @@ export async function deleteAccount() {
   }
 }
 
-// 3. 유저 검색 (차단 필터링 적용)
+// 3. 유저 검색
 export async function searchUsers(query: string) {
   const session = await auth();
   if (!session?.user?.id) return [];
 
   const myId = session.user.id;
-
   if (!query || query.trim().length < 1) return [];
 
   const users = await prisma.user.findMany({
     where: {
-      nickname: {
-        contains: query,
-        mode: "insensitive",
-      },
+      nickname: { contains: query, mode: "insensitive" },
       id: { not: myId },
       AND: [
         { blockedBy: { none: { blockerId: myId } } },
-        { blocking: { none: { blockedId: myId } } }
-      ]
+        { blocking: { none: { blockedId: myId } } },
+      ],
     },
     select: {
       id: true,
@@ -130,9 +129,7 @@ export async function toggleFollow(targetId: string) {
   if (myId === targetId) throw new Error("Cannot follow yourself");
 
   const existing = await prisma.follows.findUnique({
-    where: {
-      followerId_followingId: { followerId: myId, followingId: targetId },
-    },
+    where: { followerId_followingId: { followerId: myId, followingId: targetId } },
   });
 
   if (existing) {
@@ -159,9 +156,7 @@ export async function toggleBlock(targetId: string) {
   if (myId === targetId) throw new Error("Cannot block yourself");
 
   const existing = await prisma.block.findUnique({
-    where: {
-      blockerId_blockedId: { blockerId: myId, blockedId: targetId },
-    },
+    where: { blockerId_blockedId: { blockerId: myId, blockedId: targetId } },
   });
 
   if (existing) {
@@ -196,16 +191,9 @@ export async function getBlockedUsers() {
   const myId = session.user.id;
 
   const blocks = await prisma.block.findMany({
-    where: {
-      blockerId: myId,
-    },
+    where: { blockerId: myId },
     include: {
-      blocked: {
-        select: {
-          id: true,
-          nickname: true,
-        },
-      },
+      blocked: { select: { id: true, nickname: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -215,4 +203,122 @@ export async function getBlockedUsers() {
     nickname: b.blocked.nickname,
     isFollowing: false,
   }));
+}
+
+// 7. 피드 데이터 가져오기 (Cursor Pagination: updatedAt + id)
+export async function getFeed(cursor?: FeedCursor) {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const myId = session.user.id;
+  const limit = 20;
+
+  // 1) 내가 팔로우하는 사람들
+  const following = await prisma.follows.findMany({
+    where: { followerId: myId },
+    select: { followingId: true },
+  });
+  const followingIds = following.map((f) => f.followingId);
+  if (followingIds.length === 0) return [];
+
+  // 2) 뮤추얼(상호 팔로우) 집합: (내가 팔로우한 사람들) 중에서 (나를 팔로우하는 사람)
+  const reverse = await prisma.follows.findMany({
+    where: {
+      followerId: { in: followingIds },
+      followingId: myId,
+    },
+    select: { followerId: true },
+  });
+  const mutualSet = new Set(reverse.map((r) => r.followerId));
+
+  const cursorAt = cursor?.updatedAt ? new Date(cursor.updatedAt) : null;
+  const cursorId = cursor?.id ?? null;
+
+  // 3) 엔트리 조회
+  const rawEntries = await prisma.userEntry.findMany({
+    where: {
+      userId: { in: followingIds },
+
+      // (B) 내용 조건 정합성: rating != null OR (shortReview != null AND shortReview != "")
+      OR: [
+        { rating: { not: null } },
+        {
+          AND: [
+            { shortReview: { not: null } },
+            { shortReview: { not: "" } },
+          ],
+        },
+      ],
+
+      // 차단 관계 제외
+      user: {
+        blockedBy: { none: { blockerId: myId } },
+        blocking: { none: { blockedId: myId } },
+      },
+
+      // (D) 안정 커서: updatedAt desc, id desc
+      ...(cursorAt && cursorId
+        ? {
+            OR: [
+              { updatedAt: { lt: cursorAt } },
+              { AND: [{ updatedAt: cursorAt }, { id: { lt: cursorId } }] },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          nickname: true,
+          UserPrivacy: true,
+        },
+      },
+      likes: {
+        where: { userId: myId },
+        select: { userId: true },
+      },
+    },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: limit,
+  });
+
+  // 4) Privacy 필터링 (E: friends = 뮤추얼)
+  const feedItems = rawEntries
+    .map((entry) => {
+      const privacy: any = entry.user.UserPrivacy;
+      const isMutual = mutualSet.has(entry.user.id);
+
+      // (C) rating 0 처리 버그 방지
+      let visibleRating = entry.rating !== null ? Number(entry.rating) : null;
+      const ratingVis = privacy?.ratingVisibility as string | undefined;
+      if (ratingVis === "private") visibleRating = null;
+      if (ratingVis === "friends" && !isMutual) visibleRating = null;
+
+      let visibleReview: string | null = entry.shortReview ?? null;
+      const reviewVis = privacy?.reviewVisibility as string | undefined;
+      if (reviewVis === "private") visibleReview = null;
+      if (reviewVis === "friends" && !isMutual) visibleReview = null;
+
+      if (visibleReview && visibleReview.trim() === "") visibleReview = null;
+
+      if (visibleRating === null && visibleReview === null) return null;
+
+      return {
+        id: entry.id,
+        filmId: entry.filmId,
+        user: {
+          id: entry.user.id,
+          nickname: entry.user.nickname || "User",
+        },
+        rating: visibleRating,
+        shortReview: visibleReview,
+        likeCount: entry.likeCount,
+        isLiked: entry.likes.length > 0,
+        updatedAt: entry.updatedAt.toISOString(),
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  return feedItems;
 }

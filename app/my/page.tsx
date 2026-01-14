@@ -1,11 +1,16 @@
-// app/my/page.tsx
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import MyPageClient from "./MyPageClient";
 import PageShowRefresh from "@/components/PageShowRefresh";
 
-export default async function MyPage() {
+type Tab = "ratings" | "friends" | "feed";
+
+export default async function MyPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ tab?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/my");
 
@@ -21,7 +26,7 @@ export default async function MyPage() {
       instagramId: true,
       twitterId: true,
       letterboxdId: true,
-      threadsId: true, // [추가]
+      threadsId: true,
       _count: {
         select: {
           followedBy: true,
@@ -34,12 +39,22 @@ export default async function MyPage() {
   if (!user) redirect("/login");
 
   const emailPrefix = user.email?.split("@")[0].slice(0, 3) ?? "";
-  const isDefaultNickname = new RegExp(`^${emailPrefix}[0-9]{4}$`).test(user.nickname ?? "");
+  const isDefaultNickname = new RegExp(`^${emailPrefix}[0-9]{4}$`).test(
+    user.nickname ?? ""
+  );
+
+  const sp = searchParams ? await searchParams : undefined;
+  const rawTab = String(sp?.tab ?? "").toLowerCase();
+  const initialTab: Tab =
+    rawTab === "friends" || rawTab === "feed" || rawTab === "ratings"
+      ? (rawTab as Tab)
+      : "ratings";
 
   return (
     <main className="max-w-4xl mx-auto px-4 pt-6 pb-20">
       <PageShowRefresh />
       <MyPageClient
+        initialTab={initialTab}
         user={{
           id: user.id,
           email: user.email ?? "",
@@ -51,7 +66,7 @@ export default async function MyPage() {
           instagramId: user.instagramId,
           twitterId: user.twitterId,
           letterboxdId: user.letterboxdId,
-          threadsId: user.threadsId, // [추가]
+          threadsId: user.threadsId,
         }}
       />
     </main>
