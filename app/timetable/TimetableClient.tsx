@@ -223,15 +223,15 @@ export default function TimetableClient({
     // [캡처 전용] 저장 이미지에서 카드 음영(그림자) 아티팩트 제거용
     captureRef.current.setAttribute("data-capture-mode", "true");
 
+    // ✅ 강제 reflow + rAF 2프레임: iOS에서 "스타일 적용 전" 캡처되는 케이스 방지
+    captureRef.current.getBoundingClientRect();
+    await new Promise<void>((r) => window.requestAnimationFrame(() => r()));
+    await new Promise<void>((r) => window.requestAnimationFrame(() => r()));
+
     try {
       const element = captureRef.current;
 
-      // capture-mode CSS가 실제로 적용된 뒤 캡처되도록 2프레임 대기 (iOS 음영/밴딩 방지)
-      await new Promise<void>((r) => requestAnimationFrame(() => r()));
-      await new Promise<void>((r) => requestAnimationFrame(() => r()));
-
       const dataUrl = await toPng(element, {
-
         cacheBust: true,
         backgroundColor: "#ffffff",
         pixelRatio: 2,
@@ -1610,13 +1610,23 @@ export default function TimetableClient({
       )}
 
       <style jsx global>{`
-        /* html-to-image 캡처 시 iOS에서 카드 오른쪽 음영/밴딩 아티팩트 제거 */
+        /* html-to-image 캡처 시 iOS에서 카드 오른쪽 음영/밴딩 아티팩트 제거 (강화)
+          - box-shadow가 filter/drop-shadow 형태로 남는 케이스가 있어 * 전체에 적용 */
+        [data-capture-mode="true"] * {
+          box-shadow: none !important;
+          filter: none !important;
+          -webkit-filter: none !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+
         [data-capture-mode="true"] article {
           box-shadow: none !important;
           filter: none !important;
           -webkit-filter: none !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
+          transform: none !important;
         }
       `}</style>
 

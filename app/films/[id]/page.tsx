@@ -15,6 +15,7 @@ import { prisma } from '@/lib/prisma';
 
 import DetailClient from './DetailClient';
 import RatingEditorClient from './RatingEditorClient';
+import SocialReviews from './SocialReviews'; // [추가]
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
@@ -175,7 +176,6 @@ export default async function FilmDetailPage({
   const screeningsForDetail = [...screeningsForCodes, ...screeningsNoCode];
 
   // 이 영화 상세에 등장하는 상영들 중, 내가 하트 찍은 것
-    // 이 영화 상세에 등장하는 상영들 중, 내가 하트 찍은 것
   let favoriteScreeningIds: string[] = [];
   if (currentUserId && screeningsForDetail.length > 0) {
     const ids = screeningsForDetail
@@ -299,6 +299,50 @@ export default async function FilmDetailPage({
     allIds.has(String(c.filmId)),
   );
 
+  // =========================================================
+  // [추가] 소셜 리뷰 데이터 가져오기 (DB 조회)
+  // =========================================================
+  let socialReviews: any[] = [];
+  if (currentUserId) {
+    const dbReviews = await prisma.userEntry.findMany({
+      where: {
+        filmId: film.id, // 현재 영화
+        shortReview: { not: "" }, // 내용이 있는 것만
+        userId: { not: currentUserId }, // 내 리뷰 제외 (내껀 위에 에디터에 있으니까)
+        
+        // [중요] 차단 필터링
+        user: {
+          blockedBy: { none: { blockerId: currentUserId } }, // 내가 차단한 사람 제외
+          blocking: { none: { blockedId: currentUserId } },  // 나를 차단한 사람 제외
+        }
+      },
+      include: {
+        user: {
+          select: { id: true, nickname: true, email: true }
+        },
+        likes: {
+          where: { userId: currentUserId }, // 내가 좋아요 눌렀는지 확인용
+          select: { userId: true }
+        }
+      },
+      orderBy: [
+        { likeCount: 'desc' }, // 좋아요 많은 순
+        { updatedAt: 'desc' }  // 최신 순
+      ],
+      take: 20, // 일단 20개만
+    });
+
+    socialReviews = dbReviews.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      nickname: r.user.nickname || r.user.email?.split('@')[0] || "User",
+      shortReview: r.shortReview!,
+      likeCount: r.likeCount,
+      isLiked: r.likes.length > 0, // 내 ID로 된 좋아요가 있으면 true
+    }));
+  }
+  // =========================================================
+
   return (
     <section className="max-w-3xl mx-auto pt-0 pb-4 px-3 sm:px-4 space-y-3">
       {/* 히어로: 그라데이션/배경 제거, 원본 비율 그대로 */}
@@ -393,6 +437,11 @@ export default async function FilmDetailPage({
       <div className="mt-6 sm:mt-8">
         <RatingEditorClient filmId={film.id} />
       </div>
+
+      {/* [추가] 소셜 리뷰 리스트 (로그인 했을 때만 표시) */}
+      {currentUserId && socialReviews.length > 0 && (
+        <SocialReviews initialReviews={socialReviews} />
+      )}
     </section>
   );
 }

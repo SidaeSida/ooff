@@ -58,7 +58,7 @@ export async function deleteAccount() {
   }
 }
 
-// 3. 유저 검색 (이메일 제거)
+// 3. 유저 검색 (차단 필터링 적용)
 export async function searchUsers(query: string) {
   const session = await auth();
   if (!session?.user?.id) return [];
@@ -73,12 +73,27 @@ export async function searchUsers(query: string) {
         contains: query,
         mode: "insensitive",
       },
-      id: { not: myId },
+      id: { not: myId }, // 나 자신 제외
+      
+      // [추가] 차단 로직: 서로 차단한 관계는 검색되지 않음
+      AND: [
+        // 1. 내가 차단한 사람 제외 (Target의 blockedBy 목록에 내가 없어야 함)
+        {
+          blockedBy: {
+            none: { blockerId: myId }
+          }
+        },
+        // 2. 나를 차단한 사람 제외 (Target의 blocking 목록에 내가 없어야 함)
+        {
+          blocking: {
+            none: { blockedId: myId }
+          }
+        }
+      ]
     },
     select: {
       id: true,
       nickname: true,
-      // email 제거
       followedBy: {
         where: { followerId: myId },
         select: { followerId: true },
@@ -119,5 +134,53 @@ export async function toggleFollow(targetId: string) {
   }
 
   revalidatePath("/my");
+  revalidatePath(`/users/${targetId}`); // 상대방 페이지 갱신
   return !existing;
+}
+
+// 5. [신규] 차단 토글
+export async function toggleBlock(targetId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const myId = session.user.id;
+  if (myId === targetId) throw new Error("Cannot block yourself");
+
+  // 이미 차단했는지 확인
+  const existing = await prisma.block.findUnique({
+    where: {
+      blockerId_blockedId: { blockerId: myId, blockedId: targetId },
+    },
+  });
+
+  if (existing) {
+    // 차단 해제
+    await prisma.block.delete({
+      where: { blockerId_blockedId: { blockerId: myId, blockedId: targetId } },
+    });
+    
+    // 차단 해제 시엔 별도 팔로우 복구 없음 (처음부터 다시 팔로우해야 함)
+    revalidatePath("/my");
+    return false; // 차단 풀림
+  } else {
+    // 차단 실행 (트랜잭션: 차단 생성 + 맞팔로우 관계 삭제)
+    await prisma.$transaction([
+      // 1. 차단 데이터 생성
+      prisma.block.create({
+        data: { blockerId: myId, blockedId: targetId },
+      }),
+      // 2. 내가 걔를 팔로우 중이면 삭제
+      prisma.follows.deleteMany({
+        where: { followerId: myId, followingId: targetId },
+      }),
+      // 3. 걔가 나를 팔로우 중이면 삭제
+      prisma.follows.deleteMany({
+        where: { followerId: targetId, followingId: myId },
+      }),
+    ]);
+    
+    revalidatePath("/my");
+    revalidatePath(`/users/${targetId}`);
+    return true; // 차단됨
+  }
 }
