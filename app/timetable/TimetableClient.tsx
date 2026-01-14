@@ -217,51 +217,85 @@ export default function TimetableClient({
   // [수정] 이미지 저장 (Free Slot 제외 + 타이틀 포함)
   // ---------------------------------------------------
   const handleSaveImage = async () => {
-    if (!captureRef.current) return;
-    setIsSavingImage(true);
+  if (!captureRef.current) return;
+  setIsSavingImage(true);
 
-    try {
-      const element = captureRef.current;
-      
-      const dataUrl = await toPng(element, {
-        cacheBust: true,
-        backgroundColor: "#ffffff",
-        pixelRatio: 2, // 고해상도
-        // [중요] filter: 저장 시 제외할 요소 지정
-        filter: (node) => {
-          // 'data-hide-on-save' 속성이 있는 요소는 이미지에서 제외
-          if (node instanceof HTMLElement && node.hasAttribute('data-hide-on-save')) {
-            return false;
-          }
-          return true;
-        },
-        style: {
-          height: 'auto',
-          overflow: 'visible',
-          maxHeight: 'none',
-          border: 'none',
-          boxShadow: 'none',
-          // ▼▼▼ [튜닝 포인트] 이 값을 조절하여 X축 짤림 해결하세요 ▼▼▼
-          padding: '0px', // 예: 40px, 60px 등
-          // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+  try {
+    const element = captureRef.current;
+
+    const dataUrl = await toPng(element, {
+      cacheBust: true,
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+      filter: (node) => {
+        if (node instanceof HTMLElement && node.hasAttribute("data-hide-on-save")) {
+          return false;
         }
-      });
+        return true;
+      },
+      style: {
+        height: "auto",
+        overflow: "visible",
+        maxHeight: "none",
+        border: "none",
+        boxShadow: "none",
+        padding: "0px",
+      },
+    });
 
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      
-      const dateStr = dateIso.slice(0, 10);
-      const modeStr = viewMode === "jumpcut" ? "JumpCut" : viewMode === "onetake" ? "OneTake" : "Storyboard";
-      link.download = `OOFF_${userNickname}_${modeStr}_${dateStr}.png`;
-      
-      link.click();
-    } catch (err) {
-      console.error("Failed to capture image", err);
-      alert("Failed to save image. (Try refreshing the page)");
-    } finally {
-      setIsSavingImage(false);
+    const dateStr = dateIso.slice(0, 10);
+    const modeStr =
+      viewMode === "jumpcut"
+        ? "JumpCut"
+        : viewMode === "onetake"
+        ? "OneTake"
+        : "Storyboard";
+    const filename = `OOFF_${userNickname}_${modeStr}_${dateStr}.png`;
+
+    // ----------------------------
+    // [모바일 우선] iOS/모바일: Share Sheet로 "이미지 저장" 유도
+    // ----------------------------
+    const navAny = typeof navigator !== "undefined" ? (navigator as any) : null;
+
+    // isMobile일 때만 share 시도 (원하시면 iPad까지 포함하려면 조건 조정)
+    if (isMobile && navAny?.share) {
+      try {
+        // dataURL -> Blob -> File
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], filename, { type: blob.type || "image/png" });
+
+        // canShare가 있으면 files 지원 여부 확인
+        const canShareFiles =
+          typeof navAny.canShare === "function" ? navAny.canShare({ files: [file] }) : true;
+
+        if (canShareFiles) {
+          await navAny.share({
+            files: [file],
+            title: filename,
+          });
+          // 공유 시트에서 "이미지 저장"을 누르면 사진앱에 저장됨
+          return;
+        }
+      } catch (e) {
+        // 사용자가 공유 시트 취소하거나(AbortError), iOS 버그/제약으로 실패하면 아래 다운로드로 폴백
+      }
     }
-  };
+
+    // ----------------------------
+    // [폴백] 기존 다운로드 방식 (PC/지원 안 되는 모바일)
+    // ----------------------------
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = filename;
+    link.click();
+  } catch (err) {
+    console.error("Failed to capture image", err);
+    alert("Failed to save image. (Try refreshing the page)");
+  } finally {
+    setIsSavingImage(false);
+  }
+};
+
 
   // ---------------------------------------------------
   // 로직
@@ -1228,7 +1262,7 @@ export default function TimetableClient({
         
         {/* [수정] 타이틀 (화면에도 보이고, 캡처에도 포함됨) */}
         <div className="text-center pb-6 pt-2">
-          <h1 className="text-lg font-extrabold text-gray-900 tracking-tight">
+          <h1 className="text-sm font-extrabold text-gray-900 tracking-tight">
             &lt; {userNickname}'s {editionLabel} / {formattedDate} &gt;
           </h1>
         </div>
@@ -1300,8 +1334,8 @@ export default function TimetableClient({
                       }}
                       onClick={clickable ? () => openFreeSlotInScreenings(slot.startAbs, slot.endAbs) : undefined}
                     >
-                      <span className="truncate">Free slot {absMinutesToHm(slot.startAbs)} ~ {absMinutesToHm(slot.endAbs)}</span>
-                      <span className="ml-2 text-[11px] font-semibold">{availableCount > 0 ? `${availableCount} screenings fit` : "No screening fit"}</span>
+                      <span className="truncate">{absMinutesToHm(slot.startAbs)} - {absMinutesToHm(slot.endAbs)}</span>
+                      <span className="ml-2 text-[11px] font-semibold">{availableCount > 0 ? `${availableCount} fit` : "No fit"}</span>
                     </button>
                   );
                 })}
@@ -1420,7 +1454,7 @@ export default function TimetableClient({
             {gridGroups.map((group, idx) => (
               <div key={`${group.startAbs}-${idx}`} className="flex items-start gap-2 border-b border-dashed border-gray-200 pb-2 last:border-b-0">
                 <div className="w-[52px] text-[10px] text-right pt-1 text-gray-500">{absMinutesToHm(group.startAbs)}</div>
-                <div className="relative flex-1 py-1" style={{ minHeight: 80 }}>
+                <div className="relative flex-1 py-1" style={{ minHeight: 110 }}>
                   {group.cards.map(({ row, left, width, z }) => {
                     const s = row;
                     const priority = getPriority(s.id);
@@ -1478,7 +1512,7 @@ export default function TimetableClient({
                           </button>
                         </div>
                         <div className="mt-[1px] text-[10px] text-gray-700 truncate">{s.venue}</div>
-                        <div className="mt-[1px] text-[11px] font-semibold leading-snug line-clamp-1 break-words">
+                        <div className="mt-[1px] text-[11px] font-semibold leading-snug whitespace-normal break-words">
                           {hasBundle ? s.bundleFilms!.map((bf, bundleIdx) => (
                             <span key={bf.filmId}>
                               {bundleIdx > 0 && <span className="mx-[1px] text-[10px] text-gray-700"> + </span>}
