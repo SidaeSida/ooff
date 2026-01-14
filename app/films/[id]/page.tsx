@@ -1,4 +1,3 @@
-// app/films/[id]/page.tsx
 import { notFound } from 'next/navigation';
 
 import filmsData from '@/data/films.json';
@@ -15,7 +14,7 @@ import { prisma } from '@/lib/prisma';
 
 import DetailClient from './DetailClient';
 import RatingEditorClient from './RatingEditorClient';
-import SocialReviews from './SocialReviews'; // [추가]
+import SocialReviews from './SocialReviews';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
@@ -195,7 +194,6 @@ export default async function FilmDetailPage({
         });
         favoriteScreeningIds = favRows.map((r) => r.screeningId);
       } catch (err) {
-        // 배포 DB에 FavoriteScreening 테이블이 없는 경우 등
         console.error("favoriteScreening.findMany failed in FilmDetailPage", err);
         favoriteScreeningIds = [];
       }
@@ -300,46 +298,93 @@ export default async function FilmDetailPage({
   );
 
   // =========================================================
-  // [추가] 소셜 리뷰 데이터 가져오기 (DB 조회)
+  // [수정] 소셜 리뷰 데이터 가져오기 (평점+리뷰 & 프라이버시 적용)
   // =========================================================
   let socialReviews: any[] = [];
   if (currentUserId) {
     const dbReviews = await prisma.userEntry.findMany({
       where: {
-        filmId: film.id, // 현재 영화
-        shortReview: { not: "" }, // 내용이 있는 것만
-        userId: { not: currentUserId }, // 내 리뷰 제외 (내껀 위에 에디터에 있으니까)
+        filmId: film.id,
+        userId: { not: currentUserId }, // 내 글 제외
         
-        // [중요] 차단 필터링
+        // [변경] 평점이 있거나 OR 한줄평이 있거나
+        OR: [
+          { rating: { not: null } },
+          { shortReview: { not: "" } }
+        ],
+
+        // 차단 필터링
         user: {
-          blockedBy: { none: { blockerId: currentUserId } }, // 내가 차단한 사람 제외
-          blocking: { none: { blockedId: currentUserId } },  // 나를 차단한 사람 제외
+          blockedBy: { none: { blockerId: currentUserId } },
+          blocking: { none: { blockedId: currentUserId } },
         }
       },
       include: {
+        // 프라이버시 체크를 위해 UserPrivacy와 팔로우 여부(친구 확인용) 조회
         user: {
-          select: { id: true, nickname: true, email: true }
+          select: { 
+            id: true, 
+            nickname: true, 
+            email: true,
+            UserPrivacy: true, // 설정 조회
+            followedBy: {      // 내가 이 사람을 팔로우 하는지 확인 (Friends 체크용)
+              where: { followerId: currentUserId },
+              select: { followerId: true }
+            }
+          }
         },
         likes: {
-          where: { userId: currentUserId }, // 내가 좋아요 눌렀는지 확인용
+          where: { userId: currentUserId },
           select: { userId: true }
         }
       },
       orderBy: [
-        { likeCount: 'desc' }, // 좋아요 많은 순
-        { updatedAt: 'desc' }  // 최신 순
+        { likeCount: 'desc' },
+        { updatedAt: 'desc' }
       ],
-      take: 20, // 일단 20개만
+      take: 50,
     });
 
-    socialReviews = dbReviews.map(r => ({
-      id: r.id,
-      userId: r.userId,
-      nickname: r.user.nickname || r.user.email?.split('@')[0] || "User",
-      shortReview: r.shortReview!,
-      likeCount: r.likeCount,
-      isLiked: r.likes.length > 0, // 내 ID로 된 좋아요가 있으면 true
-    }));
+    // [로직 추가] Privacy 설정에 따라 데이터 마스킹
+    socialReviews = dbReviews.map(r => {
+      const privacy = r.user.UserPrivacy;
+      const isFriend = r.user.followedBy.length > 0; // 내가 팔로우 중이면 친구로 간주
+
+      // 1. 평점 공개 여부 체크
+      let visibleRating = r.rating ? Number(r.rating) : null;
+      const ratingVis = privacy?.ratingVisibility ?? 'public'; // 기본값 public
+      
+      if (ratingVis === 'private') {
+        visibleRating = null;
+      } else if (ratingVis === 'friends' && !isFriend) {
+        visibleRating = null;
+      }
+
+      // 2. 리뷰 공개 여부 체크
+      let visibleReview = r.shortReview;
+      const reviewVis = privacy?.reviewVisibility ?? 'public';
+
+      if (reviewVis === 'private') {
+        visibleReview = null;
+      } else if (reviewVis === 'friends' && !isFriend) {
+        visibleReview = null;
+      }
+
+      // 둘 다 안 보이면 리스트에서 제외 (null 반환 후 filter로 제거)
+      if (visibleRating === null && (!visibleReview || visibleReview.trim() === "")) {
+        return null;
+      }
+
+      return {
+        id: r.id,
+        userId: r.userId,
+        nickname: r.user.nickname || r.user.email?.split('@')[0] || "User",
+        shortReview: visibleReview || "", // null이면 빈 문자열
+        rating: visibleRating,            // [추가] 평점 전달
+        likeCount: r.likeCount,
+        isLiked: r.likes.length > 0,
+      };
+    }).filter(Boolean); // null 값(볼 수 없는 항목) 제거
   }
   // =========================================================
 

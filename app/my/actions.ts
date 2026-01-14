@@ -1,3 +1,4 @@
+// app/my/actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -9,38 +10,61 @@ type ActionState = {
   message?: string;
 };
 
-// 1. 닉네임 변경
-export async function updateNickname(formData: FormData): Promise<ActionState> {
+// [수정] 닉네임 + 프로필(Bio, SNS) 변경 통합
+export async function updateProfile(formData: FormData): Promise<ActionState> {
   const session = await auth();
   if (!session?.user?.id) return { success: false, message: "Unauthorized" };
 
-  const newNickname = String(formData.get("nickname") ?? "").trim();
-  
-  if (newNickname.length < 2 || newNickname.length > 20) {
-    return { success: false, message: "닉네임은 2~20자 사이여야 합니다." };
+  const nickname = String(formData.get("nickname") ?? "").trim();
+  const bio = String(formData.get("bio") ?? "").trim();
+  const instagramId = String(formData.get("instagramId") ?? "").trim();
+  const twitterId = String(formData.get("twitterId") ?? "").trim();
+  const letterboxdId = String(formData.get("letterboxdId") ?? "").trim();
+  const threadsId = String(formData.get("threadsId") ?? "").trim(); // [추가]
+
+  // 1. 닉네임 유효성 검사
+  if (nickname.length < 2 || nickname.length > 20) {
+    return { success: false, message: "Nickname must be between 2 and 20 characters." };
+  }
+  if (/[^a-zA-Z0-9가-힣._-]/.test(nickname)) {
+     return { success: false, message: "Nickname: Only letters, numbers, ., -, _ allowed." };
   }
 
-  if (/[^a-zA-Z0-9가-힣._-]/.test(newNickname)) {
-     return { success: false, message: "영문, 한글, 숫자, ., -, _ 만 사용 가능합니다." };
+  // 2. SNS ID 간단 검사 (공백이나 특수문자 등)
+  const snsRegex = /[^a-zA-Z0-9._]/;
+  if ((instagramId && snsRegex.test(instagramId)) || 
+      (twitterId && snsRegex.test(twitterId)) || 
+      (letterboxdId && snsRegex.test(letterboxdId)) ||
+      (threadsId && snsRegex.test(threadsId))) {
+    return { success: false, message: "SNS ID: 영문, 숫자, ., _ 만 가능합니다." };
   }
 
   try {
-    const existing = await prisma.user.findUnique({ where: { nickname: newNickname } });
+    // 닉네임 중복 체크
+    const existing = await prisma.user.findUnique({ where: { nickname } });
     if (existing && existing.id !== session.user.id) {
-      return { success: false, message: "이미 사용 중인 닉네임입니다." };
+      return { success: false, message: "Nickname already taken." };
     }
 
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { nickname: newNickname },
+      data: { 
+        nickname,
+        bio: bio || null,
+        instagramId: instagramId || null,
+        twitterId: twitterId || null,
+        letterboxdId: letterboxdId || null,
+        threadsId: threadsId || null, // [추가]
+      },
     });
 
     revalidatePath("/my");
     revalidatePath("/settings");
+    revalidatePath(`/users/${session.user.id}`);
     
     return { success: true };
   } catch (e: any) {
-    return { success: false, message: "서버 오류가 발생했습니다." };
+    return { success: false, message: "Server error occurred." };
   }
 }
 
@@ -73,22 +97,10 @@ export async function searchUsers(query: string) {
         contains: query,
         mode: "insensitive",
       },
-      id: { not: myId }, // 나 자신 제외
-      
-      // [추가] 차단 로직: 서로 차단한 관계는 검색되지 않음
+      id: { not: myId },
       AND: [
-        // 1. 내가 차단한 사람 제외 (Target의 blockedBy 목록에 내가 없어야 함)
-        {
-          blockedBy: {
-            none: { blockerId: myId }
-          }
-        },
-        // 2. 나를 차단한 사람 제외 (Target의 blocking 목록에 내가 없어야 함)
-        {
-          blocking: {
-            none: { blockedId: myId }
-          }
-        }
+        { blockedBy: { none: { blockerId: myId } } },
+        { blocking: { none: { blockedId: myId } } }
       ]
     },
     select: {
@@ -134,11 +146,11 @@ export async function toggleFollow(targetId: string) {
   }
 
   revalidatePath("/my");
-  revalidatePath(`/users/${targetId}`); // 상대방 페이지 갱신
+  revalidatePath(`/users/${targetId}`);
   return !existing;
 }
 
-// 5. [신규] 차단 토글
+// 5. 차단 토글
 export async function toggleBlock(targetId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -146,7 +158,6 @@ export async function toggleBlock(targetId: string) {
   const myId = session.user.id;
   if (myId === targetId) throw new Error("Cannot block yourself");
 
-  // 이미 차단했는지 확인
   const existing = await prisma.block.findUnique({
     where: {
       blockerId_blockedId: { blockerId: myId, blockedId: targetId },
@@ -154,33 +165,54 @@ export async function toggleBlock(targetId: string) {
   });
 
   if (existing) {
-    // 차단 해제
     await prisma.block.delete({
       where: { blockerId_blockedId: { blockerId: myId, blockedId: targetId } },
     });
-    
-    // 차단 해제 시엔 별도 팔로우 복구 없음 (처음부터 다시 팔로우해야 함)
     revalidatePath("/my");
-    return false; // 차단 풀림
+    return false;
   } else {
-    // 차단 실행 (트랜잭션: 차단 생성 + 맞팔로우 관계 삭제)
     await prisma.$transaction([
-      // 1. 차단 데이터 생성
       prisma.block.create({
         data: { blockerId: myId, blockedId: targetId },
       }),
-      // 2. 내가 걔를 팔로우 중이면 삭제
       prisma.follows.deleteMany({
         where: { followerId: myId, followingId: targetId },
       }),
-      // 3. 걔가 나를 팔로우 중이면 삭제
       prisma.follows.deleteMany({
         where: { followerId: targetId, followingId: myId },
       }),
     ]);
-    
     revalidatePath("/my");
     revalidatePath(`/users/${targetId}`);
-    return true; // 차단됨
+    return true;
   }
+}
+
+// 6. 차단 목록 가져오기
+export async function getBlockedUsers() {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const myId = session.user.id;
+
+  const blocks = await prisma.block.findMany({
+    where: {
+      blockerId: myId,
+    },
+    include: {
+      blocked: {
+        select: {
+          id: true,
+          nickname: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return blocks.map((b) => ({
+    id: b.blocked.id,
+    nickname: b.blocked.nickname,
+    isFollowing: false,
+  }));
 }

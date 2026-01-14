@@ -1,3 +1,4 @@
+// app/my/page.tsx
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +17,11 @@ export default async function MyPage() {
       id: true,
       email: true,
       nickname: true,
+      bio: true,
+      instagramId: true,
+      twitterId: true,
+      letterboxdId: true,
+      threadsId: true, // [추가]
       _count: {
         select: {
           followedBy: true,
@@ -35,12 +41,17 @@ export default async function MyPage() {
       <PageShowRefresh />
       <MyPageClient
         user={{
-          id: user.id, // [추가] ID 전달
+          id: user.id,
           email: user.email ?? "",
           nickname: user.nickname ?? emailPrefix,
           followers: user._count.followedBy,
           following: user._count.following,
           isDefaultNickname,
+          bio: user.bio,
+          instagramId: user.instagramId,
+          twitterId: user.twitterId,
+          letterboxdId: user.letterboxdId,
+          threadsId: user.threadsId, // [추가]
         }}
       />
     </main>

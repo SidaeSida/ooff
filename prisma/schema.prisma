@@ -22,6 +22,13 @@ model User {
   
   // 닉네임 (고유값)
   nickname      String?   @unique
+
+  // [추가] 프로필 관련 필드
+  bio           String?   @db.VarChar(160) // 인스타처럼 160자 제한 권장
+  instagramId   String?   // @없이 ID만 저장
+  twitterId     String?
+  letterboxdId  String?
+  threadsId     String?   // [신규] Threads 추가
   
   // 소셜 로그인은 비번이 없으므로 Optional
   passwordHash  String?

@@ -105,6 +105,13 @@ type CompressionConfig = {
   freeSlots: FreeSlot[];
 };
 
+type UndoRemove = {
+  id: string;
+  label: string;
+  prevPriority: PriorityOrNull;
+  prevOrder: number | null;
+};
+
 export default function TimetableClient({
   rows = [],
   editionLabel,
@@ -193,6 +200,13 @@ export default function TimetableClient({
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [deleteZoneActive, setDeleteZoneActive] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
+
+  // [UNDO 삭제] UI에서는 즉시 삭제, 서버 반영은 몇 초 유예 후 확정
+  const [undoRemove, setUndoRemove] = useState<UndoRemove | null>(null);
+  const pendingDeleteRef = useRef<UndoRemove | null>(null);
+  const pendingDeleteTimerRef = useRef<number | null>(null);
+  const deleteSeqRef = useRef(0);
+
 
   useEffect(() => {
     setActiveIds(new Set(rows.map((r) => r.id)));
@@ -787,9 +801,145 @@ export default function TimetableClient({
     }
   }
 
+  function clearPendingDeleteTimer() {
+    if (pendingDeleteTimerRef.current) {
+      clearTimeout(pendingDeleteTimerRef.current);
+      pendingDeleteTimerRef.current = null;
+    }
+  }
+
+  function bestEffortCommitDelete(id: string) {
+    // 언마운트/교체 시 “최소한 서버 상태는 맞추기”용. await 없이 fire-and-forget.
+    fetch("/api/favorite-screening", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ screeningId: id, favorite: false }),
+    }).catch(() => {});
+  }
+
+  function getUndoLabel(screeningId: string): string {
+    const row = rows.find((r) => r.id === screeningId) as any;
+    if (!row) return "Screening";
+
+    const hasBundle = Array.isArray(row.bundleFilms) && row.bundleFilms.length > 1;
+    if (hasBundle) {
+      const titles = row.bundleFilms
+        .map((bf: any) => bf?.title)
+        .filter((t: any) => typeof t === "string" && t.length > 0);
+      if (titles.length === 0) return row.filmTitle ?? "Bundle";
+      if (titles.length === 1) return titles[0];
+      return `${titles[0]} 외 ${titles.length - 1}`;
+    }
+
+    return row.filmTitle ?? "Screening";
+  }
+
+  async function commitDeleteWithRollback(payload: UndoRemove, seq: number) {
+    // 최신 삭제가 아니거나, 이미 Undo된 건이면 무시
+    if (deleteSeqRef.current !== seq) return;
+    if (!pendingDeleteRef.current || pendingDeleteRef.current.id !== payload.id) return;
+
+    // 커밋 시작 시점에 pending 제거 (중복 커밋 방지)
+    pendingDeleteRef.current = null;
+
+    try {
+      const resp = await fetch("/api/favorite-screening", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ screeningId: payload.id, favorite: false }),
+      });
+      if (!resp.ok) throw new Error();
+    } catch {
+      // 서버 실패 시 UI 롤백(복구) + 안내
+      setActiveIds((prev) => {
+        const next = new Set(prev);
+        next.add(payload.id);
+        return next;
+      });
+      setPriorityMap((prev) => {
+        const next = new Map(prev);
+        next.set(payload.id, payload.prevPriority);
+        return next;
+      });
+      setOrderMap((prev) => {
+        const next = new Map(prev);
+        next.set(payload.id, payload.prevOrder);
+        return next;
+      });
+
+      alert("Failed to remove favorite. (Try refreshing the page)");
+    }
+  }
+
+  function scheduleUndoDelete(payload: UndoRemove) {
+    // 이전 pending 삭제가 있으면, 더 이상 Undo 불가로 보고 서버에 즉시 커밋(상태 일치용)
+    if (pendingDeleteRef.current) {
+      bestEffortCommitDelete(pendingDeleteRef.current.id);
+      pendingDeleteRef.current = null;
+    }
+
+    clearPendingDeleteTimer();
+
+    const seq = ++deleteSeqRef.current;
+    pendingDeleteRef.current = payload;
+    setUndoRemove(payload);
+
+    // 4.5초 후: 스낵바 사라짐 + 서버 삭제 확정
+    pendingDeleteTimerRef.current = window.setTimeout(() => {
+      setUndoRemove(null);
+      void commitDeleteWithRollback(payload, seq);
+    }, 4500) as any;
+  }
+
+  function handleUndoRemove() {
+    const payload = pendingDeleteRef.current ?? undoRemove;
+    if (!payload) return;
+
+    // 삭제 확정 타이머 취소
+    clearPendingDeleteTimer();
+    pendingDeleteRef.current = null;
+    setUndoRemove(null);
+
+    // UI 복구
+    setActiveIds((prev) => {
+      const next = new Set(prev);
+      next.add(payload.id);
+      return next;
+    });
+    setPriorityMap((prev) => {
+      const next = new Map(prev);
+      next.set(payload.id, payload.prevPriority);
+      return next;
+    });
+    setOrderMap((prev) => {
+      const next = new Map(prev);
+      next.set(payload.id, payload.prevOrder);
+      return next;
+    });
+
+    // 서버도 “다시 favorite=true”로 맞춤(이미 false로 커밋된 경우 대비)
+    fetch("/api/favorite-screening", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        screeningId: payload.id,
+        favorite: true,
+        priority: payload.prevPriority ?? 0,
+        sortOrder: payload.prevOrder,
+      }),
+    }).catch(() => {});
+  }
+
   async function removeFavorite(screeningId: string) {
     const wasActive = activeIds.has(screeningId);
     if (!wasActive) return;
+
+    // 삭제 전 상태 저장(Undo 복구용)
+    const prevPriority = getPriority(screeningId);
+    const prevOrder = getOrder(screeningId);
+    const label = getUndoLabel(screeningId);
+
+    // UI 즉시 삭제
     setActiveIds((prev) => {
       const next = new Set(prev);
       next.delete(screeningId);
@@ -805,21 +955,16 @@ export default function TimetableClient({
       next.delete(screeningId);
       return next;
     });
-    try {
-      const resp = await fetch("/api/favorite-screening", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ screeningId, favorite: false }),
-      });
-      if (!resp.ok) throw new Error();
-    } catch {
-      setActiveIds((prev) => {
-        const next = new Set(prev);
-        if (wasActive) next.add(screeningId);
-        return next;
-      });
-    }
+
+    // Undo 유예 삭제 스케줄링
+    scheduleUndoDelete({
+      id: screeningId,
+      label,
+      prevPriority,
+      prevOrder,
+    });
   }
+
 
   function onHeartPointerDown(screeningId: string) {
     return (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -1073,20 +1218,19 @@ export default function TimetableClient({
   }
 
   useEffect(() => {
-    if (!dragState) return;
-    document.documentElement.classList.add("no-scroll");
-    document.body.classList.add("no-scroll");
-    const block = (e: TouchEvent) => {
-      if (e.cancelable) e.preventDefault();
-      e.stopPropagation();
-    };
-    window.addEventListener("touchmove", block, { passive: false });
     return () => {
-      document.documentElement.classList.remove("no-scroll");
-      document.body.classList.remove("no-scroll");
-      window.removeEventListener("touchmove", block);
+      // 페이지 이동/언마운트 시 pending 삭제가 남아있으면 서버 상태를 맞춤(Undo 창은 사라지므로 확정)
+      if (pendingDeleteTimerRef.current) {
+        clearTimeout(pendingDeleteTimerRef.current);
+        pendingDeleteTimerRef.current = null;
+      }
+      if (pendingDeleteRef.current) {
+        bestEffortCommitDelete(pendingDeleteRef.current.id);
+        pendingDeleteRef.current = null;
+      }
     };
-  }, [dragState]);
+  }, []);
+
 
   function openFreeSlotInScreenings(startAbs: number, endAbs: number) {
     if (!editionId) return;
@@ -1584,6 +1728,27 @@ export default function TimetableClient({
         )}
       </div>
 
+      {/* [UNDO 삭제] 하단 스낵바 (몇 초만 노출, 누르면 즉시 복구) */}
+      {undoRemove && (
+        <div
+          className="fixed left-0 right-0 bottom-4 z-[6500] flex justify-center px-3"
+          data-hide-on-save="true"
+        >
+          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-gray-200 bg-white/95 shadow-[0_10px_30px_rgba(0,0,0,0.18)] px-4 py-2">
+            <span className="text-[12px] text-gray-700 truncate max-w-[60vw]">
+              Removed: {undoRemove.label}
+            </span>
+            <button
+              type="button"
+              onClick={handleUndoRemove}
+              className="text-[12px] font-semibold text-gray-900 underline underline-offset-2"
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
+
       {priorityMenu && (
         <div className="fixed inset-0 z-[6000] bg-black/10" onClick={closePriorityMenu}>
           <div
@@ -1609,6 +1774,7 @@ export default function TimetableClient({
         </div>
       )}
 
+
       <style jsx global>{`
         /* html-to-image 캡처 시 iOS에서 카드 오른쪽 음영/밴딩 아티팩트 제거 (강화)
           - box-shadow가 filter/drop-shadow 형태로 남는 케이스가 있어 * 전체에 적용 */
@@ -1626,7 +1792,15 @@ export default function TimetableClient({
           -webkit-filter: none !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
-          transform: none !important;
+
+          /* iOS 합성/밴딩 완화용 */
+          isolation: isolate !important;
+          overflow: hidden !important;
+          background-clip: padding-box !important;
+          -webkit-backface-visibility: hidden !important;
+          backface-visibility: hidden !important;
+          -webkit-transform: translateZ(0) !important;
+          transform: translateZ(0) !important;
         }
       `}</style>
 

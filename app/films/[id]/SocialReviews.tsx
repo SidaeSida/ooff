@@ -3,13 +3,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toggleLike } from "../actions"; // Step 3에서 만든 액션
+import Link from "next/link";
+import { toggleLike } from "../actions";
 
 type SocialReview = {
-  id: string; // entryId
+  id: string;
   userId: string;
   nickname: string;
   shortReview: string;
+  rating: number | null; // [추가] 평점
   likeCount: number;
   isLiked: boolean;
 };
@@ -24,10 +26,16 @@ export default function SocialReviews({
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const handleLike = async (entryId: string) => {
-    // 1. Pending 체크
+    // 좋아요 로직은 한줄평이 있을 때만 가능하도록 서버에서 막아뒀으므로(이전 합의),
+    // UI에서도 리뷰가 없으면 좋아요 버튼을 숨기거나 비활성화할 수도 있습니다.
+    // 하지만 현재 서버 로직(toggleLike)은 '리뷰가 없으면 에러'를 뱉으므로,
+    // 여기서 리뷰가 빈 문자열이면 클릭을 막습니다.
+    
+    const target = reviews.find(r => r.id === entryId);
+    if (!target || !target.shortReview) return; // 리뷰 없으면 좋아요 불가
+
     if (pendingIds.has(entryId)) return;
 
-    // 2. Optimistic Update (즉시 UI 반영)
     setReviews((prev) =>
       prev.map((r) => {
         if (r.id !== entryId) return r;
@@ -42,16 +50,14 @@ export default function SocialReviews({
     setPendingIds((prev) => new Set(prev).add(entryId));
 
     try {
-      // 3. Server Action 호출
       await toggleLike(entryId);
-      router.refresh(); // 데이터 동기화
+      router.refresh();
     } catch (error) {
-      // 실패 시 롤백 (생략 가능하지만 안전을 위해)
       console.error(error);
       setReviews((prev) =>
         prev.map((r) => {
           if (r.id !== entryId) return r;
-          const nextLiked = !r.isLiked; // 원래대로 복구
+          const nextLiked = !r.isLiked;
           return {
             ...r,
             isLiked: nextLiked,
@@ -70,7 +76,7 @@ export default function SocialReviews({
   };
 
   if (reviews.length === 0) {
-    return null; // 리뷰가 없으면 아예 안 그림
+    return null;
   }
 
   return (
@@ -79,35 +85,57 @@ export default function SocialReviews({
       <div className="space-y-4">
         {reviews.map((review) => (
           <div key={review.id} className="flex items-start justify-between gap-3 group">
-            {/* 왼쪽: 닉네임 + 내용 */}
+            {/* 왼쪽: 닉네임 + 평점 + 내용 */}
             <div className="flex-1 text-[13px] leading-relaxed break-words whitespace-pre-wrap">
-              <span className="font-bold mr-2 text-gray-900">
-                {review.nickname}
-              </span>
-              <span className="text-gray-700 font-normal">
-                {review.shortReview}
-              </span>
-            </div>
+              <div className="flex items-center gap-2 mb-0.5">
+                {/* 닉네임 */}
+                <Link 
+                  href={`/users/${review.userId}`}
+                  className="font-bold text-gray-900 hover:underline hover:text-blue-600 transition-colors"
+                >
+                  {review.nickname}
+                </Link>
 
-            {/* 오른쪽: 하트 버튼 + 숫자 */}
-            <button
-              onClick={() => handleLike(review.id)}
-              disabled={pendingIds.has(review.id)}
-              className="shrink-0 flex flex-col items-center gap-0.5 min-w-[24px] cursor-pointer hover:opacity-70 transition-opacity"
-            >
-              <span
-                className={`text-[16px] leading-none transition-colors ${
-                  review.isLiked ? "text-red-500" : "text-gray-300"
-                }`}
-              >
-                {review.isLiked ? "♥" : "♡"}
-              </span>
-              {review.likeCount > 0 && (
-                <span className="text-[10px] text-gray-400 font-medium tabular-nums">
-                  {review.likeCount}
+                {/* [추가] 평점 배지 (평점이 있을 때만) */}
+                {review.rating !== null && (
+                  <span className="inline-flex items-center justify-center bg-gray-900 text-white text-[10px] font-bold px-1.5 h-4 rounded-md">
+                    {review.rating.toFixed(1)}
+                  </span>
+                )}
+              </div>
+
+              {/* 한줄평 (있을 때만) */}
+              {review.shortReview && (
+                <span className="text-gray-700 font-normal block mt-0.5">
+                  {review.shortReview}
                 </span>
               )}
-            </button>
+            </div>
+
+            {/* 오른쪽: 하트 버튼 (리뷰가 있을 때만 노출) */}
+            {review.shortReview ? (
+              <button
+                onClick={() => handleLike(review.id)}
+                disabled={pendingIds.has(review.id)}
+                className="shrink-0 flex flex-col items-center gap-0.5 min-w-[24px] cursor-pointer hover:opacity-70 transition-opacity pt-1"
+              >
+                <span
+                  className={`text-[16px] leading-none transition-colors ${
+                    review.isLiked ? "text-red-500" : "text-gray-300"
+                  }`}
+                >
+                  {review.isLiked ? "♥" : "♡"}
+                </span>
+                {review.likeCount > 0 && (
+                  <span className="text-[10px] text-gray-400 font-medium tabular-nums">
+                    {review.likeCount}
+                  </span>
+                )}
+              </button>
+            ) : (
+              // 리뷰가 없으면 빈 공간 차지 (레이아웃 유지용) 혹은 아예 렌더링 안 함
+              <div className="min-w-[24px]" />
+            )}
           </div>
         ))}
       </div>

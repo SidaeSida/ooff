@@ -4,7 +4,8 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import PrivacyControlsClient from "@/app/my/PrivacyControlsClient";
-import DeleteAccountButton from "./DeleteAccountButton"; // 추가된 부분
+import DeleteAccountButton from "./DeleteAccountButton";
+import ProfileForm from "./ProfileForm";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -12,21 +13,46 @@ export default async function SettingsPage() {
 
   const userId = session.user.id;
 
-  // 공개범위 설정 조회
-  let p = await prisma.userPrivacy.findUnique({
-    where: { userId },
-    select: { ratingVisibility: true, reviewVisibility: true },
-  });
+  const [user, p] = await Promise.all([
+    prisma.user.findUnique({ 
+      where: { id: userId },
+      select: { 
+        nickname: true, 
+        bio: true, 
+        instagramId: true, 
+        twitterId: true, 
+        letterboxdId: true,
+        threadsId: true, // [추가]
+        email: true 
+      }
+    }),
+    prisma.userPrivacy.findUnique({
+      where: { userId },
+      select: { ratingVisibility: true, reviewVisibility: true },
+    })
+  ]);
+
+  if (!user) redirect("/login");
 
   const initialPrivacy = {
     ratingVisibility: p?.ratingVisibility ?? "public",
     reviewVisibility: p?.reviewVisibility ?? "public",
   };
 
+  const initialProfile = {
+    nickname: user.nickname ?? "",
+    bio: user.bio ?? "",
+    instagramId: user.instagramId ?? "",
+    twitterId: user.twitterId ?? "",
+    letterboxdId: user.letterboxdId ?? "",
+    threadsId: user.threadsId ?? "", // [추가]
+  };
+
   return (
-    <main className="max-w-2xl mx-auto px-4 pt-6 pb-20 space-y-8">
+    <main className="max-w-2xl mx-auto px-4 pt-6 pb-20 space-y-10">
+      {/* Header */}
       <div className="flex items-center gap-2 border-b pb-4">
-        <Link href="/my" className="text-gray-400 hover:text-gray-800">
+        <Link href="/my" className="text-gray-400 hover:text-gray-800 transition-colors">
            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
            </svg>
@@ -34,7 +60,15 @@ export default async function SettingsPage() {
         <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
-      {/* 1. Privacy Section */}
+      {/* 1. Profile Settings */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">Profile</h2>
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+          <ProfileForm initial={initialProfile} />
+        </div>
+      </section>
+
+      {/* 2. Privacy Section */}
       <section className="space-y-4">
         <div className="flex items-baseline justify-between">
            <h2 className="text-lg font-semibold">Privacy Controls</h2>
@@ -47,27 +81,25 @@ export default async function SettingsPage() {
         </p>
       </section>
 
-      {/* 2. Account Section */}
+      {/* 3. Account Info */}
       <section className="space-y-4 pt-6 border-t">
         <h2 className="text-lg font-semibold">Account</h2>
-        <div className="space-y-3">
+        <div className="space-y-3 px-1">
           <div className="flex justify-between items-center py-1">
             <span className="text-sm text-gray-600">Email</span>
-            <span className="text-sm font-medium text-gray-900">{session.user.email}</span>
+            <span className="text-sm font-medium text-gray-900">{user.email}</span>
           </div>
         </div>
       </section>
 
-      {/* 3. Account Management */}
+      {/* 4. Danger Zone */}
       <section className="space-y-4 pt-6 border-t">
-        <h2 className="text-lg font-semibold text-gray-900">Account Management</h2>
-        
+        <h2 className="text-lg font-semibold text-red-700">Danger Zone</h2>
         <div className="bg-red-50 p-5 rounded-2xl border border-red-100 flex justify-between items-center">
           <div>
             <p className="text-sm font-bold text-red-900">Delete Account</p>
             <p className="text-xs text-red-700 mt-0.5">Permanently remove your data.</p>
           </div>
-          {/* 인터랙티브 버튼 컴포넌트로 교체 */}
           <DeleteAccountButton />
         </div>
       </section>

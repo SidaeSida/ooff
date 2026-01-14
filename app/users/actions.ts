@@ -1,9 +1,10 @@
+// app/users/actions.ts
 "use server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-// 1. 특정 유저의 공개 정보 조회 (이메일 제거)
+// 1. 특정 유저의 공개 정보 조회
 export async function getUserProfile(userId: string) {
   const session = await auth();
   const myId = session?.user?.id;
@@ -13,7 +14,12 @@ export async function getUserProfile(userId: string) {
     select: {
       id: true,
       nickname: true,
-      // email 제거 (개인정보 보호)
+      bio: true,
+      instagramId: true,
+      twitterId: true,
+      letterboxdId: true,
+      threadsId: true, // [추가]
+      
       _count: {
         select: {
           followedBy: true,
@@ -35,7 +41,7 @@ export async function getUserProfile(userId: string) {
   };
 }
 
-// 2. 평점 기록 조회 (Decimal 에러 해결)
+// 2. 평점 기록 조회
 export async function getUserRatings(userId: string) {
   const entries = await prisma.userEntry.findMany({
     where: { 
@@ -46,25 +52,23 @@ export async function getUserRatings(userId: string) {
     take: 50,
   });
 
-  // [중요] Decimal 타입을 number로 변환하여 반환
   return entries.map(entry => ({
     ...entry,
     rating: entry.rating ? Number(entry.rating) : null,
   }));
 }
 
-// 3. 팔로워/팔로잉 명단 조회 (이메일 제거)
+// 3. 팔로워/팔로잉 명단 조회
 export async function getFollowList(userId: string, type: "followers" | "following") {
   const session = await auth();
   const myId = session?.user?.id;
 
   if (type === "followers") {
-    // 나를 따르는 사람들
     const list = await prisma.follows.findMany({
       where: { followingId: userId },
       include: {
         follower: {
-          select: { id: true, nickname: true } // email 제거
+          select: { id: true, nickname: true } 
         }
       }
     });
@@ -82,12 +86,11 @@ export async function getFollowList(userId: string, type: "followers" | "followi
       };
     }));
   } else {
-    // 내가 따르는 사람들
     const list = await prisma.follows.findMany({
       where: { followerId: userId },
       include: {
         following: {
-          select: { id: true, nickname: true } // email 제거
+          select: { id: true, nickname: true }
         }
       }
     });
