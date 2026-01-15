@@ -20,37 +20,26 @@ model User {
   emailVerified DateTime?
   image         String?
   
-  // 닉네임 (고유값)
   nickname      String?   @unique
-
-  // [추가] 프로필 관련 필드
-  bio           String?   @db.VarChar(160) // 인스타처럼 160자 제한 권장
-  instagramId   String?   // @없이 ID만 저장
-  twitterId     String?
+  bio           String?   @db.VarChar(160)
   letterboxdId  String?
-  threadsId     String?   // [신규] Threads 추가
   
-  // 소셜 로그인은 비번이 없으므로 Optional
   passwordHash  String?
+  
+  // [신규] 약관 동의 일시 (이게 비어있으면 온보딩 대상으로 분류)
+  termsAcceptedAt DateTime?
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  
-  // 팔로우 시스템
-  followedBy    Follows[] @relation("following")
-  following     Follows[] @relation("follower")
-  
-  // [추가] 내가 누른 좋아요 (내가 주체)
-  likes         Like[]
-
-  // [추가] 차단 시스템
-  blockedBy     Block[]   @relation("blockedBy") // 나를 차단한 사람들 (내가 차단 당함)
-  blocking      Block[]   @relation("blocking")  // 내가 차단한 사람들 (내가 차단 함)
-  
-  // 기존 데이터 관계
+  // ... (나머지 관계 설정들 그대로 유지) ...
+  accounts          Account[]
+  sessions          Session[]
+  followedBy        Follows[] @relation("following")
+  following         Follows[] @relation("follower")
+  likes             Like[]
+  blockedBy         Block[]   @relation("blockedBy")
+  blocking          Block[]   @relation("blocking")
   UserEntry         UserEntry[]
   UserPrivacy       UserPrivacy?
   FavoriteScreening FavoriteScreening[]
@@ -151,7 +140,6 @@ model UserEntry {
   visibility  Visibility @default(private)
   
   // [추가] 좋아요 개수 (성능 최적화용 필드)
-  // 해당 한줄평이 받은 좋아요의 총 개수
   likeCount   Int      @default(0)
 
   // [추가] 이 한줄평에 달린 좋아요 데이터들

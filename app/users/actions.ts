@@ -15,10 +15,7 @@ export async function getUserProfile(userId: string) {
       id: true,
       nickname: true,
       bio: true,
-      instagramId: true,
-      twitterId: true,
-      letterboxdId: true,
-      threadsId: true, // [추가]
+      letterboxdId: true, // 나머지 SNS 제거
       
       _count: {
         select: {

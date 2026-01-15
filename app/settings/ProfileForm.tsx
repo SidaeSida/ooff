@@ -9,10 +9,7 @@ interface Props {
   initial: {
     nickname: string;
     bio: string;
-    instagramId: string;
-    twitterId: string;
     letterboxdId: string;
-    threadsId: string;
   };
 }
 
@@ -37,10 +34,8 @@ export default function ProfileForm({ initial }: Props) {
   const router = useRouter();
   const [nickname, setNickname] = useState(initial.nickname);
   const [bio, setBio] = useState(initial.bio);
-  const [instagramId, setInstagramId] = useState(initial.instagramId);
-  const [twitterId, setTwitterId] = useState(initial.twitterId);
+  // [수정] Letterboxd만 남기고 나머지 State 제거
   const [letterboxdId, setLetterboxdId] = useState(initial.letterboxdId);
-  const [threadsId, setThreadsId] = useState(initial.threadsId);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -49,10 +44,7 @@ export default function ProfileForm({ initial }: Props) {
       const formData = new FormData();
       formData.append("nickname", nickname);
       formData.append("bio", bio);
-      formData.append("instagramId", instagramId);
-      formData.append("twitterId", twitterId);
       formData.append("letterboxdId", letterboxdId);
-      formData.append("threadsId", threadsId);
 
       const res = await updateProfile(formData);
       if (!res.success) {
@@ -72,19 +64,19 @@ export default function ProfileForm({ initial }: Props) {
     <div className="space-y-6">
       {/* 1. Nickname */}
       <div className="space-y-1.5">
-        <label className="block text-sm font-bold text-gray-900">Nickname</label>
+        <label className="block text-sm font-bold text-gray-900">Username</label>
         <input
           type="text"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
           className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-black transition-colors"
-          placeholder="Your nickname"
+          placeholder="Your Username"
         />
       </div>
 
       {/* 2. Bio */}
       <div className="space-y-1.5">
-        <label className="block text-sm font-bold text-gray-900">Bio</label>
+        <label className="block text-sm font-bold text-gray-900">About</label>
         <textarea
           value={bio}
           onChange={(e) => setBio(e.target.value)}
@@ -98,36 +90,14 @@ export default function ProfileForm({ initial }: Props) {
         </div>
       </div>
 
-      {/* 3. Social Links (한 줄 스타일 + 순서 변경) */}
-      <div className="space-y-4 pt-4 border-t border-gray-100">
-        <h3 className="text-sm font-bold text-gray-900 mb-2">Social Links</h3>
-        
-        {/* Order: Letterboxd -> X -> Threads -> Instagram */}
-        <SocialInput 
-          label="Letterboxd" 
-          value={letterboxdId} 
-          onChange={setLetterboxdId} 
-          placeholder="username" 
-        />
-        <SocialInput 
-          label="X (Twitter)" 
-          value={twitterId} 
-          onChange={setTwitterId} 
-          placeholder="username" 
-        />
-        <SocialInput 
-          label="Threads" 
-          value={threadsId} 
-          onChange={setThreadsId} 
-          placeholder="username" 
-        />
-        <SocialInput 
-          label="Instagram" 
-          value={instagramId} 
-          onChange={setInstagramId} 
-          placeholder="username" 
-        />
-      </div>
+      {/* 3. Social Links (Letterboxd Only) */}        
+      {/* Only Letterboxd */}
+      <SocialInput 
+        label="Letterboxd" 
+        value={letterboxdId} 
+        onChange={setLetterboxdId} 
+        placeholder="username" 
+      />
 
       {/* Save Button */}
       <div className="pt-6 flex justify-end">

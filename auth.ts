@@ -49,14 +49,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       } catch (e) {
         console.error("Nickname generation failed during signIn:", e);
-        // 여기서 에러가 나도 로그인은 시켜줌 (session 콜백에서 복구할 것이므로)
       }
       return true;
     },
 
     async session({ session, user }) {
       if (session.user && user.email) {
-        session.user.id = user.id; // user.id는 adapter가 보장
+        session.user.id = user.id;
 
         // DB에서 최신 정보 조회
         const dbUser = await prisma.user.findUnique({
@@ -64,7 +63,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (dbUser) {
-          // [핵심] 만약 여전히 닉네임이 없다? (signIn 때 실패했다면) -> 지금 만든다
+          // 닉네임 복구 로직
           if (!dbUser.nickname) {
              console.log("Recovering missing nickname...");
              const newNick = await ensureNickname(user.email, user.id);
@@ -72,6 +71,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           } else {
              session.user.nickname = dbUser.nickname;
           }
+
+          // [핵심 추가] 약관 동의 여부를 세션에 포함
+          // (TypeScript 에러가 난다면 as any 사용하거나 types.d.ts 확장 필요)
+          (session.user as any).termsAcceptedAt = dbUser.termsAcceptedAt;
         }
       }
       return session;

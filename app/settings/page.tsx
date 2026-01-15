@@ -1,4 +1,3 @@
-// app/settings/page.tsx
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
@@ -19,10 +18,8 @@ export default async function SettingsPage() {
       select: { 
         nickname: true, 
         bio: true, 
-        instagramId: true, 
-        twitterId: true, 
+        // [수정] Letterboxd만 유지하고 나머지 삭제
         letterboxdId: true,
-        threadsId: true, // [추가]
         email: true 
       }
     }),
@@ -42,10 +39,8 @@ export default async function SettingsPage() {
   const initialProfile = {
     nickname: user.nickname ?? "",
     bio: user.bio ?? "",
-    instagramId: user.instagramId ?? "",
-    twitterId: user.twitterId ?? "",
+    // [수정] Letterboxd만 유지
     letterboxdId: user.letterboxdId ?? "",
-    threadsId: user.threadsId ?? "", // [추가]
   };
 
   return (
@@ -103,6 +98,18 @@ export default async function SettingsPage() {
           <DeleteAccountButton />
         </div>
       </section>
+
+      {/* Footer: Policies */}
+      <footer className="pt-10 pb-6 text-center border-t border-dashed border-gray-200">
+        <div className="flex justify-center gap-4 text-xs text-gray-500">
+          <Link href="/policy/terms" className="hover:text-gray-900 underline">이용약관</Link>
+          <span>|</span>
+          <Link href="/policy/privacy" className="hover:text-gray-900 underline">개인정보처리방침</Link>
+        </div>
+        <p className="text-[10px] text-gray-400 mt-3">
+          © 2025 OOFF. All rights reserved.
+        </p>
+      </footer>
     </main>
   );
 }

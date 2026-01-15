@@ -14,10 +14,8 @@ type UserData = {
   _count: { followedBy: number; following: number };
   isFollowing: boolean;
   bio?: string | null;
-  instagramId?: string | null;
-  twitterId?: string | null;
+  // [수정] Letterboxd만 유지
   letterboxdId?: string | null;
-  threadsId?: string | null;
 };
 
 type ListUser = {
@@ -164,69 +162,23 @@ export default function UserProfileClient({
                 </p>
               )}
               
-              {/* Social Icons Row */}
-              {(user.letterboxdId || user.twitterId || user.threadsId || user.instagramId) && (
+              {/* Social Icons Row (Letterboxd Only) */}
+              {user.letterboxdId && (
                 <div className="flex items-center gap-3">
-                  {/* 1. Letterboxd */}
-                  {user.letterboxdId && (
-                    <a 
-                      href={`https://letterboxd.com/${user.letterboxdId}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-gray-400 hover:text-[#00E054] transition-colors"
-                      title={`Letterboxd: @${user.letterboxdId}`}
-                    >
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><circle cx="20" cy="4" r="1"/>
-                      </svg>
-                    </a>
-                  )}
-
-                  {/* 2. X (Twitter) */}
-                  {user.twitterId && (
-                    <a 
-                      href={`https://x.com/${user.twitterId}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-gray-400 hover:text-black transition-colors"
-                      title={`X: @${user.twitterId}`}
-                    >
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/>
-                      </svg>
-                    </a>
-                  )}
-
-                  {/* 3. Threads */}
-                  {user.threadsId && (
-                    <a 
-                      href={`https://www.threads.net/@${user.threadsId}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-gray-400 hover:text-black transition-colors"
-                      title={`Threads: @${user.threadsId}`}
-                    >
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 12a4 4 0 1 0 4 4 4 4 0 0 0-4-4Z"/>
-                        <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>
-                      </svg>
-                    </a>
-                  )}
-
-                  {/* 4. Instagram */}
-                  {user.instagramId && (
-                    <a 
-                      href={`https://instagram.com/${user.instagramId}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-gray-400 hover:text-[#E1306C] transition-colors"
-                      title={`Instagram: @${user.instagramId}`}
-                    >
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                      </svg>
-                    </a>
-                  )}
+                  <a 
+                    href={`https://letterboxd.com/${user.letterboxdId}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-gray-400 hover:text-[#00E054] transition-colors"
+                    title={`Letterboxd: @${user.letterboxdId}`}
+                  >
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
+                      {/* Full-color discs (always colored) */}
+                      <circle cx="8.6" cy="12" r="5" fill="#40BCF4" />
+                      <circle cx="15.4" cy="12" r="5" fill="#FF8000" />
+                      <circle cx="12" cy="12" r="5" fill="#00E054" />
+                    </svg>
+                  </a>
                 </div>
               )}
             </div>

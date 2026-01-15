@@ -1,3 +1,4 @@
+// app/my/actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -21,11 +22,9 @@ export async function updateProfile(formData: FormData): Promise<ActionState> {
 
   const nickname = String(formData.get("nickname") ?? "").trim();
   const bio = String(formData.get("bio") ?? "").trim();
-  const instagramId = String(formData.get("instagramId") ?? "").trim();
-  const twitterId = String(formData.get("twitterId") ?? "").trim();
   const letterboxdId = String(formData.get("letterboxdId") ?? "").trim();
-  const threadsId = String(formData.get("threadsId") ?? "").trim();
 
+  // 1. 닉네임 유효성 검사
   if (nickname.length < 2 || nickname.length > 20) {
     return { success: false, message: "Nickname must be between 2 and 20 characters." };
   }
@@ -33,17 +32,14 @@ export async function updateProfile(formData: FormData): Promise<ActionState> {
     return { success: false, message: "Nickname: Only letters, numbers, ., -, _ allowed." };
   }
 
+  // 2. SNS ID 간단 검사 (Letterboxd)
   const snsRegex = /[^a-zA-Z0-9._]/;
-  if (
-    (instagramId && snsRegex.test(instagramId)) ||
-    (twitterId && snsRegex.test(twitterId)) ||
-    (letterboxdId && snsRegex.test(letterboxdId)) ||
-    (threadsId && snsRegex.test(threadsId))
-  ) {
-    return { success: false, message: "SNS ID: 영문, 숫자, ., _ 만 가능합니다." };
+  if (letterboxdId && snsRegex.test(letterboxdId)) {
+    return { success: false, message: "Letterboxd ID: 영문, 숫자, ., _ 만 가능합니다." };
   }
 
   try {
+    // 닉네임 중복 체크
     const existing = await prisma.user.findUnique({ where: { nickname } });
     if (existing && existing.id !== session.user.id) {
       return { success: false, message: "Nickname already taken." };
@@ -54,10 +50,7 @@ export async function updateProfile(formData: FormData): Promise<ActionState> {
       data: {
         nickname,
         bio: bio || null,
-        instagramId: instagramId || null,
-        twitterId: twitterId || null,
         letterboxdId: letterboxdId || null,
-        threadsId: threadsId || null,
       },
     });
 
@@ -85,17 +78,21 @@ export async function deleteAccount() {
   }
 }
 
-// 3. 유저 검색
+// 3. 유저 검색 (차단 필터링 적용)
 export async function searchUsers(query: string) {
   const session = await auth();
   if (!session?.user?.id) return [];
 
   const myId = session.user.id;
+
   if (!query || query.trim().length < 1) return [];
 
   const users = await prisma.user.findMany({
     where: {
-      nickname: { contains: query, mode: "insensitive" },
+      nickname: {
+        contains: query,
+        mode: "insensitive",
+      },
       id: { not: myId },
       AND: [
         { blockedBy: { none: { blockerId: myId } } },
@@ -129,7 +126,9 @@ export async function toggleFollow(targetId: string) {
   if (myId === targetId) throw new Error("Cannot follow yourself");
 
   const existing = await prisma.follows.findUnique({
-    where: { followerId_followingId: { followerId: myId, followingId: targetId } },
+    where: {
+      followerId_followingId: { followerId: myId, followingId: targetId },
+    },
   });
 
   if (existing) {
@@ -156,7 +155,9 @@ export async function toggleBlock(targetId: string) {
   if (myId === targetId) throw new Error("Cannot block yourself");
 
   const existing = await prisma.block.findUnique({
-    where: { blockerId_blockedId: { blockerId: myId, blockedId: targetId } },
+    where: {
+      blockerId_blockedId: { blockerId: myId, blockedId: targetId },
+    },
   });
 
   if (existing) {
@@ -191,9 +192,16 @@ export async function getBlockedUsers() {
   const myId = session.user.id;
 
   const blocks = await prisma.block.findMany({
-    where: { blockerId: myId },
+    where: {
+      blockerId: myId,
+    },
     include: {
-      blocked: { select: { id: true, nickname: true } },
+      blocked: {
+        select: {
+          id: true,
+          nickname: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });

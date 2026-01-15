@@ -1,3 +1,4 @@
+// app/my/page.tsx
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,10 +24,9 @@ export default async function MyPage({
       email: true,
       nickname: true,
       bio: true,
-      instagramId: true,
-      twitterId: true,
+      // [수정] Letterboxd만 유지
       letterboxdId: true,
-      threadsId: true,
+      
       _count: {
         select: {
           followedBy: true,
@@ -63,10 +63,8 @@ export default async function MyPage({
           following: user._count.following,
           isDefaultNickname,
           bio: user.bio,
-          instagramId: user.instagramId,
-          twitterId: user.twitterId,
+          // [수정] Letterboxd만 유지
           letterboxdId: user.letterboxdId,
-          threadsId: user.threadsId,
         }}
       />
     </main>

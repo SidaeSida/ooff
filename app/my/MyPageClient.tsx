@@ -1,3 +1,4 @@
+// app/my/MyPageClient.tsx
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -22,10 +23,8 @@ interface Props {
     following: number;
     isDefaultNickname: boolean;
     bio?: string | null;
-    instagramId?: string | null;
-    twitterId?: string | null;
+    // [수정] Letterboxd만 유지
     letterboxdId?: string | null;
-    threadsId?: string | null;
   };
 }
 
@@ -85,7 +84,6 @@ export default function MyPageClient({ user, initialTab }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"search" | "followers" | "following" | "blocked">("search");
 
-  // URL searchParams 탭 변경(/my?tab=friends 등)에도 즉시 반영
   useEffect(() => {
     if (!initialTab) return;
     setActiveTab(initialTab);
@@ -199,100 +197,35 @@ export default function MyPageClient({ user, initialTab }: Props) {
               </p>
             )}
 
-            {/* Social Icons Row */}
-            {(user.letterboxdId || user.twitterId || user.threadsId || user.instagramId) && (
-              <div className="flex items-center gap-3">
-                {/* 1. Letterboxd */}
-                {user.letterboxdId && (
-                  <a
-                    href={`https://letterboxd.com/${user.letterboxdId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-[#00E054] transition-colors"
-                    title={`Letterboxd: @${user.letterboxdId}`}
-                    aria-label={`Letterboxd: @${user.letterboxdId}`}
+            {/* Letterboxd Link (Inline, Subtle) */}
+            {user.letterboxdId && (
+              <div className="mt-4">
+                <a
+                  href={`https://letterboxd.com/${user.letterboxdId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                  title={`Letterboxd: @${user.letterboxdId}`}
+                  aria-label={`Letterboxd: @${user.letterboxdId}`}
+                >
+                  {/* Logo discs (wider, less overlap) */}
+                  <svg
+                    className="h-5 w-auto"
+                    viewBox="0 0 44 24"
+                    aria-hidden="true"
                   >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
-                      <circle cx="8.6" cy="12" r="5" fill="#40BCF4" />
-                      <circle cx="15.4" cy="12" r="5" fill="#FF8000" />
-                      <circle cx="12" cy="12" r="5" fill="#00E054" />
-                    </svg>
-                  </a>
-                )}
+                    <circle cx="14" cy="12" r="5" fill="#40BCF4" />
+                    <circle cx="23" cy="12" r="5" fill="#00E054" />
+                    <circle cx="32" cy="12" r="5" fill="#FF8000" />
+                  </svg>
 
-                {/* 2. X (Twitter) */}
-                {user.twitterId && (
-                  <a
-                    href={`https://x.com/${user.twitterId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-black transition-colors"
-                    title={`X: @${user.twitterId}`}
-                    aria-label={`X: @${user.twitterId}`}
-                  >
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        fill="currentColor"
-                        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.96 6.817H1.688l7.73-8.84L1.25 2.25h6.75l4.713 6.231L18.244 2.25Zm-1.161 17.52h1.833L6.69 4.126H4.723L17.083 19.77Z"
-                      />
-                    </svg>
-                  </a>
-                )}
-
-                {/* 3. Threads */}
-                {user.threadsId && (
-                  <a
-                    href={`https://www.threads.net/@${user.threadsId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-black transition-colors"
-                    title={`Threads: @${user.threadsId}`}
-                    aria-label={`Threads: @${user.threadsId}`}
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="12" r="4" />
-                      <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94" />
-                    </svg>
-                  </a>
-                )}
-
-                {/* 4. Instagram */}
-                {user.instagramId && (
-                  <a
-                    href={`https://instagram.com/${user.instagramId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-[#E1306C] transition-colors"
-                    title={`Instagram: @${user.instagramId}`}
-                    aria-label={`Instagram: @${user.instagramId}`}
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                      <circle cx="12" cy="12" r="4" />
-                      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-                    </svg>
-                  </a>
-                )}
+                  <span className="leading-none">
+                    Letterboxd · @{user.letterboxdId}
+                  </span>
+                </a>
               </div>
             )}
+
           </div>
 
           {/* Stats & SignOut */}
@@ -345,6 +278,7 @@ export default function MyPageClient({ user, initialTab }: Props) {
           </div>
         )}
 
+        {/* Feed Tab */}
         {activeTab === "feed" && (
           <div className="animate-in fade-in duration-300">
             <FeedTab />
@@ -370,7 +304,7 @@ export default function MyPageClient({ user, initialTab }: Props) {
                 }}
               />
               <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-x6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
 
