@@ -1,4 +1,3 @@
-// app/my/actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -39,7 +38,7 @@ export async function updateProfile(formData: FormData): Promise<ActionState> {
   }
 
   try {
-    // 닉네임 중복 체크
+    // 닉네임 중복 체크 (저장 직전 최종 확인)
     const existing = await prisma.user.findUnique({ where: { nickname } });
     if (existing && existing.id !== session.user.id) {
       return { success: false, message: "Nickname already taken." };
@@ -78,21 +77,17 @@ export async function deleteAccount() {
   }
 }
 
-// 3. 유저 검색 (차단 필터링 적용)
+// 3. 유저 검색
 export async function searchUsers(query: string) {
   const session = await auth();
   if (!session?.user?.id) return [];
 
   const myId = session.user.id;
-
   if (!query || query.trim().length < 1) return [];
 
   const users = await prisma.user.findMany({
     where: {
-      nickname: {
-        contains: query,
-        mode: "insensitive",
-      },
+      nickname: { contains: query, mode: "insensitive" },
       id: { not: myId },
       AND: [
         { blockedBy: { none: { blockerId: myId } } },
@@ -106,6 +101,12 @@ export async function searchUsers(query: string) {
         where: { followerId: myId },
         select: { followerId: true },
       },
+      // [수정] 검색 시에도 평점 개수 표시를 위해 카운트 포함
+      _count: {
+        select: {
+          UserEntry: { where: { rating: { not: null } } }
+        }
+      }
     },
     take: 10,
   });
@@ -114,6 +115,7 @@ export async function searchUsers(query: string) {
     id: u.id,
     nickname: u.nickname,
     isFollowing: u.followedBy.length > 0,
+    ratingCount: u._count.UserEntry, // 평점 개수 반환
   }));
 }
 
@@ -126,9 +128,7 @@ export async function toggleFollow(targetId: string) {
   if (myId === targetId) throw new Error("Cannot follow yourself");
 
   const existing = await prisma.follows.findUnique({
-    where: {
-      followerId_followingId: { followerId: myId, followingId: targetId },
-    },
+    where: { followerId_followingId: { followerId: myId, followingId: targetId } },
   });
 
   if (existing) {
@@ -155,9 +155,7 @@ export async function toggleBlock(targetId: string) {
   if (myId === targetId) throw new Error("Cannot block yourself");
 
   const existing = await prisma.block.findUnique({
-    where: {
-      blockerId_blockedId: { blockerId: myId, blockedId: targetId },
-    },
+    where: { blockerId_blockedId: { blockerId: myId, blockedId: targetId } },
   });
 
   if (existing) {
@@ -192,16 +190,9 @@ export async function getBlockedUsers() {
   const myId = session.user.id;
 
   const blocks = await prisma.block.findMany({
-    where: {
-      blockerId: myId,
-    },
+    where: { blockerId: myId },
     include: {
-      blocked: {
-        select: {
-          id: true,
-          nickname: true,
-        },
-      },
+      blocked: { select: { id: true, nickname: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -210,10 +201,11 @@ export async function getBlockedUsers() {
     id: b.blocked.id,
     nickname: b.blocked.nickname,
     isFollowing: false,
+    ratingCount: 0, // 차단 목록엔 표시 안 함
   }));
 }
 
-// 7. 피드 데이터 가져오기 (Cursor Pagination: updatedAt + id)
+// 7. 피드 데이터 가져오기
 export async function getFeed(cursor?: FeedCursor) {
   const session = await auth();
   if (!session?.user?.id) return [];
@@ -221,7 +213,6 @@ export async function getFeed(cursor?: FeedCursor) {
   const myId = session.user.id;
   const limit = 20;
 
-  // 1) 내가 팔로우하는 사람들
   const following = await prisma.follows.findMany({
     where: { followerId: myId },
     select: { followingId: true },
@@ -229,7 +220,6 @@ export async function getFeed(cursor?: FeedCursor) {
   const followingIds = following.map((f) => f.followingId);
   if (followingIds.length === 0) return [];
 
-  // 2) 뮤추얼(상호 팔로우) 집합: (내가 팔로우한 사람들) 중에서 (나를 팔로우하는 사람)
   const reverse = await prisma.follows.findMany({
     where: {
       followerId: { in: followingIds },
@@ -242,12 +232,9 @@ export async function getFeed(cursor?: FeedCursor) {
   const cursorAt = cursor?.updatedAt ? new Date(cursor.updatedAt) : null;
   const cursorId = cursor?.id ?? null;
 
-  // 3) 엔트리 조회
   const rawEntries = await prisma.userEntry.findMany({
     where: {
       userId: { in: followingIds },
-
-      // (B) 내용 조건 정합성: rating != null OR (shortReview != null AND shortReview != "")
       OR: [
         { rating: { not: null } },
         {
@@ -257,14 +244,10 @@ export async function getFeed(cursor?: FeedCursor) {
           ],
         },
       ],
-
-      // 차단 관계 제외
       user: {
         blockedBy: { none: { blockerId: myId } },
         blocking: { none: { blockedId: myId } },
       },
-
-      // (D) 안정 커서: updatedAt desc, id desc
       ...(cursorAt && cursorId
         ? {
             OR: [
@@ -291,13 +274,11 @@ export async function getFeed(cursor?: FeedCursor) {
     take: limit,
   });
 
-  // 4) Privacy 필터링 (E: friends = 뮤추얼)
   const feedItems = rawEntries
     .map((entry) => {
       const privacy: any = entry.user.UserPrivacy;
       const isMutual = mutualSet.has(entry.user.id);
 
-      // (C) rating 0 처리 버그 방지
       let visibleRating = entry.rating !== null ? Number(entry.rating) : null;
       const ratingVis = privacy?.ratingVisibility as string | undefined;
       if (ratingVis === "private") visibleRating = null;
@@ -329,4 +310,72 @@ export async function getFeed(cursor?: FeedCursor) {
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
   return feedItems;
+}
+
+// 8. 닉네임 중복 확인
+export async function checkNickname(nickname: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { available: false, message: "Unauthorized" };
+
+  const cleanNickname = nickname.trim();
+
+  if (cleanNickname.length < 2 || cleanNickname.length > 20) {
+    return { available: false, message: "2-20 characters required." };
+  }
+  if (/[^a-zA-Z0-9가-힣._-]/.test(cleanNickname)) {
+    return { available: false, message: "Invalid characters." };
+  }
+
+  const existing = await prisma.user.findUnique({
+    where: { nickname: cleanNickname },
+  });
+
+  if (existing && existing.id !== session.user.id) {
+    return { available: false, message: "Username already taken." };
+  }
+
+  return { available: true, message: "Available." };
+}
+
+// 9. [신규] 전체 유저 추천 목록 (리뷰 많은 순)
+export async function getTopUsers() {
+  const session = await auth();
+  const myId = session?.user?.id;
+
+  const users = await prisma.user.findMany({
+    take: 20,
+    orderBy: {
+      UserEntry: {
+        _count: 'desc'
+      }
+    },
+    where: {
+        AND: [
+            { id: { not: myId } }, // 나 제외
+            // 나를 차단했거나 내가 차단한 유저 제외 (로그인 시)
+            ...(myId ? [{ blockedBy: { none: { blockerId: myId } } }, { blocking: { none: { blockedId: myId } } }] : [])
+        ]
+    },
+    select: {
+      id: true,
+      nickname: true,
+      _count: {
+        select: {
+          // 실제 rating이 있는 개수만 카운트
+          UserEntry: { where: { rating: { not: null } } }
+        }
+      },
+      followedBy: myId ? {
+        where: { followerId: myId },
+        select: { followerId: true }
+      } : undefined
+    }
+  });
+
+  return users.map((u) => ({
+    id: u.id,
+    nickname: u.nickname,
+    ratingCount: u._count.UserEntry,
+    isFollowing: u.followedBy ? u.followedBy.length > 0 : false
+  }));
 }

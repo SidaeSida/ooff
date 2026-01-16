@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import MyRatingsClient from "./MyRatingsClient";
 import SignOutButton from "./SignOutButton";
-import { searchUsers, toggleFollow, toggleBlock, getBlockedUsers } from "./actions";
+import { searchUsers, toggleFollow, toggleBlock, getBlockedUsers, getTopUsers } from "./actions";
 import { getFollowList } from "../users/actions";
 import FeedTab from "./FeedTab";
 
@@ -23,7 +23,6 @@ interface Props {
     following: number;
     isDefaultNickname: boolean;
     bio?: string | null;
-    // [수정] Letterboxd만 유지
     letterboxdId?: string | null;
   };
 }
@@ -32,6 +31,7 @@ type ListUser = {
   id: string;
   nickname: string | null;
   isFollowing: boolean;
+  ratingCount?: number; // [추가] 평점 개수
 };
 
 function AutoFitSingleLineText({ text, className = "", maxPx = 36, minPx = 18, stepPx = 1 }: any) {
@@ -89,10 +89,30 @@ export default function MyPageClient({ user, initialTab }: Props) {
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // [수정] Friends 탭 진입 시 검색어가 없으면 'Top Users' 자동 로드
+  useEffect(() => {
+    if (activeTab === 'friends' && viewMode === 'search' && !searchQuery) {
+       loadTopUsers();
+    }
+  }, [activeTab, viewMode, searchQuery]);
+
+  const loadTopUsers = async () => {
+    setIsLoading(true);
+    try {
+      const top = await getTopUsers();
+      setUserList(top);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter") return;
+    // 검색어가 비면 다시 추천 목록 로드
     if (!searchQuery.trim()) {
-      setUserList(null);
+      loadTopUsers();
       return;
     }
     setViewMode("search");
@@ -190,14 +210,14 @@ export default function MyPageClient({ user, initialTab }: Props) {
           </div>
 
           {/* Bio & Social Links */}
-          <div className="mt-3 pr-10">
+          <div className="mt-3">
             {user.bio && (
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed break-words mb-3">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed break-words mb-3 pr-2">
                 {user.bio}
               </p>
             )}
 
-            {/* Letterboxd Link (Inline, Subtle) */}
+            {/* Letterboxd Link (Mobile Fix & Color Control) */}
             {user.letterboxdId && (
               <div className="mt-4">
                 <a
@@ -208,15 +228,17 @@ export default function MyPageClient({ user, initialTab }: Props) {
                   title={`Letterboxd: @${user.letterboxdId}`}
                   aria-label={`Letterboxd: @${user.letterboxdId}`}
                 >
-                  {/* Logo discs (wider, less overlap) */}
                   <svg
-                    className="h-5 w-auto"
+                    width="44" 
+                    height="24" 
                     viewBox="0 0 44 24"
                     aria-hidden="true"
+                    className="shrink-0"
                   >
-                    <circle cx="14" cy="12" r="5" fill="#40BCF4" />
-                    <circle cx="23" cy="12" r="5" fill="#00E054" />
-                    <circle cx="32" cy="12" r="5" fill="#FF8000" />
+                    {/* [Logo Color Change Here] */}
+                    <circle cx="14" cy="12" r="5" fill="#FF8000" /> {/* Color 1 */}
+                    <circle cx="23" cy="12" r="5" fill="#00E054" /> {/* Color 2 */}
+                    <circle cx="32" cy="12" r="5" fill="#40BCF4" /> {/* Color 3 */}
                   </svg>
 
                   <span className="leading-none">
@@ -299,7 +321,8 @@ export default function MyPageClient({ user, initialTab }: Props) {
                 onFocus={() => {
                   if (viewMode !== "search") {
                     setViewMode("search");
-                    setUserList(null);
+                    // 검색어 없으면 top users 로드
+                    if(!searchQuery) loadTopUsers();
                   }
                 }}
               />
@@ -312,12 +335,13 @@ export default function MyPageClient({ user, initialTab }: Props) {
             <div className="space-y-3 min-h-[100px]">
               {/* Sub Navigation */}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1 border-b border-gray-100 pb-2">
-                <h3 className="text-sm font-bold text-gray-900 capitalize min-w-[60px]">{viewMode}</h3>
+                <h3 className="text-sm font-bold text-gray-900 capitalize min-w-[60px]">{viewMode === 'search' ? 'Discovery' : viewMode}</h3>
                 <div className="flex gap-1">
                   <button
                     onClick={() => {
                       setViewMode("search");
-                      setUserList(null);
+                      setSearchQuery("");
+                      loadTopUsers();
                     }}
                     className={`px-2 py-0.5 text-[11px] rounded border ${
                       viewMode === "search" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"
@@ -358,16 +382,26 @@ export default function MyPageClient({ user, initialTab }: Props) {
 
               {!isLoading && userList && userList.length === 0 && (
                 <p className="text-center text-sm text-gray-400 py-4">
-                  {viewMode === "search" ? "No user found." : viewMode === "blocked" ? "No blocked users." : "List is empty."}
+                  {viewMode === "search" ? "No users found." : viewMode === "blocked" ? "No blocked users." : "List is empty."}
                 </p>
               )}
 
               {!isLoading &&
                 userList?.map((u) => (
                   <div key={u.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-                    <Link href={`/users/${u.id}`} className="min-w-0 flex-1 pr-4 cursor-pointer hover:opacity-70 transition-opacity">
-                      <p className="font-bold text-gray-900 truncate">{u.nickname}</p>
-                    </Link>
+                    <div className="min-w-0 flex-1 pr-3 cursor-pointer group" onClick={() => { if(!u.isFollowing) router.push(`/users/${u.id}`); }}>
+                        <div className="flex items-center gap-2">
+                            <Link href={`/users/${u.id}`} className="font-bold text-gray-900 truncate hover:underline">
+                                {u.nickname}
+                            </Link>
+                            {/* [Rating Count Display] */}
+                            {u.ratingCount !== undefined && u.ratingCount > 0 && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">
+                                    ★ {u.ratingCount}
+                                </span>
+                            )}
+                        </div>
+                    </div>
 
                     {viewMode === "blocked" ? (
                       <button

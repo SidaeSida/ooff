@@ -1,11 +1,10 @@
-// auth.ts
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Kakao from "next-auth/providers/kakao";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
-// 닉네임 생성 함수 (분리됨)
+// 닉네임 생성 함수
 async function ensureNickname(email: string, userId: string) {
   const localPart = email.split("@")[0];
   const prefix = localPart.slice(0, 3).padEnd(3, "0");
@@ -33,6 +32,7 @@ async function ensureNickname(email: string, userId: string) {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // [옵션 A 유지] allowDangerousEmailAccountLinking 옵션 없음 -> 계정 분리 (보안)
   providers: [Google, Kakao],
   callbacks: {
     async signIn({ user }) {
@@ -72,8 +72,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
              session.user.nickname = dbUser.nickname;
           }
 
-          // [핵심 추가] 약관 동의 여부를 세션에 포함
-          // (TypeScript 에러가 난다면 as any 사용하거나 types.d.ts 확장 필요)
+          // 약관 동의 여부 세션에 포함 (가드용)
           (session.user as any).termsAcceptedAt = dbUser.termsAcceptedAt;
         }
       }

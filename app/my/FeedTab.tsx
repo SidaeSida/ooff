@@ -179,6 +179,8 @@ export default function FeedTab() {
         <Link
           href="/my?tab=friends"
           className="px-5 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-black transition-colors"
+          // [수정] 텍스트 색상 강제 지정 (Global CSS 오버라이드 방지)
+          style={{ color: '#ffffff' }}
         >
           Find Friends
         </Link>
@@ -224,8 +226,6 @@ export default function FeedTab() {
                   </div>
                 )}
               </Link>
-
-
 
               {/* Text */}
               <div className="flex-1 min-w-0 pt-0.5">
