@@ -352,6 +352,8 @@ export async function getTopUsers() {
     where: {
         AND: [
             { id: { not: myId } }, // 나 제외
+            { nickname: { not: null } }, // [추가] 닉네임 없는 유령 유저 제외
+            { nickname: { not: "" } },   // [추가] 빈 문자열 닉네임 제외
             // 나를 차단했거나 내가 차단한 유저 제외 (로그인 시)
             ...(myId ? [{ blockedBy: { none: { blockerId: myId } } }, { blocking: { none: { blockedId: myId } } }] : [])
         ]

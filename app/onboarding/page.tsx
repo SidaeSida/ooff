@@ -36,7 +36,7 @@ export default function OnboardingPage() {
             Welcome to OOFF
           </h1>
           <p className="text-gray-500 text-sm">
-            영화 취향을 기록하고, 조용하게 연결되세요.
+            Timetable for your taste
           </p>
         </div>
 

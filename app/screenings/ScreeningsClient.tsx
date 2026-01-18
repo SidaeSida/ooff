@@ -84,8 +84,8 @@ const screenings = screeningsData as Screening[];
 const DEFAULT_EDITION = "edition_jiff_2025";
 
 const EDITION_LABEL: Record<string, string> = {
-  edition_jiff_2025: "JIFF 2025",
-  edition_biff_2025: "BIFF 2025",
+  edition_jiff_2025: "JIFF2025",
+  edition_biff_2025: "BIFF2025",
 };
 
 const PAGE_SIZE = 20;
