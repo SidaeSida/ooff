@@ -1,7 +1,6 @@
-// app/films/FilmsClient.tsx
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import filmsData from '@/data/films.json';
@@ -15,6 +14,7 @@ import {
   ymd, isWeekendISO, mdK, normId 
 } from '@/lib/utils';
 
+// [수정] posters 타입 추가
 type Film = {
   id: string;
   title: string;
@@ -27,6 +27,7 @@ type Film = {
   festivalBadges?: string[];
   credits?: { directors?: string[] };
   creditTokens?: string[];
+  posters?: string[]; // [추가]
 };
 type Entry = {
   id: string;
@@ -125,7 +126,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
     [edition]
   );
 
-  // [수정] 섹션 문자열에 '/'가 섞여 있어도 쪼개서 각각의 필터 버튼을 생성함
   const availableSections = useMemo(() => {
     if (edition === 'all') return [];
     
@@ -163,7 +163,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
   const filteredFilmIds = useMemo(() => {
     let es = edition === 'all' ? entries : entries.filter((e) => e.editionId === edition);
 
-    // [수정] 섹션이 " / "로 합쳐져 있어도, 쪼개서 필터링 (하나라도 맞으면 통과)
     if (edition !== 'all' && sectionSet.size) {
       es = es.filter((e) => {
         if (!e.section) return false;
@@ -272,6 +271,11 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
   const pageEnd = pageStart + PAGE_SIZE;
   const pageRows = rows.slice(pageStart, pageEnd);
 
+  // [신규] 페이지 변경 시 스크롤 최상단 이동
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [requestedPage]);
+
   // 평가 여부 세트
   const ratedSet = useMemo(
     () => new Set(ratedFilmIds.map((x) => normId(x))),
@@ -352,7 +356,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           )}
         </div>
 
-        {/* Section */}
+        {/* Section, Date Filter UI (기존과 동일하여 생략 없음) */}
         {edition !== 'all' && (
           <details>
             <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Section</summary>
@@ -367,7 +371,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                       setQuery(router, pathname, search, { section: allNow ? undefined : csvOfAll(availableSections), page: undefined });
                     }}
                     className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${isAllSelected(sectionCsv, availableSections) ? 'bg-black text-white' : 'bg-white'}`}
-                    title="Select all sections"
                   >
                     All
                   </button>
@@ -378,7 +381,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                         key={sec}
                         onClick={() => setQuery(router, pathname, search, { section: toggleCsv(search.get('section'), sec), page: undefined })}
                         className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${checked ? 'bg-black text-white' : 'bg-white'}`}
-                        title={sec}
                       >
                         {sec}
                       </button>
@@ -390,7 +392,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                 <button
                   className="ml-2 text-[11px] underline text-gray-600 whitespace-nowrap cursor-pointer"
                   onClick={() => setQuery(router, pathname, search, { section: undefined, page: undefined })}
-                  title="Reset sections"
                 >
                   Reset
                 </button>
@@ -399,7 +400,7 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
           </details>
         )}
 
-        {/* Date */}
+        {/* Date Filter */}
         {edition !== 'all' && (
           <details>
             <summary className="cursor-pointer select-none text-sm text-gray-700 py-1">Date</summary>
@@ -414,7 +415,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                       setQuery(router, pathname, search, { date: allNow ? undefined : csvOfAll(availableDates), page: undefined });
                     }}
                     className={`px-2 py-1 rounded border text-[11px] cursor-pointer ${isAllSelected(dateCsv, availableDates) ? 'bg-black text-white border-black' : 'bg-white'}`}
-                    title="Select all dates"
                   >
                     All
                   </button>
@@ -430,7 +430,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                         key={d}
                         onClick={() => setQuery(router, pathname, search, { date: toggleCsv(search.get('date'), d), page: undefined })}
                         className={`${base} ${sel}`}
-                        title={mdK(d)}
                         style={style}
                       >
                         {mdK(d)}
@@ -443,7 +442,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
                 <button
                   className="ml-2 text-[11px] underline text-gray-600 whitespace-nowrap cursor-pointer"
                   onClick={() => setQuery(router, pathname, search, { date: undefined, page: undefined })}
-                  title="Reset dates"
                 >
                   Reset
                 </button>
@@ -458,7 +456,6 @@ export default function FilmsClient({ ratedFilmIds }: { ratedFilmIds: string[] }
             <button
               className="text-xs underline text-gray-600 whitespace-nowrap cursor-pointer"
               onClick={() => setQuery(router, pathname, search, { section: undefined, date: undefined, page: undefined })}
-              title="Clear all filters"
             >
               Clear all
             </button>

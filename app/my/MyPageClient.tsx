@@ -1,9 +1,8 @@
-// app/my/MyPageClient.tsx
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // [수정] useSearchParams 추가
 
 import MyRatingsClient from "./MyRatingsClient";
 import SignOutButton from "./SignOutButton";
@@ -31,7 +30,7 @@ type ListUser = {
   id: string;
   nickname: string | null;
   isFollowing: boolean;
-  ratingCount?: number; // [추가] 평점 개수
+  ratingCount?: number;
 };
 
 function AutoFitSingleLineText({ text, className = "", maxPx = 36, minPx = 18, stepPx = 1 }: any) {
@@ -77,19 +76,39 @@ function AutoFitSingleLineText({ text, className = "", maxPx = 36, minPx = 18, s
 
 export default function MyPageClient({ user, initialTab }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams(); // [추가] 쿼리 파라미터 감지
 
+  // 초기값은 props에서 받지만, 이후에는 URL과 동기화
   const [activeTab, setActiveTab] = useState<Tab>(initialTab ?? "ratings");
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [userList, setUserList] = useState<ListUser[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"search" | "followers" | "following" | "blocked">("search");
+
+  // [신규] 탭 변경 핸들러 (URL 업데이트 포함)
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    // URL 쿼리 파라미터 업데이트 (스크롤 유지, 히스토리 대체)
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", tab);
+    router.replace(`/my?${params.toString()}`, { scroll: false });
+  };
+
+  // [신규] URL이 외부 요인(뒤로가기 등)으로 바뀌었을 때 탭 상태 동기화
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl && (tabFromUrl === "ratings" || tabFromUrl === "friends" || tabFromUrl === "feed")) {
+      setActiveTab(tabFromUrl as Tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!initialTab) return;
     setActiveTab(initialTab);
   }, [initialTab]);
 
-  // [수정] Friends 탭 진입 시 검색어가 없으면 'Top Users' 자동 로드
+  // Friends 탭 진입 시 검색어가 없으면 'Top Users' 자동 로드
   useEffect(() => {
     if (activeTab === 'friends' && viewMode === 'search' && !searchQuery) {
        loadTopUsers();
@@ -110,7 +129,6 @@ export default function MyPageClient({ user, initialTab }: Props) {
 
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter") return;
-    // 검색어가 비면 다시 추천 목록 로드
     if (!searchQuery.trim()) {
       loadTopUsers();
       return;
@@ -148,13 +166,12 @@ export default function MyPageClient({ user, initialTab }: Props) {
   };
 
   const switchTabAndLoad = (type: "followers" | "following") => {
-    setActiveTab("friends");
+    handleTabChange("friends"); // [수정] 탭 변경 함수 사용
     loadList(type);
   };
 
   const handleToggle = async (targetId: string, currentStatus: boolean) => {
     setUserList((prev) => prev?.map((u) => (u.id === targetId ? { ...u, isFollowing: !currentStatus } : u)) ?? null);
-
     try {
       await toggleFollow(targetId);
       router.refresh();
@@ -167,7 +184,6 @@ export default function MyPageClient({ user, initialTab }: Props) {
   const handleUnblock = async (targetId: string) => {
     if (!confirm("Unblock this user?")) return;
     setUserList((prev) => prev?.filter((u) => u.id !== targetId) ?? null);
-
     try {
       await toggleBlock(targetId);
       router.refresh();
@@ -217,7 +233,6 @@ export default function MyPageClient({ user, initialTab }: Props) {
               </p>
             )}
 
-            {/* Letterboxd Link (Mobile Fix & Color Control) */}
             {user.letterboxdId && (
               <div className="mt-4">
                 <a
@@ -228,26 +243,15 @@ export default function MyPageClient({ user, initialTab }: Props) {
                   title={`Letterboxd: @${user.letterboxdId}`}
                   aria-label={`Letterboxd: @${user.letterboxdId}`}
                 >
-                  <svg
-                    width="44" 
-                    height="24" 
-                    viewBox="0 0 44 24"
-                    aria-hidden="true"
-                    className="shrink-0"
-                  >
-                    {/* [Logo Color Change Here] */}
-                    <circle cx="14" cy="12" r="5" fill="#FF8000" /> {/* Color 1 */}
-                    <circle cx="23" cy="12" r="5" fill="#00E054" /> {/* Color 2 */}
-                    <circle cx="32" cy="12" r="5" fill="#40BCF4" /> {/* Color 3 */}
+                  <svg width="44" height="24" viewBox="0 0 44 24" aria-hidden="true" className="shrink-0">
+                    <circle cx="14" cy="12" r="5" fill="#FF8000" />
+                    <circle cx="23" cy="12" r="5" fill="#00E054" />
+                    <circle cx="32" cy="12" r="5" fill="#40BCF4" />
                   </svg>
-
-                  <span className="leading-none">
-                    Letterboxd · @{user.letterboxdId}
-                  </span>
+                  <span className="leading-none">Letterboxd · @{user.letterboxdId}</span>
                 </a>
               </div>
             )}
-
           </div>
 
           {/* Stats & SignOut */}
@@ -280,7 +284,7 @@ export default function MyPageClient({ user, initialTab }: Props) {
         {(["ratings", "friends", "feed"] as Tab[]).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)} // [수정] 탭 변경 핸들러 교체
             className={`flex-1 py-3 text-sm font-medium border-b-2 transition-all ${
               activeTab === tab
                 ? "border-gray-900 text-gray-900"
@@ -300,7 +304,6 @@ export default function MyPageClient({ user, initialTab }: Props) {
           </div>
         )}
 
-        {/* Feed Tab */}
         {activeTab === "feed" && (
           <div className="animate-in fade-in duration-300">
             <FeedTab />
@@ -321,7 +324,6 @@ export default function MyPageClient({ user, initialTab }: Props) {
                 onFocus={() => {
                   if (viewMode !== "search") {
                     setViewMode("search");
-                    // 검색어 없으면 top users 로드
                     if(!searchQuery) loadTopUsers();
                   }
                 }}
@@ -337,97 +339,31 @@ export default function MyPageClient({ user, initialTab }: Props) {
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1 border-b border-gray-100 pb-2">
                 <h3 className="text-sm font-bold text-gray-900 capitalize min-w-[60px]">{viewMode === 'search' ? 'Discovery' : viewMode}</h3>
                 <div className="flex gap-1">
-                  <button
-                    onClick={() => {
-                      setViewMode("search");
-                      setSearchQuery("");
-                      loadTopUsers();
-                    }}
-                    className={`px-2 py-0.5 text-[11px] rounded border ${
-                      viewMode === "search" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"
-                    }`}
-                  >
-                    Search
-                  </button>
-                  <button
-                    onClick={() => loadList("followers")}
-                    className={`px-2 py-0.5 text-[11px] rounded border ${
-                      viewMode === "followers" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"
-                    }`}
-                  >
-                    Followers
-                  </button>
-                  <button
-                    onClick={() => loadList("following")}
-                    className={`px-2 py-0.5 text-[11px] rounded border ${
-                      viewMode === "following" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"
-                    }`}
-                  >
-                    Following
-                  </button>
-                  <button
-                    onClick={() => loadList("blocked")}
-                    className={`px-2 py-0.5 text-[11px] rounded border ${
-                      viewMode === "blocked"
-                        ? "bg-red-50 text-red-600 border-red-200 font-medium"
-                        : "bg-white text-gray-400 border-gray-200"
-                    }`}
-                  >
-                    Blocked
-                  </button>
+                  <button onClick={() => { setViewMode("search"); setSearchQuery(""); loadTopUsers(); }} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === "search" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"}`}>Search</button>
+                  <button onClick={() => loadList("followers")} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === "followers" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"}`}>Followers</button>
+                  <button onClick={() => loadList("following")} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === "following" ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200"}`}>Following</button>
+                  <button onClick={() => loadList("blocked")} className={`px-2 py-0.5 text-[11px] rounded border ${viewMode === "blocked" ? "bg-red-50 text-red-600 border-red-200 font-medium" : "bg-white text-gray-400 border-gray-200"}`}>Blocked</button>
                 </div>
               </div>
 
               {isLoading && <p className="text-center text-sm text-gray-400 py-4">Loading...</p>}
-
-              {!isLoading && userList && userList.length === 0 && (
-                <p className="text-center text-sm text-gray-400 py-4">
-                  {viewMode === "search" ? "No users found." : viewMode === "blocked" ? "No blocked users." : "List is empty."}
-                </p>
-              )}
-
-              {!isLoading &&
-                userList?.map((u) => (
+              {!isLoading && userList && userList.length === 0 && <p className="text-center text-sm text-gray-400 py-4">{viewMode === "search" ? "No users found." : viewMode === "blocked" ? "No blocked users." : "List is empty."}</p>}
+              {!isLoading && userList?.map((u) => (
                   <div key={u.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                     <div className="min-w-0 flex-1 pr-3 cursor-pointer group" onClick={() => { if(!u.isFollowing) router.push(`/users/${u.id}`); }}>
                         <div className="flex items-center gap-2">
-                            <Link href={`/users/${u.id}`} className="font-bold text-gray-900 truncate hover:underline">
-                                {u.nickname}
-                            </Link>
-                            {/* [Rating Count Display] */}
-                            {u.ratingCount !== undefined && u.ratingCount > 0 && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">
-                                    ★ {u.ratingCount}
-                                </span>
-                            )}
+                            <Link href={`/users/${u.id}`} className="font-bold text-gray-900 truncate hover:underline">{u.nickname}</Link>
+                            {u.ratingCount !== undefined && u.ratingCount > 0 && <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">★ {u.ratingCount}</span>}
                         </div>
                     </div>
-
                     {viewMode === "blocked" ? (
-                      <button
-                        onClick={() => handleUnblock(u.id)}
-                        className="shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border bg-white text-red-600 border-red-200 hover:bg-red-50"
-                      >
-                        Unblock
-                      </button>
+                      <button onClick={() => handleUnblock(u.id)} className="shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border bg-white text-red-600 border-red-200 hover:bg-red-50">Unblock</button>
                     ) : (
-                      <button
-                        onClick={() => handleToggle(u.id, u.isFollowing)}
-                        className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                          u.isFollowing
-                            ? "bg-white text-gray-900 border-gray-300 hover:text-red-600"
-                            : "bg-gray-900 text-white border-transparent hover:bg-gray-800"
-                        }`}
-                      >
-                        {u.isFollowing ? "Following" : "Follow"}
-                      </button>
+                      <button onClick={() => handleToggle(u.id, u.isFollowing)} className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border ${u.isFollowing ? "bg-white text-gray-900 border-gray-300 hover:text-red-600" : "bg-gray-900 text-white border-transparent hover:bg-gray-800"}`}>{u.isFollowing ? "Following" : "Follow"}</button>
                     )}
                   </div>
                 ))}
-
-              {!isLoading && !userList && viewMode === "search" && (
-                <div className="text-center py-10 text-gray-400 text-sm">Search friends or click stats to view lists.</div>
-              )}
+              {!isLoading && !userList && viewMode === "search" && <div className="text-center py-10 text-gray-400 text-sm">Search friends or click stats to view lists.</div>}
             </div>
           </div>
         )}

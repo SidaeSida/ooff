@@ -939,6 +939,11 @@ export default function ScreeningsClient({ initialFavoriteIds }: Props) {
   const pageEnd = pageStart + PAGE_SIZE;
   const pageRows = filtered.slice(pageStart, pageEnd);
 
+  // [신규] 페이지 변경 시 스크롤 최상단 이동
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [requestedPage]);
+
   async function toggleFavorite(screeningId: string) {
     if (!screeningId) return;
 

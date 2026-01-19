@@ -101,7 +101,6 @@ export async function searchUsers(query: string) {
         where: { followerId: myId },
         select: { followerId: true },
       },
-      // [수정] 검색 시에도 평점 개수 표시를 위해 카운트 포함
       _count: {
         select: {
           UserEntry: { where: { rating: { not: null } } }
@@ -115,7 +114,7 @@ export async function searchUsers(query: string) {
     id: u.id,
     nickname: u.nickname,
     isFollowing: u.followedBy.length > 0,
-    ratingCount: u._count.UserEntry, // 평점 개수 반환
+    ratingCount: u._count.UserEntry,
   }));
 }
 
@@ -201,11 +200,11 @@ export async function getBlockedUsers() {
     id: b.blocked.id,
     nickname: b.blocked.nickname,
     isFollowing: false,
-    ratingCount: 0, // 차단 목록엔 표시 안 함
+    ratingCount: 0,
   }));
 }
 
-// 7. 피드 데이터 가져오기
+// 7. 피드 데이터 가져오기 (수정됨: 내 평가 여부 포함)
 export async function getFeed(cursor?: FeedCursor) {
   const session = await auth();
   if (!session?.user?.id) return [];
@@ -213,6 +212,7 @@ export async function getFeed(cursor?: FeedCursor) {
   const myId = session.user.id;
   const limit = 20;
 
+  // 1. 팔로잉 목록 가져오기
   const following = await prisma.follows.findMany({
     where: { followerId: myId },
     select: { followingId: true },
@@ -220,6 +220,7 @@ export async function getFeed(cursor?: FeedCursor) {
   const followingIds = following.map((f) => f.followingId);
   if (followingIds.length === 0) return [];
 
+  // 2. 맞팔 여부 확인용
   const reverse = await prisma.follows.findMany({
     where: {
       followerId: { in: followingIds },
@@ -229,9 +230,11 @@ export async function getFeed(cursor?: FeedCursor) {
   });
   const mutualSet = new Set(reverse.map((r) => r.followerId));
 
+  // 3. 커서 기반 페이지네이션 조건
   const cursorAt = cursor?.updatedAt ? new Date(cursor.updatedAt) : null;
   const cursorId = cursor?.id ?? null;
 
+  // 4. 친구들의 엔트리 조회
   const rawEntries = await prisma.userEntry.findMany({
     where: {
       userId: { in: followingIds },
@@ -274,6 +277,21 @@ export async function getFeed(cursor?: FeedCursor) {
     take: limit,
   });
 
+  // [신규] 조회된 피드 영화들에 대해, 내가 평가한 기록이 있는지 확인
+  const filmIdsInFeed = Array.from(new Set(rawEntries.map(e => e.filmId)));
+  
+  const myRatings = await prisma.userEntry.findMany({
+    where: {
+      userId: myId,
+      filmId: { in: filmIdsInFeed },
+      rating: { not: null }
+    },
+    select: { filmId: true, rating: true }
+  });
+  
+  // 빠른 조회를 위한 Map 생성
+  const myRatingMap = new Map(myRatings.map(r => [r.filmId, r.rating]));
+
   const feedItems = rawEntries
     .map((entry) => {
       const privacy: any = entry.user.UserPrivacy;
@@ -305,6 +323,8 @@ export async function getFeed(cursor?: FeedCursor) {
         likeCount: entry.likeCount,
         isLiked: entry.likes.length > 0,
         updatedAt: entry.updatedAt.toISOString(),
+        // [추가] 내 평점 정보 포함 (없으면 null)
+        myRating: myRatingMap.get(entry.filmId) ? Number(myRatingMap.get(entry.filmId)) : null,
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
@@ -337,7 +357,7 @@ export async function checkNickname(nickname: string) {
   return { available: true, message: "Available." };
 }
 
-// 9. [신규] 전체 유저 추천 목록 (리뷰 많은 순)
+// 9. 전체 유저 추천 목록
 export async function getTopUsers() {
   const session = await auth();
   const myId = session?.user?.id;
@@ -351,10 +371,9 @@ export async function getTopUsers() {
     },
     where: {
         AND: [
-            { id: { not: myId } }, // 나 제외
-            { nickname: { not: null } }, // [추가] 닉네임 없는 유령 유저 제외
-            { nickname: { not: "" } },   // [추가] 빈 문자열 닉네임 제외
-            // 나를 차단했거나 내가 차단한 유저 제외 (로그인 시)
+            { id: { not: myId } },
+            { nickname: { not: null } },
+            { nickname: { not: "" } },
             ...(myId ? [{ blockedBy: { none: { blockerId: myId } } }, { blocking: { none: { blockedId: myId } } }] : [])
         ]
     },
@@ -363,7 +382,6 @@ export async function getTopUsers() {
       nickname: true,
       _count: {
         select: {
-          // 실제 rating이 있는 개수만 카운트
           UserEntry: { where: { rating: { not: null } } }
         }
       },
