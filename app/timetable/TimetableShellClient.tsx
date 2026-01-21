@@ -31,7 +31,11 @@ export default function TimetableShellClient(props: Props) {
 
   return (
     <>
-      <InnerTimetableClient {...props} />
+      <InnerTimetableClient 
+        {...props} 
+        // [신규] 자식 컴포넌트에서 AI 패널을 열 수 있도록 함수 전달
+        onOpenAi={() => setIsAiOpen(true)}
+      />
 
       {/* [Unified] Floating Button (FAB) - Desktop/Mobile 모두 표시 */}
       <button

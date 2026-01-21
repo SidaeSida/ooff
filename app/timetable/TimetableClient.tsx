@@ -41,6 +41,7 @@ type Props = {
   editionLabel: string;
   dateIso: string;
   userNickname: string;
+  onOpenAi?: () => void; // [신규] 부모로부터 받는 AI 오픈 핸들러
 };
 
 type PlacedRow = TimetableRow & {
@@ -117,6 +118,7 @@ export default function TimetableClient({
   editionLabel,
   dateIso,
   userNickname,
+  onOpenAi,
 }: Props) {
   const getIsMobile = () =>
     typeof window !== "undefined" && window.innerWidth < 420;
@@ -1219,7 +1221,6 @@ export default function TimetableClient({
 
   useEffect(() => {
     return () => {
-      // 페이지 이동/언마운트 시 pending 삭제가 남아있으면 서버 상태를 맞춤(Undo 창은 사라지므로 확정)
       if (pendingDeleteTimerRef.current) {
         clearTimeout(pendingDeleteTimerRef.current);
         pendingDeleteTimerRef.current = null;
@@ -1373,34 +1374,13 @@ export default function TimetableClient({
     <section className="space-y-3">
       {/* 1. 컨트롤 영역 (저장 시 제외됨) */}
       <div className="flex items-center justify-between gap-2">
-        {/* Left: View Mode Toggles (왼쪽 고정, 필요 시 가로 스크롤) */}
         <div className="min-w-0 flex-1 overflow-x-auto">
           <div className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-1 py-0.5 border border-gray-200">
-            <button
-              type="button"
-              className={viewBtnClass("jumpcut")}
-              onClick={() => setViewMode("jumpcut")}
-            >
-              {viewLabel("jumpcut")}
-            </button>
-            <button
-              type="button"
-              className={viewBtnClass("onetake")}
-              onClick={() => setViewMode("onetake")}
-            >
-              {viewLabel("onetake")}
-            </button>
-            <button
-              type="button"
-              className={viewBtnClass("storyboard")}
-              onClick={() => setViewMode("storyboard")}
-            >
-              {viewLabel("storyboard")}
-            </button>
+            <button type="button" className={viewBtnClass("jumpcut")} onClick={() => setViewMode("jumpcut")}>{viewLabel("jumpcut")}</button>
+            <button type="button" className={viewBtnClass("onetake")} onClick={() => setViewMode("onetake")}>{viewLabel("onetake")}</button>
+            <button type="button" className={viewBtnClass("storyboard")} onClick={() => setViewMode("storyboard")}>{viewLabel("storyboard")}</button>
           </div>
         </div>
-
-        {/* Right: Save Image Button (오른쪽 고정, 원형 SVG 버튼) */}
         <div className="shrink-0">
           <button
             type="button"
@@ -1419,24 +1399,44 @@ export default function TimetableClient({
         </div>
       </div>
 
-
-      {visibleRows.length === 0 && (
-        <div className="text-sm text-gray-500 border rounded-lg px-3 py-2">
-          No favorite screenings on this day.
-        </div>
-      )}
-
       {/* 2. 캡처 대상 영역 (Title + Timeline) */}
       <div ref={captureRef} className="bg-white">
         
-        {/* [수정] 타이틀 (화면에도 보이고, 캡처에도 포함됨) */}
-        <div className="text-center pb-6 pt-2">
-          <h1 className="text-sm font-extrabold text-gray-900 tracking-tight">
-            &lt; {userNickname}'s {editionLabel} / {formattedDate} &gt;
-          </h1>
-        </div>
+        {/* [수정] 타이틀: 데이터가 있을 때만 표시 */}
+        {visibleRows.length > 0 && (
+          <div className="text-center pb-6 pt-2">
+            <h1 className="text-sm font-extrabold text-gray-900 tracking-tight">
+              &lt; {userNickname}'s {editionLabel} / {formattedDate} &gt;
+            </h1>
+          </div>
+        )}
 
-        {/* 메인 타임라인 (Jump Cut / One Take) */}
+        {/* [신규] Empty State UI (CTA) */}
+        {visibleRows.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 space-y-6 text-center border rounded-xl border-dashed border-gray-200 bg-gray-50 mt-4">
+             <div className="space-y-1">
+                <p className="text-gray-900 font-bold text-lg">Your timetable is empty.</p>
+             </div>
+             
+             <div className="flex flex-wrap gap-3 justify-center">
+                <Link 
+                  href={`/screenings?edition=${editionId}&date=${dateIso}`} // [UX] 현재 선택된 날짜 필터 유지
+                  className="px-5 py-2.5 rounded-full bg-white border border-gray-300 text-sm font-bold text-gray-800 hover:bg-gray-100 transition-colors shadow-sm"
+                >
+                  Browse Screenings
+                </Link>
+                
+                <button 
+                  onClick={onOpenAi} // 부모에게 받은 핸들러 실행
+                  className="px-5 py-2.5 rounded-full bg-black text-white text-sm font-bold hover:bg-gray-800 transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <span>✨</span> AI Planner
+                </button>
+             </div>
+          </div>
+        )}
+
+        {/* 메인 타임라인 */}
         {visibleRows.length > 0 && viewMode !== "storyboard" && (
           <div className="bg-white px-1.5 pb-2">
             <div
@@ -1476,7 +1476,6 @@ export default function TimetableClient({
                 freeSlotsToRender.map((slot, idx) => {
                   const availableCount = countScreeningsForSlot(allScreeningsForCount, slot.startAbs, slot.endAbs);
                   const clickable = availableCount > 0;
-                  // [수정] 1시간(60분) 미만이고 비어있으면 렌더링 안 함
                   const durationMin = slot.endAbs - slot.startAbs;
                   if (durationMin < 60 && availableCount === 0) return null;
 
@@ -1484,7 +1483,6 @@ export default function TimetableClient({
                     <button
                       key={`${slot.startAbs}-${idx}`}
                       type="button"
-                      // [수정] 저장 시 제외 속성 추가
                       data-hide-on-save="true"
                       disabled={!clickable}
                       className={[
@@ -1728,34 +1726,19 @@ export default function TimetableClient({
         )}
       </div>
 
-      {/* [UNDO 삭제] 하단 스낵바 (몇 초만 노출, 누르면 즉시 복구) */}
+      {/* 스낵바 및 메뉴 UI (기존 유지) */}
       {undoRemove && (
-        <div
-          className="fixed left-0 right-0 bottom-4 z-[6500] flex justify-center px-3"
-          data-hide-on-save="true"
-        >
+        <div className="fixed left-0 right-0 bottom-4 z-[6500] flex justify-center px-3" data-hide-on-save="true">
           <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-gray-200 bg-white/95 shadow-[0_10px_30px_rgba(0,0,0,0.18)] px-4 py-2">
-            <span className="text-[12px] text-gray-700 truncate max-w-[60vw]">
-              Removed: {undoRemove.label}
-            </span>
-            <button
-              type="button"
-              onClick={handleUndoRemove}
-              className="text-[12px] font-semibold text-gray-900 underline underline-offset-2"
-            >
-              Undo
-            </button>
+            <span className="text-[12px] text-gray-700 truncate max-w-[60vw]">Removed: {undoRemove.label}</span>
+            <button type="button" onClick={handleUndoRemove} className="text-[12px] font-semibold text-gray-900 underline underline-offset-2">Undo</button>
           </div>
         </div>
       )}
 
       {priorityMenu && (
         <div className="fixed inset-0 z-[6000] bg-black/10" onClick={closePriorityMenu}>
-          <div
-            className="absolute rounded-xl bg-white/95 border border-gray-300 shadow-[0_8px_20px_rgba(0,0,0,0.18)] w-[40px] text-[14px]"
-            style={{ left: priorityMenu.x, top: priorityMenu.y }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="absolute rounded-xl bg-white/95 border border-gray-300 shadow-[0_8px_20px_rgba(0,0,0,0.18)] w-[40px] text-[14px]" style={{ left: priorityMenu.x, top: priorityMenu.y }} onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col divide-y divide-gray-200">
               <button type="button" className="w-full py-1 text-center hover:bg-gray-50" onClick={() => handlePriorityAction(priorityMenu.screeningId, "first")}>
                 <span className="font-medium" style={{ color: "var(--badge-rated-bg)" }}>1</span>
@@ -1774,10 +1757,7 @@ export default function TimetableClient({
         </div>
       )}
 
-
       <style jsx global>{`
-        /* html-to-image 캡처 시 iOS에서 카드 오른쪽 음영/밴딩 아티팩트 제거 (강화)
-          - box-shadow가 filter/drop-shadow 형태로 남는 케이스가 있어 * 전체에 적용 */
         [data-capture-mode="true"] * {
           box-shadow: none !important;
           filter: none !important;
@@ -1785,15 +1765,12 @@ export default function TimetableClient({
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
         }
-
         [data-capture-mode="true"] article {
           box-shadow: none !important;
           filter: none !important;
           -webkit-filter: none !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
-
-          /* iOS 합성/밴딩 완화용 */
           isolation: isolate !important;
           overflow: hidden !important;
           background-clip: padding-box !important;
@@ -1803,7 +1780,6 @@ export default function TimetableClient({
           transform: translateZ(0) !important;
         }
       `}</style>
-
     </section>
   );
 }

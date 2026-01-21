@@ -1,4 +1,3 @@
-// app/timetable/page.tsx
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -119,16 +118,15 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   }
   const userId = session.user.id;
 
-  // [수정] 닉네임 가져오기
+  // 닉네임 가져오기 (없으면 이메일 앞부분 사용)
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { nickname: true, email: true },
   });
   
-  // 닉네임 없으면 이메일 앞자리라도 쓰기 (방어 로직)
   const displayNickname = user?.nickname || user?.email?.split("@")[0] || "User";
 
-  // 즐겨찾기 조회
+  // 즐겨찾기(내 시간표) 조회
   let favoriteRows: { screeningId: string; priority: number | null; sortOrder: number | null }[] = [];
 
   try {
@@ -140,16 +138,8 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     favoriteRows = [];
   }
 
-  if (!favoriteRows.length) {
-    return (
-      <main className="p-4 space-y-3">
-        <h1 className="text-xl font-semibold">My Timetable</h1>
-        <p className="text-sm text-gray-600">
-          No favorite screenings yet. Add ♥ on a screening to build your timetable.
-        </p>
-      </main>
-    );
-  }
+  // [수정] 데이터가 없어도 조기 리턴(Early Return) 하지 않음!
+  // 그래야 아래쪽의 TimetableShellClient가 실행되고, 빈 화면 UI가 뜹니다.
 
   const favoritePriority = new Map<string, number | null>();
   const favoriteOrder = new Map<string, number | null>();
@@ -169,7 +159,6 @@ export default async function TimetablePage({ searchParams }: PageProps) {
   const filmById = Object.fromEntries(films.map((f) => [f.id, f]));
   const entryById = Object.fromEntries(entries.map((e) => [e.id, e]));
 
-  // bundleMap: editionId + code → 해당 상영에 포함된 영화 리스트
   const bundleMap = new Map<string, BundleFilm[]>();
 
   for (const s of screenings) {
@@ -188,7 +177,8 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     }
     bundleMap.set(key, list);
   }
-  // merged rows
+
+  // Merged Rows 생성
   const merged: ViewRow[] = screenings
     .filter((s) => favoriteIds.has(s.id))
     .map((s) => {
@@ -204,11 +194,9 @@ export default async function TimetablePage({ searchParams }: PageProps) {
       const editionId = entry?.editionId ?? "unknown";
       const primaryFilmId = entry?.filmId ?? s.entryId;
 
-      // bundleList 먼저 선언
       const bundleKey = buildBundleKey(editionId, s.code);
       const bundleList = bundleKey ? bundleMap.get(bundleKey) ?? [] : [];
 
-      // runtime 계산
       let endMin: number;
 
       if (s.endsAt) {
@@ -216,17 +204,12 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         const [hh2, mm2] = t2.split(":").map((v) => Number(v) || 0);
         endMin = hh2 * 60 + mm2;
       } else {
-        // 기본값
         let runtime = 120;
-
-        // 다중상영 영화 → 구성 영화 runtime 합산
         if (bundleList.length > 1) {
           const runtimes = bundleList.map((bf) => {
             const rt = filmById[bf.filmId]?.runtime;
             return typeof rt === "number" ? rt : null;
           });
-
-          // 모두 runtime이 있을 때만 합산
           if (runtimes.every((x) => x !== null)) {
             runtime = (runtimes as number[]).reduce((a, b) => a + b, 0);
           }
@@ -236,8 +219,6 @@ export default async function TimetablePage({ searchParams }: PageProps) {
         endMin = startMin + runtime;
       }
 
-
-      // filmTitle / bundleFilms
       let filmTitle: string;
       let bundleFilms: BundleFilm[] | undefined;
 
@@ -280,14 +261,7 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     })
     .filter((row) => row.editionId !== "unknown");
 
-  if (!merged.length) {
-    return (
-      <main className="p-4 space-y-3">
-        <h1 className="text-xl font-semibold">My Timetable</h1>
-        <p className="text-sm text-gray-600">No favorite screenings yet.</p>
-      </main>
-    );
-  }
+  // [수정] merged가 0개여도 로직 계속 진행 (필터 렌더링 등)
 
   const sp = await searchParams;
 
@@ -301,14 +275,21 @@ export default async function TimetablePage({ searchParams }: PageProps) {
     return a.localeCompare(b);
   });
 
+  // [수정] 데이터가 없어서 editions가 비었을 때 기본값 처리
   const currentEdition =
-    sp.edition && editions.includes(sp.edition) ? sp.edition : editions[0];
+    sp.edition && editions.includes(sp.edition) 
+      ? sp.edition 
+      : (editions[0] || "edition_jiff_2025");
 
   const days = Array.from(
     new Set(merged.filter((m) => m.editionId === currentEdition).map((m) => m.date))
   ).sort();
 
-  const currentDate = sp.date && days.includes(sp.date) ? sp.date : days[0];
+  // [수정] 데이터가 없어서 days가 비었을 때 기본값 처리
+  const currentDate = 
+    sp.date && days.includes(sp.date) 
+      ? sp.date 
+      : (days[0] || "2025-05-01");
 
   const filtered = merged
     .filter((m) => m.editionId === currentEdition && m.date === currentDate)
@@ -321,76 +302,82 @@ export default async function TimetablePage({ searchParams }: PageProps) {
 
   return (
     <main className="p-4 space-y-4">
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] text-gray-500">영화제</span>
-          {editions.map((eid) => {
-            const active = eid === currentEdition;
-            const params = new URLSearchParams();
-            params.set("edition", eid);
-            params.set("date", currentDate);
-            return (
-              <Link
-                key={eid}
-                href={`/timetable?${params.toString()}`}
-                className={
-                  pillBase +
-                  " " +
-                  (active
-                    ? "bg-black border-black"
-                    : "bg-white border-gray-300 hover:bg-gray-100")
-                }
-              >
-                <span className={active ? "text-white" : "text-gray-800"}>
-                  {EDITION_LABEL[eid] ?? eid}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+      {/* 데이터가 있을 때만 필터(영화제, 날짜) 노출 */}
+      {merged.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-gray-500">영화제</span>
+            {editions.map((eid) => {
+              const active = eid === currentEdition;
+              const params = new URLSearchParams();
+              params.set("edition", eid);
+              params.set("date", currentDate);
+              return (
+                <Link
+                  key={eid}
+                  href={`/timetable?${params.toString()}`}
+                  className={
+                    pillBase +
+                    " " +
+                    (active
+                      ? "bg-black border-black"
+                      : "bg-white border-gray-300 hover:bg-gray-100")
+                  }
+                >
+                  <span className={active ? "text-white" : "text-gray-800"}>
+                    {EDITION_LABEL[eid] ?? eid}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] text-gray-500">날짜</span>
-          {days.map((d) => {
-            const active = d === currentDate;
-            const params = new URLSearchParams();
-            params.set("edition", currentEdition);
-            params.set("date", d);
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-gray-500">날짜</span>
+            {days.map((d) => {
+              const active = d === currentDate;
+              const params = new URLSearchParams();
+              params.set("edition", currentEdition);
+              params.set("date", d);
 
-            const weekend = isWeekend(d);
-            const label = formatDateLabel(d);
+              const weekend = isWeekend(d);
+              const label = formatDateLabel(d);
 
-            const textClass = active
-              ? "text-white"
-              : weekend
-              ? "text-[#D30000]"
-              : "text-gray-800";
+              const textClass = active
+                ? "text-white"
+                : weekend
+                ? "text-[#D30000]"
+                : "text-gray-800";
 
-            return (
-              <Link
-                key={d}
-                href={`/timetable?${params.toString()}`}
-                className={
-                  pillBase +
-                  " " +
-                  (active
-                    ? "bg-black border-black"
-                    : "bg-white border-gray-300 hover:bg-gray-100")
-                }
-              >
-                <span className={textClass}>{label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+              return (
+                <Link
+                  key={d}
+                  href={`/timetable?${params.toString()}`}
+                  className={
+                    pillBase +
+                    " " +
+                    (active
+                      ? "bg-black border-black"
+                      : "bg-white border-gray-300 hover:bg-gray-100")
+                  }
+                >
+                  <span className={textClass}>{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
+      {/* [중요] 데이터가 없어도(filtered=[]) 
+        TimetableShellClient를 렌더링해야 '빈 화면 UI'와 'AI 버튼'이 나옵니다.
+      */}
       <section>
         <TimetableShellClient
           rows={filtered}
           editionLabel={currentEditionLabel}
           dateIso={currentDate}
-          userNickname={displayNickname} // [추가] 닉네임 전달
+          userNickname={displayNickname}
         />
       </section>
     </main>
